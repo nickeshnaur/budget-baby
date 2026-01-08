@@ -437,9 +437,9 @@ function handleTellerAccount(req, res) {
             console.log('🏦 Real accounts from Teller:');
             console.log(JSON.stringify(accounts, null, 2));
 
-            // Store each account with real data
+            // Store each account with real data in database
             accounts.forEach(account => {
-              connectedAccounts.set(account.id, {
+              const accountData = {
                 id: account.id,
                 enrollmentToken: enrollmentToken,
                 institutionName: account.institution?.name || 'Unknown Bank',
@@ -448,8 +448,18 @@ function handleTellerAccount(req, res) {
                 subtype: account.subtype,
                 lastFour: account.last_four || 'N/A',
                 connectedAt: new Date().toISOString()
-              });
-              console.log(`✅ Stored account: ${account.institution?.name} - ${account.name || account.subtype} ****${account.last_four || 'N/A'}`);
+              };
+
+              // Save to database
+              db.run(`INSERT OR REPLACE INTO accounts
+                     (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                     [account.id, enrollmentToken, accountData.institutionName, accountData.accountName,
+                      accountData.accountType, accountData.subtype, accountData.lastFour, accountData.connectedAt]);
+
+              // Also store in memory for quick access
+              connectedAccounts.set(account.id, accountData);
+              console.log(`✅ Stored account: ${accountData.institutionName} - ${accountData.accountName} ****${accountData.lastFour}`);
             });
 
             res.setHeader('Content-Type', 'application/json');
