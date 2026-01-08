@@ -609,18 +609,99 @@ function handleFetchTransactions(req, res) {
       }
 
       const account = connectedAccounts.get(accountId);
-      console.log(`🔍 Transaction fetch requested for account ${accountId}`);
-      console.log('⚠️ Teller API requires client certificates - returning mock data for now');
+      const enrollmentToken = account.enrollmentToken;
+      console.log(`🔍 Fetching transactions for account ${accountId}`);
 
-      // Return success without fetching from Teller (certificates required)
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        success: true,
-        message: 'Account connected successfully - transactions will sync when certificates are configured',
-        transactions: [],
-        count: 0
-      }));
+      // Try to fetch transactions without certificates (basic auth only)
+      const https = require('https');
+
+      const options = {
+        hostname: 'api.teller.io',
+        path: `/accounts/${enrollmentToken}/transactions?from_date=2026-01-01`,
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+          'Accept': 'application/json'
+        }
+      };
+
+      const tellerReq = https.request(options, (tellerRes) => {
+        let responseBody = '';
+
+        tellerRes.on('data', (chunk) => {
+          responseBody += chunk;
+        });
+
+        tellerRes.on('end', async () => {
+          try {
+            if (tellerRes.statusCode !== 200) {
+              console.log('⚠️ Teller API error (expected with basic auth):', tellerRes.statusCode);
+              // Return success but with no transactions
+              res.setHeader('Content-Type', 'application/json');
+              res.writeHead(200);
+              res.end(JSON.stringify({
+                success: true,
+                message: 'Account connected - transaction sync requires certificates',
+                transactions: [],
+                count: 0
+              }));
+              return;
+            }
+
+            const tellerTransactions = JSON.parse(responseBody);
+            console.log('🎉 Successfully fetched transactions from Teller:', tellerTransactions.length);
+
+            // Process and save transactions
+            const processedTransactions = tellerTransactions.map(txn => {
+              const transaction = {
+                id: txn.id,
+                accountId: accountId,
+                description: txn.description,
+                amount: -Math.abs(txn.amount), // Expenses negative
+                date: txn.date,
+                status: txn.status,
+                category: 'Unsorted',
+                createdAt: new Date().toISOString()
+              };
+
+              transactions.set(txn.id, transaction);
+
+              // Save to PostgreSQL
+              if (pool) {
+                pool.query(
+                  `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                   ON CONFLICT (id) DO NOTHING`,
+                  [txn.id, accountId, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                ).catch(dbError => console.error('Failed to save transaction:', dbError));
+              }
+
+              return transaction;
+            });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              success: true,
+              transactions: processedTransactions,
+              count: processedTransactions.length
+            }));
+
+          } catch (error) {
+            console.error('Error parsing Teller response:', error);
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: 'Failed to parse transaction data' }));
+          }
+        });
+      });
+
+      tellerReq.on('error', (error) => {
+        console.error('Teller API request error:', error);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Failed to fetch transactions from bank' }));
+      });
+
+      tellerReq.end();
 
     } catch (error) {
       console.error('Fetch transactions error:', error);
