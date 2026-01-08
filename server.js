@@ -711,6 +711,14 @@ function handleFetchTransactions(req, res) {
                       category: 'Unsorted', // Always unsorted initially
                       createdAt: new Date().toISOString()
                     };
+
+                    // Save to database
+                    db.run(`INSERT OR REPLACE INTO transactions
+                           (id, account_id, description, amount, date, status, category, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                           [transaction.id, transaction.accountId, transaction.description, transaction.amount,
+                            transaction.date, transaction.status, transaction.category, transaction.createdAt]);
+
                     transactions.set(txn.id, transaction);
                     return transaction;
                   });
