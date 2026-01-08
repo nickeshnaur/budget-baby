@@ -27,11 +27,26 @@ console.log(`🗄️ Database URL: ${DATABASE_URL ? 'Connected' : 'Missing - add
 
 let pool = null;
 if (DATABASE_URL && Pool) {
-  pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: DATABASE_URL.includes('railway.app') ? { rejectUnauthorized: false } : false
-  });
-  console.log('✅ PostgreSQL pool created');
+  try {
+    pool = new Pool({
+      connectionString: DATABASE_URL,
+      ssl: DATABASE_URL.includes('railway.app') ? { rejectUnauthorized: false } : false
+    });
+    console.log('✅ PostgreSQL pool created successfully');
+    console.log('🔗 Database URL host:', new URL(DATABASE_URL).hostname);
+
+    // Test the connection
+    pool.query('SELECT NOW()', (err, res) => {
+      if (err) {
+        console.error('❌ Database connection test failed:', err.message);
+      } else {
+        console.log('✅ Database connection test successful:', res.rows[0].now);
+      }
+    });
+  } catch (error) {
+    console.error('❌ Failed to create PostgreSQL pool:', error.message);
+    pool = null;
+  }
 } else if (!Pool) {
   console.log('⚠️ PostgreSQL module not available - using file storage only');
 } else {
@@ -128,8 +143,13 @@ async function loadFromDatabase() {
 
 // Initialize and load data on startup
 (async () => {
-  await initializeDatabase();
-  await loadFromDatabase();
+  if (pool) {
+    console.log('🔄 Initializing PostgreSQL database...');
+    await initializeDatabase();
+    await loadFromDatabase();
+  } else {
+    console.log('📁 Using file storage mode - no database available');
+  }
 })();
 
 // Persistent storage using filesystem
@@ -447,7 +467,7 @@ function handleTellerEnrollment(req, res) {
   }
 }
 
-function handleTellerAccount(req, res) {
+async function handleTellerAccount(req, res) {
   let body = '';
   req.on('data', chunk => {
     body += chunk.toString();
@@ -477,7 +497,8 @@ function handleTellerAccount(req, res) {
       // Save to PostgreSQL database
       if (pool) {
         try {
-          await pool.query(
+          console.log('💾 Saving account to PostgreSQL:', { enrollmentToken, institutionName });
+          const result = await pool.query(
             `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              ON CONFLICT (id) DO UPDATE SET
@@ -487,13 +508,17 @@ function handleTellerAccount(req, res) {
                account_type = $5,
                subtype = $6,
                last_four = $7,
-               connected_at = $8`,
+               connected_at = $8
+             RETURNING *`,
             [enrollmentToken, enrollmentToken, institutionName, 'Account', 'depository', 'checking', '****', new Date()]
           );
-          console.log('💾 Account saved to PostgreSQL');
+          console.log('✅ Account saved to PostgreSQL successfully:', result.rowCount, 'row(s) affected');
         } catch (dbError) {
-          console.error('Failed to save account to database:', dbError);
+          console.error('❌ CRITICAL: Failed to save account to database:', dbError.message);
+          console.error('Database error details:', dbError);
         }
+      } else {
+        console.log('⚠️ No database pool available - account only saved to file storage');
       }
 
       // Save accounts to file as backup
