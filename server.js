@@ -634,8 +634,8 @@ function handleFetchTransactions(req, res) {
           console.log('TELLER_KEY_PEM first 50 chars:', process.env.TELLER_KEY_PEM.substring(0, 50));
 
           // Add PEM headers if missing
-          let certPem = process.env.TELLER_CERT_PEM;
-          let keyPem = process.env.TELLER_KEY_PEM;
+          let certPem = process.env.TELLER_CERT_PEM.trim();
+          let keyPem = process.env.TELLER_KEY_PEM.trim();
 
           if (!certPem.startsWith('-----BEGIN')) {
             certPem = `-----BEGIN CERTIFICATE-----\n${certPem}\n-----END CERTIFICATE-----`;
@@ -643,6 +643,9 @@ function handleFetchTransactions(req, res) {
           if (!keyPem.startsWith('-----BEGIN')) {
             keyPem = `-----BEGIN PRIVATE KEY-----\n${keyPem}\n-----END PRIVATE KEY-----`;
           }
+
+          console.log('Final cert starts with:', certPem.substring(0, 30));
+          console.log('Final key starts with:', keyPem.substring(0, 30));
 
           cert = Buffer.from(certPem);
           key = Buffer.from(keyPem);
