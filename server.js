@@ -17,7 +17,15 @@ const TELLER_CONFIG = {
 
 // Database setup
 const dbPath = path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || '.', 'budget.db');
-const db = new sqlite3.Database(dbPath);
+console.log(`📁 Database path: ${dbPath}`);
+console.log(`📁 Volume mount path: ${process.env.RAILWAY_VOLUME_MOUNT_PATH || 'not set'}`);
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('❌ Failed to open database:', err);
+  } else {
+    console.log(`✅ Database connected: ${dbPath}`);
+  }
+});
 
 // Initialize database tables
 db.serialize(() => {
