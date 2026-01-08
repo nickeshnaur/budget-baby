@@ -412,13 +412,13 @@ function handleTellerAccount(req, res) {
                 id: account.id,
                 enrollmentToken: enrollmentToken,
                 institutionName: account.institution?.name || 'Unknown Bank',
-                accountName: account.name,
+                accountName: account.name || `${account.subtype || account.type || 'Account'}`,
                 accountType: account.type,
                 subtype: account.subtype,
-                lastFour: account.last_four,
+                lastFour: account.last_four || 'N/A',
                 connectedAt: new Date().toISOString()
               });
-              console.log(`✅ Stored account: ${account.institution?.name} - ${account.name}`);
+              console.log(`✅ Stored account: ${account.institution?.name} - ${account.name || account.subtype} ****${account.last_four || 'N/A'}`);
             });
 
             res.setHeader('Content-Type', 'application/json');

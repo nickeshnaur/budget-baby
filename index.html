@@ -6134,7 +6134,7 @@
                         accountDiv.innerHTML = `
                             <div class="account-info">
                                 <div class="account-name">${account.institutionName}</div>
-                                <div class="account-type">${account.accountName || 'Account'}</div>
+                                <div class="account-type">${account.accountName || account.subtype || 'Account'} ${account.lastFour ? '****' + account.lastFour : ''}</div>
                                 <div class="account-status">Connected</div>
                             </div>
                             <button class="setting-button" onclick="disconnectAccount()">Disconnect</button>
