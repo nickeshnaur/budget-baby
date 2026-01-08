@@ -7144,11 +7144,11 @@
             const existingTransactions = transactionsSection.querySelectorAll('.transaction-card');
             existingTransactions.forEach(el => el.remove());
 
-            // Filter to show only UNSORTED transactions on dashboard
-            const unsortedTransactions = transactions.filter(t => t.category === 'Unsorted');
+            // Show all recent transactions on dashboard (not just unsorted)
+            const recentTransactions = transactions.slice(0, 10);
 
-            // Show the first 10 unsorted transactions on dashboard
-            unsortedTransactions.slice(0, 10).forEach(transaction => {
+            // Show the first 10 recent transactions on dashboard
+            recentTransactions.forEach(transaction => {
                 const txnEl = createDashboardTransactionElement(transaction);
                 transactionsSection.appendChild(txnEl);
 
