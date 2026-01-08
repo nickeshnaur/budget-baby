@@ -908,10 +908,9 @@ function handleUpdateTransactionCategory(req, res) {
 }
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Budget App running on http://localhost:${PORT}`);
-  console.log(`📱 Local network access: http://192.168.1.187:${PORT}`);
+  console.log(`🚀 Budget App running on port ${PORT}`);
   console.log(`📱 Password: ${PASSWORD}`);
-  console.log(`💡 Open your browser and visit either URL above`);
+  console.log(`💡 Open your browser and visit the URL above`);
   console.log(`📱 For mobile testing, use: http://192.168.1.187:${PORT}`);
 });
 
