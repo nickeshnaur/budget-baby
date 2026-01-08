@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const querystring = require('querystring');
+const sqlite3 = require('sqlite3').verbose();
 
 const PORT = process.env.PORT || 3000;
 const PASSWORD = 'babywolfdog';
@@ -14,7 +15,37 @@ const TELLER_CONFIG = {
     environment: 'development' // Now with client certificates for real bank data
 };
 
-// In-memory storage for accounts and transactions
+// Database setup
+const dbPath = path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || '.', 'budget.db');
+const db = new sqlite3.Database(dbPath);
+
+// Initialize database tables
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY,
+    enrollment_token TEXT,
+    institution_name TEXT,
+    account_name TEXT,
+    account_type TEXT,
+    subtype TEXT,
+    last_four TEXT,
+    connected_at TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS transactions (
+    id TEXT PRIMARY KEY,
+    account_id TEXT,
+    description TEXT,
+    amount REAL,
+    date TEXT,
+    status TEXT,
+    category TEXT,
+    created_at TEXT,
+    FOREIGN KEY(account_id) REFERENCES accounts(id)
+  )`);
+});
+
+// In-memory storage for quick access
 const connectedAccounts = new Map();
 const transactions = new Map();
 
