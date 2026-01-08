@@ -403,7 +403,8 @@ function handleTellerAccount(req, res) {
             }
 
             const accounts = JSON.parse(responseBody);
-            console.log('🏦 Real accounts from Teller:', accounts);
+            console.log('🏦 Real accounts from Teller:');
+            console.log(JSON.stringify(accounts, null, 2));
 
             // Store each account with real data
             accounts.forEach(account => {
