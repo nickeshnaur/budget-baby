@@ -5852,6 +5852,12 @@
             handleRoute() {
                 const hash = window.location.hash.substring(1); // Remove #
 
+                // Check authentication first
+                if (!isAuthenticated) {
+                    document.getElementById('loginScreen').style.display = 'block';
+                    return;
+                }
+
                 // Hide all pages
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'none';
@@ -6230,6 +6236,9 @@
 
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Initial route handling on page load
+            router.handleRoute();
+
             // Login form handling
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
