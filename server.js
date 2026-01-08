@@ -49,6 +49,56 @@ db.serialize(() => {
 const connectedAccounts = new Map();
 const transactions = new Map();
 
+// Load data from database on startup
+function loadFromDatabase() {
+  // Load accounts
+  db.all(`SELECT * FROM accounts`, (err, rows) => {
+    if (err) {
+      console.error('Failed to load accounts from database:', err);
+      return;
+    }
+    rows.forEach(row => {
+      connectedAccounts.set(row.id, {
+        id: row.id,
+        enrollmentToken: row.enrollment_token,
+        institutionName: row.institution_name,
+        accountName: row.account_name,
+        accountType: row.account_type,
+        subtype: row.subtype,
+        lastFour: row.last_four,
+        connectedAt: row.connected_at
+      });
+    });
+    console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts from database`);
+  });
+
+  // Load transactions
+  db.all(`SELECT * FROM transactions`, (err, rows) => {
+    if (err) {
+      console.error('Failed to load transactions from database:', err);
+      return;
+    }
+    rows.forEach(row => {
+      transactions.set(row.id, {
+        id: row.id,
+        accountId: row.account_id,
+        description: row.description,
+        amount: row.amount,
+        date: row.date,
+        status: row.status,
+        category: row.category,
+        createdAt: row.created_at
+      });
+    });
+    console.log(`📊 Loaded ${transactions.size} transactions from database`);
+  });
+}
+
+// Initialize database and load data
+setTimeout(() => {
+  loadFromDatabase();
+}, 100);
+
 // Persistent storage using filesystem
 // Use persistent storage directory if available (Railway), otherwise local files
 const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '.';
