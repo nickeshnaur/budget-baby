@@ -633,8 +633,19 @@ function handleFetchTransactions(req, res) {
           console.log('TELLER_CERT_PEM first 50 chars:', process.env.TELLER_CERT_PEM.substring(0, 50));
           console.log('TELLER_KEY_PEM first 50 chars:', process.env.TELLER_KEY_PEM.substring(0, 50));
 
-          cert = Buffer.from(process.env.TELLER_CERT_PEM);
-          key = Buffer.from(process.env.TELLER_KEY_PEM);
+          // Add PEM headers if missing
+          let certPem = process.env.TELLER_CERT_PEM;
+          let keyPem = process.env.TELLER_KEY_PEM;
+
+          if (!certPem.startsWith('-----BEGIN')) {
+            certPem = `-----BEGIN CERTIFICATE-----\n${certPem}\n-----END CERTIFICATE-----`;
+          }
+          if (!keyPem.startsWith('-----BEGIN')) {
+            keyPem = `-----BEGIN PRIVATE KEY-----\n${keyPem}\n-----END PRIVATE KEY-----`;
+          }
+
+          cert = Buffer.from(certPem);
+          key = Buffer.from(keyPem);
           console.log('✅ Loaded certificates from environment variables');
         } else {
           console.error('❌ No certificates found in files or environment variables');
