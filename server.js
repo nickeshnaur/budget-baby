@@ -3,7 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const querystring = require('querystring');
-const { Pool } = require('pg');
+// PostgreSQL module - graceful fallback for local development
+let Pool = null;
+try {
+  Pool = require('pg').Pool;
+} catch (error) {
+  console.log('⚠️ PostgreSQL module not found - using file storage only');
+}
 
 const PORT = process.env.PORT || 3000;
 const PASSWORD = 'babywolfdog';
@@ -20,12 +26,14 @@ const DATABASE_URL = process.env.DATABASE_URL;
 console.log(`🗄️ Database URL: ${DATABASE_URL ? 'Connected' : 'Missing - add PostgreSQL service'}`);
 
 let pool = null;
-if (DATABASE_URL) {
+if (DATABASE_URL && Pool) {
   pool = new Pool({
     connectionString: DATABASE_URL,
     ssl: DATABASE_URL.includes('railway.app') ? { rejectUnauthorized: false } : false
   });
   console.log('✅ PostgreSQL pool created');
+} else if (!Pool) {
+  console.log('⚠️ PostgreSQL module not available - using file storage only');
 } else {
   console.log('⚠️ No DATABASE_URL - using in-memory storage only');
 }
