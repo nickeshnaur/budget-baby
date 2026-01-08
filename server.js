@@ -617,6 +617,22 @@ function handleFetchTransactions(req, res) {
       // STEP 1: Get actual account IDs using enrollment token
       const https = require('https');
 
+      // Try to load certificates from files, fallback to environment variables
+      let cert, key;
+      try {
+        cert = fs.readFileSync('./certificate.pem');
+        key = fs.readFileSync('./private_key.pem');
+      } catch (error) {
+        // Fallback to environment variables for Railway deployment
+        if (process.env.TELLER_CERT && process.env.TELLER_KEY) {
+          cert = Buffer.from(process.env.TELLER_CERT, 'base64');
+          key = Buffer.from(process.env.TELLER_KEY, 'base64');
+        } else {
+          console.error('❌ No certificates found in files or environment variables');
+          throw new Error('Certificate files not found');
+        }
+      }
+
       const accountsOptions = {
         hostname: 'api.teller.io',
         path: '/accounts',
@@ -625,8 +641,8 @@ function handleFetchTransactions(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.readFileSync('./certificate.pem'),
-        key: fs.readFileSync('./private_key.pem'),
+        cert: cert,
+        key: key,
         rejectUnauthorized: false
       };
 
@@ -687,8 +703,8 @@ function handleFetchTransactions(req, res) {
                 'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
                 'Accept': 'application/json'
               },
-              cert: fs.readFileSync('./certificate.pem'),
-              key: fs.readFileSync('./private_key.pem'),
+              cert: cert,
+              key: key,
               rejectUnauthorized: false
             };
 
