@@ -57,12 +57,36 @@ db.serialize(() => {
 const connectedAccounts = new Map();
 const transactions = new Map();
 
+// Load data from environment variables as backup
+function loadFromEnvironment() {
+  try {
+    if (process.env.CONNECTED_ACCOUNTS) {
+      const accountsData = JSON.parse(process.env.CONNECTED_ACCOUNTS);
+      Object.entries(accountsData).forEach(([key, value]) => {
+        connectedAccounts.set(key, value);
+      });
+      console.log(`🏦 Loaded ${connectedAccounts.size} accounts from environment`);
+    }
+
+    if (process.env.TRANSACTIONS_DATA) {
+      const transactionsData = JSON.parse(process.env.TRANSACTIONS_DATA);
+      Object.entries(transactionsData).forEach(([key, value]) => {
+        transactions.set(key, value);
+      });
+      console.log(`📊 Loaded ${transactions.size} transactions from environment`);
+    }
+  } catch (error) {
+    console.log('No environment data found, starting fresh');
+  }
+}
+
 // Load data from database on startup
 function loadFromDatabase() {
   // Load accounts
   db.all(`SELECT * FROM accounts`, (err, rows) => {
     if (err) {
       console.error('Failed to load accounts from database:', err);
+      loadFromEnvironment();
       return;
     }
     rows.forEach(row => {
@@ -78,6 +102,11 @@ function loadFromDatabase() {
       });
     });
     console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts from database`);
+
+    // Fallback to environment if database is empty
+    if (connectedAccounts.size === 0) {
+      loadFromEnvironment();
+    }
   });
 
   // Load transactions
