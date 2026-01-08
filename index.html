@@ -6216,22 +6216,10 @@
             }
         });
 
-        async function checkAuth() {
-            try {
-                const response = await fetch('/api/auth/me');
-                if (response.ok) {
-                    isAuthenticated = true;
-                    // Route to the current hash or dashboard
-                    router.handleRoute();
-                } else {
-                    isAuthenticated = false;
-                    showLogin();
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                isAuthenticated = false;
-                showLogin();
-            }
+        // Remove broken auth API call - just use localStorage
+        function checkAuth() {
+            // Authentication is already set from localStorage on page load
+            console.log('Auth check: isAuthenticated =', isAuthenticated);
         }
 
         // Initialize when DOM is loaded
