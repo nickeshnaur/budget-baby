@@ -616,12 +616,12 @@ function handleFetchTransactions(req, res) {
       const enrollmentToken = account.enrollmentToken;
       console.log(`🔍 Fetching transactions for account ${accountId}`);
 
-      // Try to fetch transactions without certificates (basic auth only)
+      // STEP 1: Get actual account IDs using enrollment token
       const https = require('https');
 
-      const options = {
+      const accountsOptions = {
         hostname: 'api.teller.io',
-        path: `/accounts/${enrollmentToken}/transactions?from_date=2026-01-01`,
+        path: '/accounts',
         method: 'GET',
         headers: {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
@@ -630,101 +630,144 @@ function handleFetchTransactions(req, res) {
         rejectUnauthorized: false
       };
 
-      // Only add certificates if they exist and are properly formatted
-      if (process.env.TELLER_CERTIFICATE && process.env.TELLER_PRIVATE_KEY) {
-        try {
-          const cert = process.env.TELLER_CERTIFICATE.replace(/\\n/g, '\n');
-          const key = process.env.TELLER_PRIVATE_KEY.replace(/\\n/g, '\n');
+      const accountsReq = https.request(accountsOptions, (accountsRes) => {
+        let accountsBody = '';
 
-          // Basic validation that it looks like PEM format
-          if (cert.includes('-----BEGIN') && key.includes('-----BEGIN')) {
-            options.cert = cert;
-            options.key = key;
-            options.rejectUnauthorized = true;
-            console.log('🔐 Using Teller certificates for API access');
-          } else {
-            console.log('⚠️ Certificate format invalid, trying without certificates');
-          }
-        } catch (e) {
-          console.log('⚠️ Certificate error, trying without certificates:', e.message);
-        }
-      } else {
-        console.log('⚠️ No certificates found, trying basic auth only');
-      }
-
-      const tellerReq = https.request(options, (tellerRes) => {
-        let responseBody = '';
-
-        tellerRes.on('data', (chunk) => {
-          responseBody += chunk;
+        accountsRes.on('data', (chunk) => {
+          accountsBody += chunk;
         });
 
-        tellerRes.on('end', async () => {
+        accountsRes.on('end', async () => {
           try {
-            if (tellerRes.statusCode !== 200) {
-              console.error('❌ Teller API error:', tellerRes.statusCode, responseBody);
+            if (accountsRes.statusCode !== 200) {
+              console.error('❌ Teller accounts API error:', accountsRes.statusCode, accountsBody);
               res.writeHead(500);
               res.end(JSON.stringify({
-                error: `Teller API error: ${tellerRes.statusCode}`,
-                details: responseBody
+                error: `Teller accounts API error: ${accountsRes.statusCode}`,
+                details: accountsBody
               }));
               return;
             }
 
-            const tellerTransactions = JSON.parse(responseBody);
-            console.log('🎉 Successfully fetched transactions from Teller:', tellerTransactions.length);
+            const accounts = JSON.parse(accountsBody);
+            console.log('📋 Found accounts:', accounts.length);
 
-            // Process and save transactions
-            const processedTransactions = tellerTransactions.map(txn => {
-              const transaction = {
-                id: txn.id,
-                accountId: accountId,
-                description: txn.description,
-                amount: -Math.abs(txn.amount), // Expenses negative
-                date: txn.date,
-                status: txn.status,
-                category: 'Unsorted',
-                createdAt: new Date().toISOString()
-              };
+            if (accounts.length === 0) {
+              res.setHeader('Content-Type', 'application/json');
+              res.writeHead(200);
+              res.end(JSON.stringify({
+                success: true,
+                message: 'No accounts found',
+                transactions: [],
+                count: 0
+              }));
+              return;
+            }
 
-              transactions.set(txn.id, transaction);
+            // STEP 2: Get transactions from first account
+            const firstAccount = accounts[0];
+            console.log('💳 Getting transactions for account:', firstAccount.id);
 
-              // Save to PostgreSQL
-              if (pool) {
-                pool.query(
-                  `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                   ON CONFLICT (id) DO NOTHING`,
-                  [txn.id, accountId, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
-                ).catch(dbError => console.error('Failed to save transaction:', dbError));
-              }
+            const transactionsOptions = {
+              hostname: 'api.teller.io',
+              path: `/accounts/${firstAccount.id}/transactions?from_date=2026-01-01`,
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+                'Accept': 'application/json'
+              },
+              rejectUnauthorized: false
+            };
 
-              return transaction;
+            const transactionsReq = https.request(transactionsOptions, (transactionsRes) => {
+              let transactionsBody = '';
+
+              transactionsRes.on('data', (chunk) => {
+                transactionsBody += chunk;
+              });
+
+              transactionsRes.on('end', async () => {
+                try {
+                  if (transactionsRes.statusCode !== 200) {
+                    console.error('❌ Teller transactions API error:', transactionsRes.statusCode, transactionsBody);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({
+                      error: `Teller transactions API error: ${transactionsRes.statusCode}`,
+                      details: transactionsBody
+                    }));
+                    return;
+                  }
+
+                  const tellerTransactions = JSON.parse(transactionsBody);
+                  console.log('🎉 Successfully fetched transactions from Teller:', tellerTransactions.length);
+
+                  // Process and save transactions
+                  const processedTransactions = tellerTransactions.map(txn => {
+                    const transaction = {
+                      id: txn.id,
+                      accountId: accountId,
+                      description: txn.description,
+                      amount: -Math.abs(txn.amount),
+                      date: txn.date,
+                      status: txn.status,
+                      category: 'Unsorted',
+                      createdAt: new Date().toISOString()
+                    };
+
+                    transactions.set(txn.id, transaction);
+
+                    // Save to PostgreSQL
+                    if (pool) {
+                      pool.query(
+                        `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                         ON CONFLICT (id) DO NOTHING`,
+                        [txn.id, accountId, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                      ).catch(dbError => console.error('Failed to save transaction:', dbError));
+                    }
+
+                    return transaction;
+                  });
+
+                  res.setHeader('Content-Type', 'application/json');
+                  res.writeHead(200);
+                  res.end(JSON.stringify({
+                    success: true,
+                    transactions: processedTransactions,
+                    count: processedTransactions.length
+                  }));
+
+                } catch (error) {
+                  console.error('Error parsing transactions response:', error);
+                  res.writeHead(500);
+                  res.end(JSON.stringify({ error: 'Failed to parse transactions' }));
+                }
+              });
             });
 
-            res.setHeader('Content-Type', 'application/json');
-            res.writeHead(200);
-            res.end(JSON.stringify({
-              success: true,
-              transactions: processedTransactions,
-              count: processedTransactions.length
-            }));
+            transactionsReq.on('error', (error) => {
+              console.error('Transactions API request error:', error);
+              res.writeHead(500);
+              res.end(JSON.stringify({ error: 'Failed to fetch transactions' }));
+            });
+
+            transactionsReq.end();
 
           } catch (error) {
-            console.error('Error parsing Teller response:', error);
+            console.error('Error parsing accounts response:', error);
             res.writeHead(500);
-            res.end(JSON.stringify({ error: 'Failed to parse transaction data' }));
+            res.end(JSON.stringify({ error: 'Failed to parse accounts data' }));
           }
         });
       });
 
-      tellerReq.on('error', (error) => {
-        console.error('Teller API request error:', error);
+      accountsReq.on('error', (error) => {
+        console.error('Accounts API request error:', error);
         res.writeHead(500);
-        res.end(JSON.stringify({ error: 'Failed to fetch transactions from bank' }));
+        res.end(JSON.stringify({ error: 'Failed to fetch accounts' }));
       });
 
-      tellerReq.end();
+      accountsReq.end();
 
     } catch (error) {
       console.error('Fetch transactions error:', error);
