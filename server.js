@@ -622,13 +622,23 @@ function handleFetchTransactions(req, res) {
       try {
         cert = fs.readFileSync('./certificate.pem');
         key = fs.readFileSync('./private_key.pem');
+        console.log('✅ Loaded certificates from files');
       } catch (error) {
         // Fallback to environment variables for Railway deployment
+        console.log('🔍 Checking environment variables for certificates...');
+        console.log('TELLER_CERT_PEM exists:', !!process.env.TELLER_CERT_PEM);
+        console.log('TELLER_KEY_PEM exists:', !!process.env.TELLER_KEY_PEM);
+
         if (process.env.TELLER_CERT_PEM && process.env.TELLER_KEY_PEM) {
+          console.log('TELLER_CERT_PEM first 50 chars:', process.env.TELLER_CERT_PEM.substring(0, 50));
+          console.log('TELLER_KEY_PEM first 50 chars:', process.env.TELLER_KEY_PEM.substring(0, 50));
+
           cert = Buffer.from(process.env.TELLER_CERT_PEM);
           key = Buffer.from(process.env.TELLER_KEY_PEM);
+          console.log('✅ Loaded certificates from environment variables');
         } else {
           console.error('❌ No certificates found in files or environment variables');
+          console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('TELLER')));
           throw new Error('Certificate files not found');
         }
       }
