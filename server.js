@@ -33,7 +33,11 @@ if (DATABASE_URL && Pool) {
       ssl: DATABASE_URL.includes('railway.app') ? { rejectUnauthorized: false } : false
     });
     console.log('✅ PostgreSQL pool created successfully');
-    console.log('🔗 Database URL host:', new URL(DATABASE_URL).hostname);
+    try {
+      console.log('🔗 Database URL host:', new URL(DATABASE_URL).hostname);
+    } catch (e) {
+      console.log('🔗 Database URL format issue');
+    }
 
     // Test the connection
     pool.query('SELECT NOW()', (err, res) => {
