@@ -19,13 +19,24 @@ const connectedAccounts = new Map();
 const transactions = new Map();
 
 // Persistent storage using filesystem
-const sessionFile = './sessions.json';
-const accountsFile = './accounts.json';
-const transactionsFile = './transactions.json';
+// Use persistent storage directory if available (Railway), otherwise local files
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '.';
+const sessionFile = path.join(dataDir, 'sessions.json');
+const accountsFile = path.join(dataDir, 'accounts.json');
+const transactionsFile = path.join(dataDir, 'transactions.json');
+
+// Ensure data directory exists
+function ensureDataDir() {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log(`📁 Created data directory: ${dataDir}`);
+  }
+}
 
 // Load sessions from file
 function loadSessions() {
   try {
+    ensureDataDir();
     if (fs.existsSync(sessionFile)) {
       const data = fs.readFileSync(sessionFile, 'utf8');
       const sessionData = JSON.parse(data);
@@ -64,9 +75,10 @@ function loadAccounts() {
 // Save accounts to file
 function saveAccounts(accounts) {
   try {
+    ensureDataDir();
     const accountsData = Object.fromEntries(accounts);
     fs.writeFileSync(accountsFile, JSON.stringify(accountsData, null, 2));
-    console.log('📝 Connected accounts saved to file');
+    console.log(`📝 Connected accounts saved to ${accountsFile}`);
   } catch (error) {
     console.error('❌ Failed to save accounts:', error);
   }
@@ -89,9 +101,10 @@ function loadTransactions() {
 // Save transactions to file
 function saveTransactions(transactionsMap) {
   try {
+    ensureDataDir();
     const transactionsData = Object.fromEntries(transactionsMap);
     fs.writeFileSync(transactionsFile, JSON.stringify(transactionsData, null, 2));
-    console.log('💾 Transactions saved to file');
+    console.log(`💾 Transactions saved to ${transactionsFile}`);
   } catch (error) {
     console.error('❌ Failed to save transactions:', error);
   }
