@@ -622,7 +622,10 @@ function handleFetchTransactions(req, res) {
         headers: {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
-        }
+        },
+        cert: process.env.TELLER_CERTIFICATE,
+        key: process.env.TELLER_PRIVATE_KEY,
+        rejectUnauthorized: true
       };
 
       const tellerReq = https.request(options, (tellerRes) => {
