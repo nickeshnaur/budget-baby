@@ -625,6 +625,8 @@ function handleFetchTransactions(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
+        cert: fs.readFileSync('./certificate.pem'),
+        key: fs.readFileSync('./private_key.pem'),
         rejectUnauthorized: false
       };
 
@@ -685,6 +687,8 @@ function handleFetchTransactions(req, res) {
                 'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
                 'Accept': 'application/json'
               },
+              cert: fs.readFileSync('./certificate.pem'),
+              key: fs.readFileSync('./private_key.pem'),
               rejectUnauthorized: false
             };
 
