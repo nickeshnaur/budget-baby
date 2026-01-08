@@ -636,14 +636,52 @@ function handleFetchTransactions(req, res) {
           try {
             if (tellerRes.statusCode !== 200) {
               console.log('⚠️ Teller API error (expected with basic auth):', tellerRes.statusCode);
-              // Return success but with no transactions
+
+              // Add sample January 2026 transactions since real API requires certificates
+              const sampleTransactions = [
+                { id: 'sample_jan_1', description: 'Grocery Store', amount: -85.45, date: '2026-01-07', status: 'posted' },
+                { id: 'sample_jan_2', description: 'Gas Station', amount: -52.20, date: '2026-01-06', status: 'posted' },
+                { id: 'sample_jan_3', description: 'Coffee Shop', amount: -8.75, date: '2026-01-05', status: 'posted' },
+                { id: 'sample_jan_4', description: 'Restaurant', amount: -42.30, date: '2026-01-04', status: 'posted' },
+                { id: 'sample_jan_5', description: 'Online Shopping', amount: -127.99, date: '2026-01-03', status: 'posted' }
+              ];
+
+              const processedTransactions = sampleTransactions.map(txn => {
+                const transaction = {
+                  id: txn.id,
+                  accountId: accountId,
+                  description: txn.description,
+                  amount: txn.amount,
+                  date: txn.date,
+                  status: txn.status,
+                  category: 'Unsorted',
+                  createdAt: new Date().toISOString()
+                };
+
+                transactions.set(txn.id, transaction);
+
+                // Save to PostgreSQL
+                if (pool) {
+                  pool.query(
+                    `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                     ON CONFLICT (id) DO NOTHING`,
+                    [txn.id, accountId, txn.description, txn.amount, txn.date, txn.status, 'Unsorted', new Date()]
+                  ).catch(dbError => console.error('Failed to save transaction:', dbError));
+                }
+
+                return transaction;
+              });
+
+              console.log('📊 Added sample January 2026 transactions (real API requires certificates)');
+
               res.setHeader('Content-Type', 'application/json');
               res.writeHead(200);
               res.end(JSON.stringify({
                 success: true,
-                message: 'Account connected - transaction sync requires certificates',
-                transactions: [],
-                count: 0
+                message: `Synced ${processedTransactions.length} sample transactions (real sync requires certificates)`,
+                transactions: processedTransactions,
+                count: processedTransactions.length
               }));
               return;
             }
