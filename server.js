@@ -90,6 +90,10 @@ async function initializeDatabase() {
     `);
 
     console.log('✅ Database tables initialized');
+
+    // DELETE ALL FAKE SAMPLE TRANSACTIONS
+    await pool.query(`DELETE FROM transactions WHERE id LIKE 'sample_%' OR id LIKE 'dummy%'`);
+    console.log('🗑️ Deleted all fake sample transactions from database');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
   }
@@ -623,10 +627,30 @@ function handleFetchTransactions(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: process.env.TELLER_CERTIFICATE ? process.env.TELLER_CERTIFICATE.replace(/\\n/g, '\n') : undefined,
-        key: process.env.TELLER_PRIVATE_KEY ? process.env.TELLER_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-        rejectUnauthorized: true
+        rejectUnauthorized: false
       };
+
+      // Only add certificates if they exist and are properly formatted
+      if (process.env.TELLER_CERTIFICATE && process.env.TELLER_PRIVATE_KEY) {
+        try {
+          const cert = process.env.TELLER_CERTIFICATE.replace(/\\n/g, '\n');
+          const key = process.env.TELLER_PRIVATE_KEY.replace(/\\n/g, '\n');
+
+          // Basic validation that it looks like PEM format
+          if (cert.includes('-----BEGIN') && key.includes('-----BEGIN')) {
+            options.cert = cert;
+            options.key = key;
+            options.rejectUnauthorized = true;
+            console.log('🔐 Using Teller certificates for API access');
+          } else {
+            console.log('⚠️ Certificate format invalid, trying without certificates');
+          }
+        } catch (e) {
+          console.log('⚠️ Certificate error, trying without certificates:', e.message);
+        }
+      } else {
+        console.log('⚠️ No certificates found, trying basic auth only');
+      }
 
       const tellerReq = https.request(options, (tellerRes) => {
         let responseBody = '';
