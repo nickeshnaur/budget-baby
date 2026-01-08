@@ -17,7 +17,15 @@ const TELLER_CONFIG = {
 
 // Database setup
 const dbPath = path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || '.', 'budget.db');
-const db = new sqlite3.Database(dbPath);
+console.log(`📁 Database path: ${dbPath}`);
+console.log(`📁 Volume mount path: ${process.env.RAILWAY_VOLUME_MOUNT_PATH || 'not set'}`);
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('❌ Failed to open database:', err);
+  } else {
+    console.log(`✅ Database connected: ${dbPath}`);
+  }
+});
 
 // Initialize database tables
 db.serialize(() => {
@@ -48,6 +56,85 @@ db.serialize(() => {
 // In-memory storage for quick access
 const connectedAccounts = new Map();
 const transactions = new Map();
+
+// Load data from environment variables as backup
+function loadFromEnvironment() {
+  try {
+    if (process.env.CONNECTED_ACCOUNTS) {
+      const accountsData = JSON.parse(process.env.CONNECTED_ACCOUNTS);
+      Object.entries(accountsData).forEach(([key, value]) => {
+        connectedAccounts.set(key, value);
+      });
+      console.log(`🏦 Loaded ${connectedAccounts.size} accounts from environment`);
+    }
+
+    if (process.env.TRANSACTIONS_DATA) {
+      const transactionsData = JSON.parse(process.env.TRANSACTIONS_DATA);
+      Object.entries(transactionsData).forEach(([key, value]) => {
+        transactions.set(key, value);
+      });
+      console.log(`📊 Loaded ${transactions.size} transactions from environment`);
+    }
+  } catch (error) {
+    console.log('No environment data found, starting fresh');
+  }
+}
+
+// Load data from database on startup
+function loadFromDatabase() {
+  // Load accounts
+  db.all(`SELECT * FROM accounts`, (err, rows) => {
+    if (err) {
+      console.error('Failed to load accounts from database:', err);
+      loadFromEnvironment();
+      return;
+    }
+    rows.forEach(row => {
+      connectedAccounts.set(row.id, {
+        id: row.id,
+        enrollmentToken: row.enrollment_token,
+        institutionName: row.institution_name,
+        accountName: row.account_name,
+        accountType: row.account_type,
+        subtype: row.subtype,
+        lastFour: row.last_four,
+        connectedAt: row.connected_at
+      });
+    });
+    console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts from database`);
+
+    // Fallback to environment if database is empty
+    if (connectedAccounts.size === 0) {
+      loadFromEnvironment();
+    }
+  });
+
+  // Load transactions
+  db.all(`SELECT * FROM transactions`, (err, rows) => {
+    if (err) {
+      console.error('Failed to load transactions from database:', err);
+      return;
+    }
+    rows.forEach(row => {
+      transactions.set(row.id, {
+        id: row.id,
+        accountId: row.account_id,
+        description: row.description,
+        amount: row.amount,
+        date: row.date,
+        status: row.status,
+        category: row.category,
+        createdAt: row.created_at
+      });
+    });
+    console.log(`📊 Loaded ${transactions.size} transactions from database`);
+  });
+}
+
+// Initialize database and load data
+setTimeout(() => {
+  loadFromDatabase();
+}, 100);
 
 // Persistent storage using filesystem
 // Use persistent storage directory if available (Railway), otherwise local files
@@ -414,8 +501,8 @@ function handleTellerAccount(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
@@ -572,8 +659,8 @@ function handleFetchTransactions(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
@@ -661,6 +748,14 @@ function handleFetchTransactions(req, res) {
                       category: 'Unsorted', // Always unsorted initially
                       createdAt: new Date().toISOString()
                     };
+
+                    // Save to database
+                    db.run(`INSERT OR REPLACE INTO transactions
+                           (id, account_id, description, amount, date, status, category, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                           [transaction.id, transaction.accountId, transaction.description, transaction.amount,
+                            transaction.date, transaction.status, transaction.category, transaction.createdAt]);
+
                     transactions.set(txn.id, transaction);
                     return transaction;
                   });
@@ -847,8 +942,8 @@ function handleGetAccountDetails(req, res) {
           'Authorization': `Basic ${Buffer.from(accountId + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
