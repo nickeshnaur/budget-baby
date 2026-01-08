@@ -91,9 +91,7 @@ async function initializeDatabase() {
 
     console.log('✅ Database tables initialized');
 
-    // DELETE ALL FAKE SAMPLE TRANSACTIONS
-    await pool.query(`DELETE FROM transactions WHERE id LIKE 'sample_%' OR id LIKE 'dummy%'`);
-    console.log('🗑️ Deleted all fake sample transactions from database');
+    // Keep existing transactions - don't delete anything
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
   }
