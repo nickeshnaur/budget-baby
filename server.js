@@ -911,6 +911,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Budget App running on port ${PORT}`);
   console.log(`📱 Password: ${PASSWORD}`);
   console.log(`💡 Open your browser and visit the URL above`);
+  console.log(`🔄 Deployment timestamp: ${new Date().toISOString()}`);
   console.log(`📱 For mobile testing, use: http://192.168.1.187:${PORT}`);
 });
 
