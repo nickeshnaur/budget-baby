@@ -472,8 +472,8 @@ function handleTellerAccount(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
@@ -630,8 +630,8 @@ function handleFetchTransactions(req, res) {
           'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
@@ -913,8 +913,8 @@ function handleGetAccountDetails(req, res) {
           'Authorization': `Basic ${Buffer.from(accountId + ':').toString('base64')}`,
           'Accept': 'application/json'
         },
-        cert: fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate file missing - live transactions disabled'), null),
-        key: fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key file missing - live transactions disabled'), null),
+        cert: process.env.TELLER_CERTIFICATE || (fs.existsSync('./certificate.pem') ? fs.readFileSync('./certificate.pem') : (console.log('❌ Certificate missing - add TELLER_CERTIFICATE env var'), null)),
+        key: process.env.TELLER_PRIVATE_KEY || (fs.existsSync('./private_key.pem') ? fs.readFileSync('./private_key.pem') : (console.log('❌ Private key missing - add TELLER_PRIVATE_KEY env var'), null)),
         rejectUnauthorized: true
       };
 
