@@ -5815,7 +5815,7 @@
     <script src="https://cdn.teller.io/connect/connect.js"></script>
 
     <script>
-        let isAuthenticated = false;
+        let isAuthenticated = localStorage.getItem('authenticated') === 'true';
 
         // Router for handling navigation with URLs
         const router = {
@@ -6249,6 +6249,7 @@
 
                     if (response.ok) {
                         isAuthenticated = true;
+                        localStorage.setItem('authenticated', 'true');
                         document.getElementById('passwordInput').value = '';
                         errorMessage.style.display = 'none';
                         router.handleRoute();
