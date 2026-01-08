@@ -185,9 +185,9 @@ const server = http.createServer((req, res) => {
 
   // Static file serving
   if (pathname === '/') {
-    serveFile(res, './index.html', 'text/html');
+    serveFile(res, path.join(__dirname, 'index.html'), 'text/html');
   } else {
-    const filePath = path.join('.', pathname);
+    const filePath = path.join(__dirname, pathname);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       serveFile(res, filePath, getContentType(filePath));
     } else {
