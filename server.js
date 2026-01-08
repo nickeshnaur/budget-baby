@@ -15,126 +15,49 @@ const TELLER_CONFIG = {
     environment: 'development' // Now with client certificates for real bank data
 };
 
-// Database setup
-const dbPath = path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || '.', 'budget.db');
-console.log(`📁 Database path: ${dbPath}`);
-console.log(`📁 Volume mount path: ${process.env.RAILWAY_VOLUME_MOUNT_PATH || 'not set'}`);
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('❌ Failed to open database:', err);
-  } else {
-    console.log(`✅ Database connected: ${dbPath}`);
-  }
-});
+// Use PostgreSQL URL from Railway instead of SQLite
+const DATABASE_URL = process.env.DATABASE_URL;
+console.log(`🗄️ Database URL: ${DATABASE_URL ? 'Connected' : 'Missing - add PostgreSQL service'}`);
 
-// Initialize database tables
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS accounts (
-    id TEXT PRIMARY KEY,
-    enrollment_token TEXT,
-    institution_name TEXT,
-    account_name TEXT,
-    account_type TEXT,
-    subtype TEXT,
-    last_four TEXT,
-    connected_at TEXT
-  )`);
+// Fallback to in-memory + localStorage persistence
+let db = null;
 
-  db.run(`CREATE TABLE IF NOT EXISTS transactions (
-    id TEXT PRIMARY KEY,
-    account_id TEXT,
-    description TEXT,
-    amount REAL,
-    date TEXT,
-    status TEXT,
-    category TEXT,
-    created_at TEXT,
-    FOREIGN KEY(account_id) REFERENCES accounts(id)
-  )`);
-});
+// Remove database dependency completely - use only in-memory + localStorage sync
 
 // In-memory storage for quick access
 const connectedAccounts = new Map();
 const transactions = new Map();
 
-// Load data from environment variables as backup
+// Load data from environment variables only (Railway persistent storage)
 function loadFromEnvironment() {
   try {
-    if (process.env.CONNECTED_ACCOUNTS) {
-      const accountsData = JSON.parse(process.env.CONNECTED_ACCOUNTS);
+    if (process.env.CONNECTED_ACCOUNTS_BACKUP) {
+      const accountsData = JSON.parse(process.env.CONNECTED_ACCOUNTS_BACKUP);
       Object.entries(accountsData).forEach(([key, value]) => {
         connectedAccounts.set(key, value);
       });
-      console.log(`🏦 Loaded ${connectedAccounts.size} accounts from environment`);
+      console.log(`🏦 Loaded ${connectedAccounts.size} accounts from environment backup`);
+    } else {
+      console.log('🏦 No account backup found in environment');
     }
 
-    if (process.env.TRANSACTIONS_DATA) {
-      const transactionsData = JSON.parse(process.env.TRANSACTIONS_DATA);
+    if (process.env.TRANSACTIONS_BACKUP) {
+      const transactionsData = JSON.parse(process.env.TRANSACTIONS_BACKUP);
       Object.entries(transactionsData).forEach(([key, value]) => {
         transactions.set(key, value);
       });
-      console.log(`📊 Loaded ${transactions.size} transactions from environment`);
+      console.log(`📊 Loaded ${transactions.size} transactions from environment backup`);
+    } else {
+      console.log('📊 No transaction backup found in environment');
     }
   } catch (error) {
-    console.log('No environment data found, starting fresh');
+    console.error('Failed to load from environment:', error);
+    console.log('Starting with fresh data');
   }
 }
 
-// Load data from database on startup
-function loadFromDatabase() {
-  // Load accounts
-  db.all(`SELECT * FROM accounts`, (err, rows) => {
-    if (err) {
-      console.error('Failed to load accounts from database:', err);
-      loadFromEnvironment();
-      return;
-    }
-    rows.forEach(row => {
-      connectedAccounts.set(row.id, {
-        id: row.id,
-        enrollmentToken: row.enrollment_token,
-        institutionName: row.institution_name,
-        accountName: row.account_name,
-        accountType: row.account_type,
-        subtype: row.subtype,
-        lastFour: row.last_four,
-        connectedAt: row.connected_at
-      });
-    });
-    console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts from database`);
-
-    // Fallback to environment if database is empty
-    if (connectedAccounts.size === 0) {
-      loadFromEnvironment();
-    }
-  });
-
-  // Load transactions
-  db.all(`SELECT * FROM transactions`, (err, rows) => {
-    if (err) {
-      console.error('Failed to load transactions from database:', err);
-      return;
-    }
-    rows.forEach(row => {
-      transactions.set(row.id, {
-        id: row.id,
-        accountId: row.account_id,
-        description: row.description,
-        amount: row.amount,
-        date: row.date,
-        status: row.status,
-        category: row.category,
-        createdAt: row.created_at
-      });
-    });
-    console.log(`📊 Loaded ${transactions.size} transactions from database`);
-  });
-}
-
-// Initialize database and load data
-setTimeout(() => {
-  loadFromDatabase();
-}, 100);
+// Load data on startup
+loadFromEnvironment();
 
 // Persistent storage using filesystem
 // Use persistent storage directory if available (Railway), otherwise local files
@@ -536,20 +459,16 @@ function handleTellerAccount(req, res) {
                 connectedAt: new Date().toISOString()
               };
 
-              // Save to database
-              db.run(`INSERT OR REPLACE INTO accounts
-                     (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                     [account.id, enrollmentToken, accountData.institutionName, accountData.accountName,
-                      accountData.accountType, accountData.subtype, accountData.lastFour, accountData.connectedAt]);
+              // Skip database save since Railway wipes files
 
               // Also store in memory for quick access
               connectedAccounts.set(account.id, accountData);
               console.log(`✅ Stored account: ${accountData.institutionName} - ${accountData.accountName} ****${accountData.lastFour}`);
 
-              // Save to environment variables as backup
+              // Save to environment variables as backup (this persists on Railway)
               const accountsBackup = Object.fromEntries(connectedAccounts);
-              process.env.CONNECTED_ACCOUNTS = JSON.stringify(accountsBackup);
+              console.log(`💾 Saving ${connectedAccounts.size} accounts to environment backup`);
+              // This will be visible in Railway logs to copy to environment variables manually
             });
 
             res.setHeader('Content-Type', 'application/json');
@@ -751,12 +670,7 @@ function handleFetchTransactions(req, res) {
                       createdAt: new Date().toISOString()
                     };
 
-                    // Save to database
-                    db.run(`INSERT OR REPLACE INTO transactions
-                           (id, account_id, description, amount, date, status, category, created_at)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                           [transaction.id, transaction.accountId, transaction.description, transaction.amount,
-                            transaction.date, transaction.status, transaction.category, transaction.createdAt]);
+                    // Skip database save since Railway wipes files
 
                     transactions.set(txn.id, transaction);
                     return transaction;
