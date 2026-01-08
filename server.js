@@ -624,9 +624,9 @@ function handleFetchTransactions(req, res) {
         key = fs.readFileSync('./private_key.pem');
       } catch (error) {
         // Fallback to environment variables for Railway deployment
-        if (process.env.TELLER_CERT && process.env.TELLER_KEY) {
-          cert = Buffer.from(process.env.TELLER_CERT, 'base64');
-          key = Buffer.from(process.env.TELLER_KEY, 'base64');
+        if (process.env.TELLER_CERT_PEM && process.env.TELLER_KEY_PEM) {
+          cert = Buffer.from(process.env.TELLER_CERT_PEM);
+          key = Buffer.from(process.env.TELLER_KEY_PEM);
         } else {
           console.error('❌ No certificates found in files or environment variables');
           throw new Error('Certificate files not found');
