@@ -625,35 +625,11 @@ function handleFetchTransactions(req, res) {
         console.log('✅ Loaded certificates from files');
       } catch (error) {
         // Fallback to environment variables for Railway deployment
-        console.log('🔍 Checking environment variables for certificates...');
-        console.log('TELLER_CERT_PEM exists:', !!process.env.TELLER_CERT_PEM);
-        console.log('TELLER_KEY_PEM exists:', !!process.env.TELLER_KEY_PEM);
-
-        if (process.env.TELLER_CERT_PEM && process.env.TELLER_KEY_PEM) {
-          console.log('TELLER_CERT_PEM first 50 chars:', process.env.TELLER_CERT_PEM.substring(0, 50));
-          console.log('TELLER_KEY_PEM first 50 chars:', process.env.TELLER_KEY_PEM.substring(0, 50));
-
-          // Add PEM headers if missing and format properly
-          let certPem = process.env.TELLER_CERT_PEM.trim();
-          let keyPem = process.env.TELLER_KEY_PEM.trim();
-
-          if (!certPem.startsWith('-----BEGIN')) {
-            // Format cert content with proper line breaks (64 chars per line)
-            const certLines = certPem.match(/.{1,64}/g) || [certPem];
-            certPem = `-----BEGIN CERTIFICATE-----\n${certLines.join('\n')}\n-----END CERTIFICATE-----`;
-          }
-          if (!keyPem.startsWith('-----BEGIN')) {
-            // Format key content with proper line breaks (64 chars per line)
-            const keyLines = keyPem.match(/.{1,64}/g) || [keyPem];
-            keyPem = `-----BEGIN PRIVATE KEY-----\n${keyLines.join('\n')}\n-----END PRIVATE KEY-----`;
-          }
-
-          console.log('Final cert starts with:', certPem.substring(0, 30));
-          console.log('Final key starts with:', keyPem.substring(0, 30));
-
-          cert = Buffer.from(certPem);
-          key = Buffer.from(keyPem);
-          console.log('✅ Loaded certificates from environment variables');
+        if (process.env.TELLER_CERT_B64 && process.env.TELLER_KEY_B64) {
+          // Use base64 decoded certificates (complete with headers)
+          cert = Buffer.from(process.env.TELLER_CERT_B64, 'base64');
+          key = Buffer.from(process.env.TELLER_KEY_B64, 'base64');
+          console.log('✅ Loaded certificates from base64 environment variables');
         } else {
           console.error('❌ No certificates found in files or environment variables');
           console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('TELLER')));
