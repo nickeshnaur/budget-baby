@@ -2424,23 +2424,14 @@
     <div id="dashboard" class="dashboard container" style="display: none;">
         <div class="month-header">
             <div class="date-selectors">
-                <select class="month-selector" id="dashboard-month-selector">
-                    <option value="1">Jan</option>
-                    <option value="2">Feb</option>
-                    <option value="3">Mar</option>
-                    <option value="4">Apr</option>
-                    <option value="5">May</option>
-                    <option value="6">Jun</option>
-                    <option value="7">Jul</option>
-                    <option value="8">Aug</option>
-                    <option value="9">Sep</option>
-                    <option value="10">Oct</option>
-                    <option value="11">Nov</option>
-                    <option value="12">Dec</option>
-                </select>
-                <select class="year-selector" id="dashboard-year-selector">
-                    <option value="2026">2026</option>
-                </select>
+                <div class="custom-dropdown" id="dashboard-month-selector" data-value="1">
+                    <span class="dropdown-display">JAN</span>
+                    <span class="material-icons" style="font-size: 16px;">expand_more</span>
+                </div>
+                <div class="custom-dropdown" id="dashboard-year-selector" data-value="2026">
+                    <span class="dropdown-display">2026</span>
+                    <span class="material-icons" style="font-size: 16px;">expand_more</span>
+                </div>
             </div>
         </div>
 
@@ -5840,6 +5831,7 @@
                 // Show the correct page based on hash
                 if (hash === '' || hash === 'dashboard') {
                     document.getElementById('dashboard').style.display = 'block';
+                    initializeDashboardSelectors();
                     loadTransactionsFromAPI();
                 } else if (hash === 'transactions') {
                     document.getElementById('transactionsPage').style.display = 'block';
@@ -5862,10 +5854,12 @@
                         loadCategoryTransactions(hash.replace('category-', ''));
                     } else {
                         document.getElementById('dashboard').style.display = 'block';
+                        initializeDashboardSelectors();
                         loadTransactionsFromAPI();
                     }
                 } else {
                     document.getElementById('dashboard').style.display = 'block';
+                    initializeDashboardSelectors();
                     loadTransactionsFromAPI();
                 }
             }
@@ -7275,6 +7269,38 @@
             }
         }
 
+        // Initialize dashboard page date selectors
+        function initializeDashboardSelectors() {
+            const monthSelector = document.getElementById('dashboard-month-selector');
+            const yearSelector = document.getElementById('dashboard-year-selector');
+
+            if (monthSelector && yearSelector) {
+                // Set to current month/year
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
+
+                monthSelector.setAttribute('data-value', currentMonth);
+                yearSelector.setAttribute('data-value', currentYear);
+
+                // Set display text
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
+                yearSelector.querySelector('.dropdown-display').textContent = currentYear;
+
+                // Add click handlers
+                monthSelector.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showCustomDropdown(monthSelector, 'month');
+                });
+
+                yearSelector.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showCustomDropdown(yearSelector, 'year');
+                });
+            }
+        }
+
         // Show custom dropdown for month/year selection
         function showCustomDropdown(element, type) {
             // Remove any existing dropdown
@@ -8212,12 +8238,31 @@
             const transactionMonth = transactionDate.getMonth() + 1;
             const transactionYear = transactionDate.getFullYear();
 
+            // Get selected month/year from dashboard dropdowns if on dashboard page
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard && dashboard.style.display !== 'none') {
+                const monthSelector = document.getElementById('dashboard-month-selector');
+                const yearSelector = document.getElementById('dashboard-year-selector');
+
+                if (monthSelector && yearSelector) {
+                    const selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || currentMonth;
+                    const selectedYear = parseInt(yearSelector.getAttribute('data-value')) || currentYear;
+                    return transactionMonth === selectedMonth && transactionYear === selectedYear;
+                }
+            }
+
             return transactionMonth === currentMonth && transactionYear === currentYear;
         }
 
         // Function to update data display based on selected month/year
         async function updateDataForSelectedDate() {
             console.log(`Filtering data for ${currentMonth}/${currentYear}`);
+
+            // If on dashboard, reload transactions to apply date filter
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard && dashboard.style.display !== 'none') {
+                await loadTransactionsFromAPI();
+            }
 
             // Filter transactions on all pages
             filterTransactionCards();
