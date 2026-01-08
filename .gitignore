@@ -1,0 +1,14 @@
+node_modules/
+.env
+*.log
+.DS_Store
+data/
+mongodb-macos-x86_64-8.0.4/
+mongodb-macos-x86_64-8.0.4.tgz
+certificate.pem
+private_key.pem
+sessions.json
+accounts.json
+transactions.json
+simple-app/
+.claude/
