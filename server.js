@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const querystring = require('querystring');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 const PASSWORD = 'babywolfdog';
@@ -15,49 +15,114 @@ const TELLER_CONFIG = {
     environment: 'development' // Now with client certificates for real bank data
 };
 
-// Use PostgreSQL URL from Railway instead of SQLite
+// PostgreSQL connection setup
 const DATABASE_URL = process.env.DATABASE_URL;
 console.log(`🗄️ Database URL: ${DATABASE_URL ? 'Connected' : 'Missing - add PostgreSQL service'}`);
 
-// Fallback to in-memory + localStorage persistence
-let db = null;
+let pool = null;
+if (DATABASE_URL) {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes('railway.app') ? { rejectUnauthorized: false } : false
+  });
+  console.log('✅ PostgreSQL pool created');
+} else {
+  console.log('⚠️ No DATABASE_URL - using in-memory storage only');
+}
 
-// Remove database dependency completely - use only in-memory + localStorage sync
+// Initialize database tables
+async function initializeDatabase() {
+  if (!pool) return;
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        enrollment_token TEXT,
+        institution_name TEXT,
+        account_name TEXT,
+        account_type TEXT,
+        subtype TEXT,
+        last_four TEXT,
+        connected_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id TEXT PRIMARY KEY,
+        account_id TEXT,
+        description TEXT,
+        amount DECIMAL,
+        date TEXT,
+        status TEXT,
+        category TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY(account_id) REFERENCES accounts(id)
+      );
+    `);
+
+    console.log('✅ Database tables initialized');
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+  }
+}
 
 // In-memory storage for quick access
 const connectedAccounts = new Map();
 const transactions = new Map();
 
-// Load data from environment variables only (Railway persistent storage)
-function loadFromEnvironment() {
-  try {
-    if (process.env.CONNECTED_ACCOUNTS_BACKUP) {
-      const accountsData = JSON.parse(process.env.CONNECTED_ACCOUNTS_BACKUP);
-      Object.entries(accountsData).forEach(([key, value]) => {
-        connectedAccounts.set(key, value);
-      });
-      console.log(`🏦 Loaded ${connectedAccounts.size} accounts from environment backup`);
-    } else {
-      console.log('🏦 No account backup found in environment');
-    }
+// Load data from PostgreSQL database on startup
+async function loadFromDatabase() {
+  if (!pool) {
+    console.log('🏦 No database - starting with fresh data');
+    return;
+  }
 
-    if (process.env.TRANSACTIONS_BACKUP) {
-      const transactionsData = JSON.parse(process.env.TRANSACTIONS_BACKUP);
-      Object.entries(transactionsData).forEach(([key, value]) => {
-        transactions.set(key, value);
+  try {
+    // Load accounts
+    const accountsResult = await pool.query('SELECT * FROM accounts');
+    accountsResult.rows.forEach(row => {
+      connectedAccounts.set(row.id, {
+        id: row.id,
+        enrollmentToken: row.enrollment_token,
+        institutionName: row.institution_name,
+        accountName: row.account_name,
+        accountType: row.account_type,
+        subtype: row.subtype,
+        lastFour: row.last_four,
+        connectedAt: row.connected_at
       });
-      console.log(`📊 Loaded ${transactions.size} transactions from environment backup`);
-    } else {
-      console.log('📊 No transaction backup found in environment');
-    }
+    });
+    console.log(`🏦 Loaded ${connectedAccounts.size} accounts from PostgreSQL`);
+
+    // Load transactions
+    const transactionsResult = await pool.query('SELECT * FROM transactions');
+    transactionsResult.rows.forEach(row => {
+      transactions.set(row.id, {
+        id: row.id,
+        accountId: row.account_id,
+        description: row.description,
+        amount: parseFloat(row.amount),
+        date: row.date,
+        status: row.status,
+        category: row.category,
+        createdAt: row.created_at
+      });
+    });
+    console.log(`📊 Loaded ${transactions.size} transactions from PostgreSQL`);
+
   } catch (error) {
-    console.error('Failed to load from environment:', error);
+    console.error('Failed to load from database:', error);
     console.log('Starting with fresh data');
   }
 }
 
-// Load data on startup
-loadFromEnvironment();
+// Initialize and load data on startup
+(async () => {
+  await initializeDatabase();
+  await loadFromDatabase();
+})();
 
 // Persistent storage using filesystem
 // Use persistent storage directory if available (Railway), otherwise local files
@@ -153,19 +218,21 @@ function saveTransactions(transactionsMap) {
 
 const sessions = loadSessions();
 
-// Load connected accounts at startup
-const savedAccounts = loadAccounts();
-savedAccounts.forEach((account, id) => {
-  connectedAccounts.set(id, account);
-});
-console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts`);
+// Load connected accounts from files as fallback
+if (!pool) {
+  const savedAccounts = loadAccounts();
+  savedAccounts.forEach((account, id) => {
+    connectedAccounts.set(id, account);
+  });
+  console.log(`🏦 Loaded ${connectedAccounts.size} connected accounts from files`);
 
-// Load transactions at startup
-const savedTransactions = loadTransactions();
-savedTransactions.forEach((transaction, id) => {
-  transactions.set(id, transaction);
-});
-console.log(`📊 Loaded ${transactions.size} transactions`);
+  // Load transactions from files as fallback
+  const savedTransactions = loadTransactions();
+  savedTransactions.forEach((transaction, id) => {
+    transactions.set(id, transaction);
+  });
+  console.log(`📊 Loaded ${transactions.size} transactions from files`);
+}
 
 // Simple session management
 function generateSessionId() {
@@ -399,7 +466,29 @@ function handleTellerAccount(req, res) {
       connectedAccounts.set(enrollmentToken, accountData);
       console.log(`✅ Stored account: ${institutionName} - Account`);
 
-      // Save accounts to persistent storage
+      // Save to PostgreSQL database
+      if (pool) {
+        try {
+          await pool.query(
+            `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (id) DO UPDATE SET
+               enrollment_token = $2,
+               institution_name = $3,
+               account_name = $4,
+               account_type = $5,
+               subtype = $6,
+               last_four = $7,
+               connected_at = $8`,
+            [enrollmentToken, enrollmentToken, institutionName, 'Account', 'depository', 'checking', '****', new Date()]
+          );
+          console.log('💾 Account saved to PostgreSQL');
+        } catch (dbError) {
+          console.error('Failed to save account to database:', dbError);
+        }
+      }
+
+      // Save accounts to file as backup
       saveAccounts(connectedAccounts);
 
       // Return success with the account data
@@ -543,8 +632,6 @@ function handleFetchTransactions(req, res) {
                 'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
                 'Accept': 'application/json'
               },
-              cert: fs.readFileSync('./certificate.pem'),
-              key: fs.readFileSync('./private_key.pem'),
               rejectUnauthorized: true
             };
 
@@ -589,9 +676,23 @@ function handleFetchTransactions(req, res) {
                       createdAt: new Date().toISOString()
                     };
 
-                    // Skip database save since Railway wipes files
-
                     transactions.set(txn.id, transaction);
+
+                    // Save to PostgreSQL database
+                    if (pool) {
+                      pool.query(
+                        `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                         ON CONFLICT (id) DO UPDATE SET
+                           description = $3,
+                           amount = $4,
+                           date = $5,
+                           status = $6,
+                           category = $7`,
+                        [txn.id, accountId, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                      ).catch(dbError => console.error('Failed to save transaction to database:', dbError));
+                    }
+
                     return transaction;
                   });
 
@@ -650,8 +751,6 @@ function handleFetchTransactions(req, res) {
             'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
             'Accept': 'application/json'
           },
-          cert: fs.readFileSync('./certificate.pem'),
-          key: fs.readFileSync('./private_key.pem'),
           rejectUnauthorized: true
         };
 
@@ -874,6 +973,16 @@ function handleUpdateTransactionCategory(req, res) {
         transactions.set(transactionId, transaction);
 
         console.log(`📝 Updated transaction ${transactionId} category to ${category}`);
+
+        // Update in PostgreSQL database
+        if (pool) {
+          pool.query(
+            'UPDATE transactions SET category = $1 WHERE id = $2',
+            [category, transactionId]
+          ).catch(dbError => console.error('Failed to update transaction in database:', dbError));
+        }
+
+        // Save to file as backup
         saveTransactions(transactions);
 
         res.setHeader('Content-Type', 'application/json');
