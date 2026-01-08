@@ -546,6 +546,10 @@ function handleTellerAccount(req, res) {
               // Also store in memory for quick access
               connectedAccounts.set(account.id, accountData);
               console.log(`✅ Stored account: ${accountData.institutionName} - ${accountData.accountName} ****${accountData.lastFour}`);
+
+              // Save to environment variables as backup
+              const accountsBackup = Object.fromEntries(connectedAccounts);
+              process.env.CONNECTED_ACCOUNTS = JSON.stringify(accountsBackup);
             });
 
             res.setHeader('Content-Type', 'application/json');
