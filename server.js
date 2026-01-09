@@ -924,10 +924,12 @@ function handleGetTransactions(req, res) {
       .map(txn => {
         // Add account info to each transaction
         const account = connectedAccounts.get(txn.accountId);
+        const institutionName = account ? account.institutionName : 'Unknown';
+        const lastFour = account && account.lastFour && account.lastFour !== '****' ? account.lastFour : '';
         return {
           ...txn,
-          accountName: account ? account.institutionName : 'Unknown',
-          accountLastFour: account ? account.lastFour : ''
+          accountName: lastFour ? `${institutionName} ${lastFour}` : institutionName,
+          accountLastFour: lastFour
         };
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
