@@ -748,7 +748,7 @@ function handleFetchTransactions(req, res) {
             console.log('📋 Found accounts:', accounts.length);
 
             // Update stored accounts with actual details from Teller
-            accounts.forEach(acc => {
+            for (const acc of accounts) {
               const existingAccount = connectedAccounts.get(accountId);
               if (existingAccount) {
                 existingAccount.institutionName = acc.institution?.name || existingAccount.institutionName;
@@ -758,8 +758,27 @@ function handleFetchTransactions(req, res) {
                 existingAccount.lastFour = acc.last_four || existingAccount.lastFour;
                 connectedAccounts.set(accountId, existingAccount);
                 console.log(`📝 Updated account details: ${existingAccount.institutionName} - ${existingAccount.accountName} (****${existingAccount.lastFour})`);
+
+                // Save updated details to PostgreSQL
+                if (pool) {
+                  try {
+                    await pool.query(
+                      `UPDATE accounts SET
+                        institution_name = $1,
+                        account_name = $2,
+                        account_type = $3,
+                        subtype = $4,
+                        last_four = $5
+                       WHERE id = $6`,
+                      [existingAccount.institutionName, existingAccount.accountName, existingAccount.accountType, existingAccount.subtype, existingAccount.lastFour, accountId]
+                    );
+                    console.log(`💾 Saved account details to database`);
+                  } catch (dbErr) {
+                    console.error('Failed to update account in database:', dbErr);
+                  }
+                }
               }
-            });
+            }
 
             if (accounts.length === 0) {
               res.setHeader('Content-Type', 'application/json');
