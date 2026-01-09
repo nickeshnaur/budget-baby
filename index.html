@@ -7146,8 +7146,8 @@
             const existingTransactions = transactionsSection.querySelectorAll('.transaction-card');
             existingTransactions.forEach(el => el.remove());
 
-            // Show all recent transactions on dashboard (not just unsorted)
-            const recentTransactions = transactions.slice(0, 10);
+            // Show only unsorted transactions on dashboard
+            const recentTransactions = transactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '').slice(0, 10);
 
             // Show the first 10 recent transactions on dashboard
             recentTransactions.forEach(transaction => {
