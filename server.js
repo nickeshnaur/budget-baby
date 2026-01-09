@@ -92,6 +92,15 @@ async function initializeDatabase() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        authenticated BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP
+      );
+    `);
+
     console.log('✅ Database tables initialized');
 
     // Keep existing transactions - don't delete anything
@@ -156,6 +165,7 @@ async function loadFromDatabase() {
     console.log('🔄 Initializing PostgreSQL database...');
     await initializeDatabase();
     await loadFromDatabase();
+    await loadSessionsFromDB();
   } else {
     console.log('📁 Using file storage mode - no database available');
   }
@@ -176,7 +186,7 @@ function ensureDataDir() {
   }
 }
 
-// Load sessions from file
+// Load sessions from file (fallback)
 function loadSessions() {
   try {
     ensureDataDir();
@@ -191,13 +201,59 @@ function loadSessions() {
   return new Map();
 }
 
-// Save sessions to file
-function saveSessions(sessions) {
+// Load sessions from PostgreSQL
+async function loadSessionsFromDB() {
+  if (!pool) return;
   try {
-    const sessionData = Object.fromEntries(sessions);
+    const result = await pool.query('SELECT * FROM sessions WHERE expires_at > NOW()');
+    result.rows.forEach(row => {
+      sessions.set(row.id, {
+        authenticated: row.authenticated,
+        createdAt: row.created_at,
+        expiresAt: row.expires_at
+      });
+    });
+    console.log(`🔐 Loaded ${sessions.size} sessions from PostgreSQL`);
+  } catch (error) {
+    console.error('Failed to load sessions from database:', error);
+  }
+}
+
+// Save sessions to file (fallback) and database
+function saveSessions(sessionsMap) {
+  // Save to file as backup
+  try {
+    const sessionData = Object.fromEntries(sessionsMap);
     fs.writeFileSync(sessionFile, JSON.stringify(sessionData, null, 2));
   } catch (error) {
-    console.error('Error saving sessions:', error);
+    console.error('Error saving sessions to file:', error);
+  }
+}
+
+// Save single session to PostgreSQL
+async function saveSessionToDB(sessionId, sessionData) {
+  if (!pool) return;
+  try {
+    await pool.query(
+      `INSERT INTO sessions (id, authenticated, created_at, expires_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET
+         authenticated = $2,
+         expires_at = $4`,
+      [sessionId, sessionData.authenticated, new Date(sessionData.createdAt), new Date(sessionData.expiresAt)]
+    );
+  } catch (error) {
+    console.error('Failed to save session to database:', error);
+  }
+}
+
+// Delete session from PostgreSQL
+async function deleteSessionFromDB(sessionId) {
+  if (!pool) return;
+  try {
+    await pool.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
+  } catch (error) {
+    console.error('Failed to delete session from database:', error);
   }
 }
 
@@ -290,6 +346,7 @@ function isAuthenticated(req) {
   if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
     sessions.delete(sessionId);
     saveSessions(sessions);
+    deleteSessionFromDB(sessionId); // Fire and forget
     return false;
   }
 
@@ -400,7 +457,7 @@ function handleLogin(req, res) {
   req.on('data', chunk => {
     body += chunk.toString();
   });
-  req.on('end', () => {
+  req.on('end', async () => {
     try {
       const data = JSON.parse(body);
       if (data.password === PASSWORD) {
@@ -412,6 +469,7 @@ function handleLogin(req, res) {
         };
         sessions.set(sessionId, sessionData);
         saveSessions(sessions);
+        await saveSessionToDB(sessionId, sessionData);
 
         const isSecure = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
         const cookieOptions = `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=${90 * 24 * 60 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
@@ -448,12 +506,13 @@ function handleAuthCheck(req, res) {
   }
 }
 
-function handleLogout(req, res) {
+async function handleLogout(req, res) {
   const cookies = parseCookies(req.headers.cookie || '');
   const sessionId = cookies.sessionId;
   if (sessionId) {
     sessions.delete(sessionId);
     saveSessions(sessions);
+    await deleteSessionFromDB(sessionId);
   }
   res.setHeader('Content-Type', 'application/json');
   res.writeHead(200);
