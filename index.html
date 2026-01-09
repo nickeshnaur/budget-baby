@@ -6135,6 +6135,7 @@
                     accountsContainer.innerHTML = '';
 
                     result.accounts.forEach(account => {
+                        const isDisconnected = account.status === 'disconnected';
                         const accountDiv = document.createElement('div');
                         accountDiv.className = 'connected-account';
                         accountDiv.setAttribute('data-account-id', account.id);
@@ -6142,9 +6143,14 @@
                             <div class="account-info">
                                 <div class="account-name">${account.institutionName}</div>
                                 <div class="account-type">${account.accountName || account.subtype || 'Account'} ${account.lastFour ? '****' + account.lastFour : ''}</div>
-                                <div class="account-status">Connected</div>
+                                <div class="account-status" style="color: ${isDisconnected ? '#ff6b6b' : '#4ecdc4'}">
+                                    ${isDisconnected ? 'Needs Reconnection' : 'Connected'}
+                                </div>
                             </div>
-                            <button class="setting-button" onclick="disconnectAccount()">Disconnect</button>
+                            ${isDisconnected
+                                ? `<button class="setting-button" style="background: #ff6b6b" onclick="removeAccount('${account.id}')">Remove</button>`
+                                : `<button class="setting-button" onclick="removeAccount('${account.id}')">Remove</button>`
+                            }
                         `;
                         accountsContainer.appendChild(accountDiv);
                     });
@@ -6154,10 +6160,24 @@
             }
         }
 
-        function disconnectAccount() {
-            const accountsContainer = document.getElementById('connected-accounts');
-            accountsContainer.innerHTML = '<div class="section-subtitle">No accounts connected</div>';
-            alert('Account disconnected successfully!');
+        async function removeAccount(accountId) {
+            if (!confirm('Remove this account? You can reconnect it later.')) return;
+
+            try {
+                const response = await fetch('/api/account/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Account removed. You can reconnect it using the Connect Bank button.');
+                    loadConnectedAccounts();
+                }
+            } catch (error) {
+                console.error('Error removing account:', error);
+                alert('Failed to remove account');
+            }
         }
 
         async function syncTransactions() {
@@ -6171,11 +6191,21 @@
                     return;
                 }
 
+                // Filter to only sync connected accounts (not disconnected ones)
+                const connectedAccounts = accountsResult.accounts.filter(a => a.status !== 'disconnected');
+                const disconnectedCount = accountsResult.accounts.length - connectedAccounts.length;
+
+                if (connectedAccounts.length === 0) {
+                    alert('All accounts need reconnection. Please remove and reconnect your bank accounts.');
+                    return;
+                }
+
                 alert('Syncing transactions from your connected accounts...');
                 let totalSynced = 0;
+                let newDisconnected = [];
 
                 // Fetch transactions for each connected account
-                for (const account of accountsResult.accounts) {
+                for (const account of connectedAccounts) {
                     try {
                         const response = await fetch('/api/transactions/fetch', {
                             method: 'POST',
@@ -6190,19 +6220,33 @@
                         const result = await response.json();
                         if (result.success) {
                             totalSynced += result.newCount || 0;
+                        } else if (result.disconnected) {
+                            // Account became disconnected during sync
+                            newDisconnected.push(account.institutionName + ' ' + (account.lastFour || ''));
                         }
                     } catch (error) {
                         console.error(`Error syncing transactions for account ${account.id}:`, error);
                     }
                 }
 
-                // Refresh the home page to show new transactions
+                // Refresh accounts list to show updated status
+                loadConnectedAccounts();
                 loadTransactionsFromAPI();
+
+                // Build result message
+                let message = '';
                 if (totalSynced > 0) {
-                    alert(`Successfully synced ${totalSynced} new transactions!`);
+                    message = `Synced ${totalSynced} new transactions.`;
                 } else {
-                    alert('All transactions up to date. No new transactions found.');
+                    message = 'All transactions up to date.';
                 }
+                if (newDisconnected.length > 0) {
+                    message += `\n\n${newDisconnected.length} account(s) need reconnection:\n${newDisconnected.join('\n')}\n\nGo to Profile to remove and reconnect.`;
+                }
+                if (disconnectedCount > 0 && newDisconnected.length === 0) {
+                    message += `\n\n(${disconnectedCount} account(s) skipped - need reconnection)`;
+                }
+                alert(message);
 
             } catch (error) {
                 console.error('Error syncing transactions:', error);

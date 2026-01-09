@@ -74,9 +74,15 @@ async function initializeDatabase() {
         account_type TEXT,
         subtype TEXT,
         last_four TEXT,
+        status TEXT DEFAULT 'connected',
         connected_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // Add status column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE accounts ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'connected';
+    `).catch(() => {});
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS transactions (
@@ -132,6 +138,7 @@ async function loadFromDatabase() {
         accountType: row.account_type,
         subtype: row.subtype,
         lastFour: row.last_four,
+        status: row.status || 'connected',
         connectedAt: row.connected_at
       });
     });
@@ -444,6 +451,8 @@ function handleApiRequest(req, res, pathname) {
     handleUpdateTransactionCategory(req, res);
   } else if (pathname === '/api/accounts' && req.method === 'GET') {
     handleGetAccounts(req, res);
+  } else if (pathname === '/api/account/delete' && req.method === 'POST') {
+    handleDeleteAccount(req, res);
   } else if (pathname === '/api/account/details' && req.method === 'POST') {
     handleGetAccountDetails(req, res);
   } else {
@@ -602,6 +611,7 @@ async function handleTellerAccount(req, res) {
                 accountType: acc.type || 'unknown',
                 subtype: acc.subtype || 'unknown',
                 lastFour: acc.last_four || '',
+                status: 'connected',
                 connectedAt: new Date().toISOString()
               };
 
@@ -613,16 +623,17 @@ async function handleTellerAccount(req, res) {
               if (pool) {
                 try {
                   await pool.query(
-                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, status, connected_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                      ON CONFLICT (id) DO UPDATE SET
                        enrollment_token = $2,
                        institution_name = $3,
                        account_name = $4,
                        account_type = $5,
                        subtype = $6,
-                       last_four = $7`,
-                    [acc.id, enrollmentToken, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, new Date()]
+                       last_four = $7,
+                       status = $8`,
+                    [acc.id, enrollmentToken, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, 'connected', new Date()]
                   );
                 } catch (dbError) {
                   console.error('Failed to save account:', dbError.message);
@@ -777,12 +788,34 @@ function handleFetchTransactions(req, res) {
             if (accountsRes.statusCode !== 200) {
               console.error('❌ Teller accounts API error:', accountsRes.statusCode, accountsBody);
 
-              // Load from existing local file storage where real transactions exist
+              // If 403/401, mark account as disconnected
+              if (accountsRes.statusCode === 403 || accountsRes.statusCode === 401) {
+                // Mark account as disconnected
+                if (connectedAccounts.has(accountId)) {
+                  const acc = connectedAccounts.get(accountId);
+                  acc.status = 'disconnected';
+                  connectedAccounts.set(accountId, acc);
+                }
+                if (pool) {
+                  pool.query('UPDATE accounts SET status = $1 WHERE id = $2', ['disconnected', accountId])
+                    .catch(err => console.error('Failed to update account status:', err));
+                }
+
+                res.setHeader('Content-Type', 'application/json');
+                res.writeHead(200);
+                res.end(JSON.stringify({
+                  success: false,
+                  disconnected: true,
+                  message: 'This account needs to be reconnected',
+                  accountId: accountId
+                }));
+                return;
+              }
+
+              // Other errors - load from memory as fallback
               const allTransactions = Array.from(transactions.values())
                 .filter(t => t.date && t.date.startsWith('2026-01'))
-                .filter(t => t.id.startsWith('txn_')); // Real Teller transaction IDs
-
-              console.log('📊 Loading existing real transactions from memory:', allTransactions.length);
+                .filter(t => t.id.startsWith('txn_'));
 
               res.setHeader('Content-Type', 'application/json');
               res.writeHead(200);
@@ -790,7 +823,8 @@ function handleFetchTransactions(req, res) {
                 success: true,
                 message: `Loaded ${allTransactions.length} existing transactions`,
                 transactions: allTransactions,
-                count: allTransactions.length
+                count: allTransactions.length,
+                newCount: 0
               }));
               return;
             }
@@ -814,7 +848,7 @@ function handleFetchTransactions(req, res) {
               return;
             }
 
-            // Store each account from Teller
+            // Store each account from Teller (mark as connected since API call succeeded)
             for (const acc of accounts) {
               console.log(`📋 Account: ${acc.institution?.name} - ${acc.name} (****${acc.last_four})`);
 
@@ -828,6 +862,7 @@ function handleFetchTransactions(req, res) {
                 accountType: acc.type || 'unknown',
                 subtype: acc.subtype || 'unknown',
                 lastFour: acc.last_four || '',
+                status: 'connected',
                 connectedAt: new Date().toISOString()
               };
 
@@ -837,15 +872,16 @@ function handleFetchTransactions(req, res) {
               if (pool) {
                 try {
                   await pool.query(
-                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, status, connected_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                      ON CONFLICT (id) DO UPDATE SET
                        institution_name = $3,
                        account_name = $4,
                        account_type = $5,
                        subtype = $6,
-                       last_four = $7`,
-                    [subAccountId, accountId, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, new Date()]
+                       last_four = $7,
+                       status = $8`,
+                    [subAccountId, accountId, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, 'connected', new Date()]
                   );
                 } catch (dbErr) {
                   console.error('Failed to save account:', dbErr);
@@ -1025,6 +1061,45 @@ function handleGetAccounts(req, res) {
     res.writeHead(500);
     res.end(JSON.stringify({ error: 'Failed to get accounts' }));
   }
+}
+
+async function handleDeleteAccount(req, res) {
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { accountId } = JSON.parse(body);
+
+      if (!accountId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Account ID required' }));
+        return;
+      }
+
+      // Remove from memory
+      connectedAccounts.delete(accountId);
+
+      // Remove from database
+      if (pool) {
+        await pool.query('DELETE FROM accounts WHERE id = $1', [accountId]);
+      }
+
+      // Save to file backup
+      saveAccounts(connectedAccounts);
+
+      console.log(`🗑️ Deleted account: ${accountId}`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, message: 'Account removed' }));
+    } catch (error) {
+      console.error('Delete account error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to delete account' }));
+    }
+  });
 }
 
 function handleGetAccountDetails(req, res) {
