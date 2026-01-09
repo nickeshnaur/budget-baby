@@ -1252,7 +1252,233 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`💡 Open your browser and visit the URL above`);
   console.log(`🔄 Deployment timestamp: ${new Date().toISOString()}`);
   console.log(`📱 For mobile testing, use: http://192.168.1.187:${PORT}`);
+
+  // Start auto-sync scheduler
+  startAutoSync();
 });
+
+// Auto-sync configuration
+const AUTO_SYNC_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+let isAutoSyncing = false; // Lock to prevent concurrent syncs
+
+async function autoSyncTransactions() {
+  // Prevent concurrent syncs
+  if (isAutoSyncing) {
+    console.log('⏳ Auto-sync already in progress, skipping...');
+    return;
+  }
+
+  isAutoSyncing = true;
+  console.log(`\n🔄 AUTO-SYNC STARTED at ${new Date().toISOString()}`);
+
+  try {
+    // Get all connected accounts (not disconnected, not placeholders)
+    const accountsToSync = Array.from(connectedAccounts.values())
+      .filter(acc => acc.status !== 'disconnected')
+      .filter(acc => acc.lastFour && acc.lastFour !== '****' && acc.lastFour !== '');
+
+    if (accountsToSync.length === 0) {
+      console.log('📭 No connected accounts to sync');
+      isAutoSyncing = false;
+      return;
+    }
+
+    console.log(`📋 Found ${accountsToSync.length} accounts to sync`);
+
+    // Group accounts by enrollment token to avoid duplicate API calls
+    const enrollmentTokens = [...new Set(accountsToSync.map(acc => acc.enrollmentToken))];
+    console.log(`🔑 ${enrollmentTokens.length} unique enrollment(s) to process`);
+
+    let totalNewTransactions = 0;
+
+    for (const enrollmentToken of enrollmentTokens) {
+      try {
+        const result = await syncEnrollment(enrollmentToken);
+        totalNewTransactions += result.newCount || 0;
+        console.log(`  ✅ Enrollment synced: ${result.newCount} new transactions`);
+      } catch (error) {
+        console.error(`  ❌ Failed to sync enrollment: ${error.message}`);
+      }
+    }
+
+    console.log(`🎉 AUTO-SYNC COMPLETE: ${totalNewTransactions} new transactions`);
+
+  } catch (error) {
+    console.error('❌ Auto-sync error:', error);
+  } finally {
+    isAutoSyncing = false;
+  }
+}
+
+// Sync a single enrollment (reusable function)
+async function syncEnrollment(enrollmentToken) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const https = require('https');
+
+      let cert, key;
+      try {
+        cert = fs.readFileSync('./certificate.pem');
+        key = fs.readFileSync('./private_key.pem');
+      } catch (error) {
+        if (process.env.TELLER_CERT_B64 && process.env.TELLER_KEY_B64) {
+          cert = Buffer.from(process.env.TELLER_CERT_B64, 'base64');
+          key = Buffer.from(process.env.TELLER_KEY_B64, 'base64');
+        } else {
+          throw new Error('Certificate files not found');
+        }
+      }
+
+      const options = {
+        hostname: 'api.teller.io',
+        path: '/accounts',
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+          'Accept': 'application/json'
+        },
+        cert: cert,
+        key: key,
+        rejectUnauthorized: false
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', async () => {
+          if (res.statusCode === 403 || res.statusCode === 401) {
+            // Mark accounts with this enrollment as disconnected
+            connectedAccounts.forEach((acc, id) => {
+              if (acc.enrollmentToken === enrollmentToken) {
+                acc.status = 'disconnected';
+                if (pool) {
+                  pool.query('UPDATE accounts SET status = $1 WHERE id = $2', ['disconnected', id]).catch(() => {});
+                }
+              }
+            });
+            resolve({ newCount: 0, error: 'disconnected' });
+            return;
+          }
+
+          if (res.statusCode !== 200) {
+            resolve({ newCount: 0, error: `API error ${res.statusCode}` });
+            return;
+          }
+
+          const accounts = JSON.parse(body);
+
+          // Get existing transaction IDs from database
+          let existingTxnIds = new Set();
+          if (pool) {
+            try {
+              const existing = await pool.query('SELECT id FROM transactions');
+              existing.rows.forEach(row => existingTxnIds.add(row.id));
+            } catch (e) {}
+          }
+
+          let newCount = 0;
+
+          // Fetch transactions for each account
+          for (const acc of accounts) {
+            try {
+              const txns = await fetchAccountTransactions(acc.id, enrollmentToken, cert, key);
+              for (const txn of txns) {
+                const isNew = !existingTxnIds.has(txn.id);
+                if (isNew) newCount++;
+
+                const existingCategory = transactions.has(txn.id)
+                  ? transactions.get(txn.id).category
+                  : 'Unsorted';
+
+                const transaction = {
+                  id: txn.id,
+                  accountId: acc.id,
+                  description: txn.description,
+                  amount: -Math.abs(txn.amount),
+                  date: txn.date,
+                  status: txn.status,
+                  category: existingCategory,
+                  createdAt: new Date().toISOString()
+                };
+
+                transactions.set(txn.id, transaction);
+
+                if (pool && isNew) {
+                  pool.query(
+                    `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                     ON CONFLICT (id) DO NOTHING`,
+                    [txn.id, acc.id, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                  ).catch(() => {});
+                }
+              }
+            } catch (e) {
+              console.error(`    Error fetching transactions for ${acc.name}: ${e.message}`);
+            }
+          }
+
+          resolve({ newCount });
+        });
+      });
+
+      req.on('error', (error) => reject(error));
+      req.end();
+
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Fetch transactions for a single account
+function fetchAccountTransactions(accountId, enrollmentToken, cert, key) {
+  return new Promise((resolve, reject) => {
+    const https = require('https');
+
+    const options = {
+      hostname: 'api.teller.io',
+      path: `/accounts/${accountId}/transactions?from_date=2026-01-01`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+        'Accept': 'application/json'
+      },
+      cert: cert,
+      key: key,
+      rejectUnauthorized: false
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          resolve(JSON.parse(body));
+        } else {
+          resolve([]); // Return empty on error
+        }
+      });
+    });
+
+    req.on('error', () => resolve([]));
+    req.end();
+  });
+}
+
+function startAutoSync() {
+  console.log(`⏰ Auto-sync enabled: every 12 hours`);
+
+  // Run first sync after 1 minute (let server fully initialize)
+  setTimeout(() => {
+    console.log('🔄 Running initial auto-sync...');
+    autoSyncTransactions();
+  }, 60 * 1000);
+
+  // Then run every 12 hours
+  setInterval(() => {
+    autoSyncTransactions();
+  }, AUTO_SYNC_INTERVAL);
+}
 
 // Graceful shutdown
 process.on('SIGINT', () => {
