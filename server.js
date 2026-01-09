@@ -14,6 +14,9 @@ try {
 const PORT = process.env.PORT || 3000;
 const PASSWORD = 'babywolfdog';
 
+// Force HTTPS redirect in production
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+
 // Teller.io configuration
 const TELLER_CONFIG = {
     applicationId: 'app_pn2qum0p0bom9ppvn0000',
