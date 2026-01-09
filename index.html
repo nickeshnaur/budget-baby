@@ -6200,6 +6200,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        credentials: 'include',
                         body: JSON.stringify({ password }),
                     });
 
@@ -8024,6 +8025,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         transactionId: transactionId,
                         category: category

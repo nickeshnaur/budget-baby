@@ -413,7 +413,9 @@ function handleLogin(req, res) {
         sessions.set(sessionId, sessionData);
         saveSessions(sessions);
 
-        res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=${90 * 24 * 60 * 60}; SameSite=Strict`);
+        const isSecure = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
+        const cookieOptions = `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=${90 * 24 * 60 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+        res.setHeader('Set-Cookie', cookieOptions);
         res.setHeader('Content-Type', 'application/json');
         res.writeHead(200);
         res.end(JSON.stringify({ success: true, message: 'Login successful' }));
