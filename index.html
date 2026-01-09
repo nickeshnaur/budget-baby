@@ -5810,6 +5810,12 @@
     <script>
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
 
+        // Helper function to convert transaction descriptions to Title Case
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+
         // Router for handling navigation with URLs
         const router = {
             routes: {
@@ -7645,7 +7651,7 @@
                 " title="Delete transaction">×</button>
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
-                    <div class="transaction-description">${transaction.description}</div>
+                    <div class="transaction-description">${toTitleCase(transaction.description)}</div>
                     <div class="transaction-amount">${isDebit ? '-' : '+'}$${amount}</div>
                 </div>
                 <div class="transaction-footer">
@@ -7806,7 +7812,7 @@
                 ">×</button>` : ''}
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
-                    <div class="transaction-description">${transaction.description}</div>
+                    <div class="transaction-description">${toTitleCase(transaction.description)}</div>
                     <div class="transaction-amount">${isDebit ? '-' : '+'}$${amount}</div>
                 </div>
                 <div class="transaction-footer">
@@ -7847,7 +7853,7 @@
                 <div class="_${formattedDate.replace(/\//g, '-')}">${formattedDate}</div>
                 <div class="title">
                     <div class="frame-7">
-                        <div class="transaction-merchant">${transaction.description}</div>
+                        <div class="transaction-merchant">${toTitleCase(transaction.description)}</div>
                     </div>
                     <div class="transaction-amount">${transaction.amount < 0 ? '-' : '+'}$${amount}</div>
                 </div>
