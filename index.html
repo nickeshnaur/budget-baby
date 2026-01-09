@@ -5810,6 +5810,9 @@
             handleRoute() {
                 const hash = window.location.hash.substring(1); // Remove #
 
+                // Always scroll to top when navigating
+                window.scrollTo(0, 0);
+
                 // Check authentication first
                 if (!isAuthenticated) {
                     document.getElementById('loginScreen').style.display = 'flex';
