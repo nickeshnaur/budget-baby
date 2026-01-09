@@ -747,6 +747,20 @@ function handleFetchTransactions(req, res) {
             const accounts = JSON.parse(accountsBody);
             console.log('📋 Found accounts:', accounts.length);
 
+            // Update stored accounts with actual details from Teller
+            accounts.forEach(acc => {
+              const existingAccount = connectedAccounts.get(accountId);
+              if (existingAccount) {
+                existingAccount.institutionName = acc.institution?.name || existingAccount.institutionName;
+                existingAccount.accountName = acc.name || existingAccount.accountName;
+                existingAccount.accountType = acc.type || existingAccount.accountType;
+                existingAccount.subtype = acc.subtype || existingAccount.subtype;
+                existingAccount.lastFour = acc.last_four || existingAccount.lastFour;
+                connectedAccounts.set(accountId, existingAccount);
+                console.log(`📝 Updated account details: ${existingAccount.institutionName} - ${existingAccount.accountName} (****${existingAccount.lastFour})`);
+              }
+            });
+
             if (accounts.length === 0) {
               res.setHeader('Content-Type', 'application/json');
               res.writeHead(200);
@@ -876,9 +890,17 @@ function handleFetchTransactions(req, res) {
 
 function handleGetTransactions(req, res) {
   try {
-    const allTransactions = Array.from(transactions.values()).sort((a, b) =>
-      new Date(b.date) - new Date(a.date)
-    );
+    const allTransactions = Array.from(transactions.values())
+      .map(txn => {
+        // Add account info to each transaction
+        const account = connectedAccounts.get(txn.accountId);
+        return {
+          ...txn,
+          accountName: account ? account.institutionName : 'Unknown',
+          accountLastFour: account ? account.lastFour : ''
+        };
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);

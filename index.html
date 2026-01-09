@@ -7770,7 +7770,7 @@
                         ${categoryEmoji} ${transaction.category.toUpperCase()}
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
-                    <div class="transaction-bank">${transaction.id && transaction.id.startsWith('manual_') ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.bank || 'Capital One - Credit Card')}</div>
+                    <div class="transaction-bank">${transaction.id && transaction.id.startsWith('manual_') ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
                 </div>
             `;
 
