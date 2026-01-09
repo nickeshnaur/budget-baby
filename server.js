@@ -746,36 +746,47 @@ function handleFetchTransactions(req, res) {
 
             const accounts = JSON.parse(accountsBody);
             console.log('📋 Found accounts:', accounts.length);
+            console.log('📋 Teller accounts data:', JSON.stringify(accounts, null, 2));
 
-            // Update stored accounts with actual details from Teller
-            for (const acc of accounts) {
-              const existingAccount = connectedAccounts.get(accountId);
-              if (existingAccount) {
-                existingAccount.institutionName = acc.institution?.name || existingAccount.institutionName;
-                existingAccount.accountName = acc.name || existingAccount.accountName;
-                existingAccount.accountType = acc.type || existingAccount.accountType;
-                existingAccount.subtype = acc.subtype || existingAccount.subtype;
-                existingAccount.lastFour = acc.last_four || existingAccount.lastFour;
-                connectedAccounts.set(accountId, existingAccount);
-                console.log(`📝 Updated account details: ${existingAccount.institutionName} - ${existingAccount.accountName} (****${existingAccount.lastFour})`);
+            // Update stored account with actual details from Teller (use first account's details)
+            const firstTellerAccount = accounts[0];
+            if (firstTellerAccount) {
+              console.log('📋 First account details:', {
+                id: firstTellerAccount.id,
+                name: firstTellerAccount.name,
+                institution: firstTellerAccount.institution,
+                type: firstTellerAccount.type,
+                subtype: firstTellerAccount.subtype,
+                last_four: firstTellerAccount.last_four
+              });
+            }
+            const existingAccount = connectedAccounts.get(accountId);
+            if (existingAccount && firstTellerAccount) {
+              existingAccount.institutionName = firstTellerAccount.institution?.name || existingAccount.institutionName;
+              existingAccount.accountName = firstTellerAccount.name || existingAccount.accountName;
+              existingAccount.accountType = firstTellerAccount.type || existingAccount.accountType;
+              existingAccount.subtype = firstTellerAccount.subtype || existingAccount.subtype;
+              existingAccount.lastFour = firstTellerAccount.last_four || existingAccount.lastFour;
+              existingAccount.tellerAccountId = firstTellerAccount.id; // Store the Teller account ID too
+              connectedAccounts.set(accountId, existingAccount);
+              console.log(`📝 Updated account details: ${existingAccount.institutionName} - ${existingAccount.accountName} (****${existingAccount.lastFour})`);
 
-                // Save updated details to PostgreSQL
-                if (pool) {
-                  try {
-                    await pool.query(
-                      `UPDATE accounts SET
-                        institution_name = $1,
-                        account_name = $2,
-                        account_type = $3,
-                        subtype = $4,
-                        last_four = $5
-                       WHERE id = $6`,
-                      [existingAccount.institutionName, existingAccount.accountName, existingAccount.accountType, existingAccount.subtype, existingAccount.lastFour, accountId]
-                    );
-                    console.log(`💾 Saved account details to database`);
-                  } catch (dbErr) {
-                    console.error('Failed to update account in database:', dbErr);
-                  }
+              // Save updated details to PostgreSQL
+              if (pool) {
+                try {
+                  await pool.query(
+                    `UPDATE accounts SET
+                      institution_name = $1,
+                      account_name = $2,
+                      account_type = $3,
+                      subtype = $4,
+                      last_four = $5
+                     WHERE id = $6`,
+                    [existingAccount.institutionName, existingAccount.accountName, existingAccount.accountType, existingAccount.subtype, existingAccount.lastFour, accountId]
+                  );
+                  console.log(`💾 Saved account details to database for ${accountId}`);
+                } catch (dbErr) {
+                  console.error('Failed to update account in database:', dbErr);
                 }
               }
             }
