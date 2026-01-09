@@ -844,10 +844,14 @@ function handleFetchTransactions(req, res) {
             // Fetch from all accounts in parallel
             const results = await Promise.all(accounts.map(fetchTransactionsForAccount));
 
-            // Process all transactions
+            // Process all transactions - PRESERVE existing categories
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
+                // Check if transaction already exists and preserve its category
+                const existingTxn = transactions.get(txn.id);
+                const existingCategory = existingTxn ? existingTxn.category : 'Unsorted';
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id, // Use the specific account ID
@@ -855,19 +859,24 @@ function handleFetchTransactions(req, res) {
                   amount: -Math.abs(txn.amount),
                   date: txn.date,
                   status: txn.status,
-                  category: 'Unsorted',
-                  createdAt: new Date().toISOString()
+                  category: existingCategory, // Preserve existing category!
+                  createdAt: existingTxn ? existingTxn.createdAt : new Date().toISOString()
                 };
 
                 transactions.set(txn.id, transaction);
                 allTransactions.push(transaction);
 
-                // Save to PostgreSQL
+                // Save to PostgreSQL - only insert new, don't overwrite category
                 if (pool) {
                   pool.query(
                     `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                     ON CONFLICT (id) DO NOTHING`,
+                     ON CONFLICT (id) DO UPDATE SET
+                       account_id = $2,
+                       description = $3,
+                       amount = $4,
+                       date = $5,
+                       status = $6`,
                     [txn.id, acc.id, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
                   ).catch(dbError => console.error('Failed to save transaction:', dbError));
                 }
@@ -910,6 +919,7 @@ function handleFetchTransactions(req, res) {
 function handleGetTransactions(req, res) {
   try {
     const allTransactions = Array.from(transactions.values())
+      .filter(txn => txn.date && txn.date >= '2026-01-01') // Only Jan 2026 onwards
       .map(txn => {
         // Add account info to each transaction
         const account = connectedAccounts.get(txn.accountId);
