@@ -856,7 +856,7 @@ function handleFetchTransactions(req, res) {
               const subAccountId = acc.id;
               const accountData = {
                 id: subAccountId,
-                enrollmentToken: accountId, // Link back to enrollment
+                enrollmentToken: enrollmentToken, // Use the ACTUAL enrollment token, not accountId!
                 institutionName: acc.institution?.name || 'Unknown',
                 accountName: acc.name || 'Account',
                 accountType: acc.type || 'unknown',
@@ -868,7 +868,7 @@ function handleFetchTransactions(req, res) {
 
               connectedAccounts.set(subAccountId, accountData);
 
-              // Save to PostgreSQL
+              // Save to PostgreSQL - use enrollmentToken variable, not accountId!
               if (pool) {
                 try {
                   await pool.query(
@@ -881,7 +881,7 @@ function handleFetchTransactions(req, res) {
                        subtype = $6,
                        last_four = $7,
                        status = $8`,
-                    [subAccountId, accountId, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, 'connected', new Date()]
+                    [subAccountId, enrollmentToken, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, 'connected', new Date()]
                   );
                 } catch (dbErr) {
                   console.error('Failed to save account:', dbErr);
