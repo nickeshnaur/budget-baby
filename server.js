@@ -763,6 +763,16 @@ function handleFetchTransactions(req, res) {
               return;
             }
 
+            // Remove the enrollment token placeholder entry now that we have real accounts
+            if (connectedAccounts.has(accountId)) {
+              connectedAccounts.delete(accountId);
+              console.log(`🗑️ Removed enrollment placeholder: ${accountId}`);
+              if (pool) {
+                pool.query('DELETE FROM accounts WHERE id = $1', [accountId])
+                  .catch(err => console.error('Failed to delete enrollment placeholder:', err));
+              }
+            }
+
             // Store each account from Teller
             for (const acc of accounts) {
               console.log(`📋 Account: ${acc.institution?.name} - ${acc.name} (****${acc.last_four})`);
