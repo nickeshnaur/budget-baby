@@ -895,33 +895,46 @@ function handleFetchTransactions(req, res) {
             // Fetch from all accounts in parallel
             const results = await Promise.all(accounts.map(fetchTransactionsForAccount));
 
-            // Process all transactions - PRESERVE existing categories
+            // Get existing transaction IDs and categories from DATABASE (not memory)
+            let existingTxnData = new Map(); // id -> category
+            if (pool) {
+              try {
+                const existing = await pool.query('SELECT id, category FROM transactions');
+                existing.rows.forEach(row => {
+                  existingTxnData.set(row.id, row.category || 'Unsorted');
+                });
+                console.log(`📊 Found ${existingTxnData.size} existing transactions in database`);
+              } catch (dbErr) {
+                console.error('Failed to fetch existing transactions:', dbErr);
+              }
+            }
+
+            // Process all transactions - PRESERVE existing categories from DATABASE
             let newCount = 0;
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
-                // Check if transaction already exists and preserve its category
-                const existingTxn = transactions.get(txn.id);
-                const isNew = !existingTxn;
-                const existingCategory = existingTxn ? existingTxn.category : 'Unsorted';
+                // Check DATABASE for existing transaction
+                const isNew = !existingTxnData.has(txn.id);
+                const existingCategory = existingTxnData.get(txn.id) || 'Unsorted';
 
                 if (isNew) newCount++;
 
                 const transaction = {
                   id: txn.id,
-                  accountId: acc.id, // Use the specific account ID
+                  accountId: acc.id,
                   description: txn.description,
                   amount: -Math.abs(txn.amount),
                   date: txn.date,
                   status: txn.status,
-                  category: existingCategory, // Preserve existing category!
-                  createdAt: existingTxn ? existingTxn.createdAt : new Date().toISOString()
+                  category: existingCategory,
+                  createdAt: new Date().toISOString()
                 };
 
                 transactions.set(txn.id, transaction);
                 allTransactions.push(transaction);
 
-                // Save to PostgreSQL - only insert new, don't overwrite category
+                // Save to PostgreSQL - only insert new, preserve category on existing
                 if (pool) {
                   pool.query(
                     `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
