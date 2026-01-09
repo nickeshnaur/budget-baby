@@ -5812,7 +5812,8 @@
 
                 // Check authentication first
                 if (!isAuthenticated) {
-                    document.getElementById('loginScreen').style.display = 'block';
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    document.getElementById('loginScreen').style.visibility = 'visible';
                     return;
                 }
 
@@ -8051,8 +8052,15 @@
 
                     // Refresh the transactions to ensure consistent state
                     await loadTransactionsFromAPI();
+                } else if (response.status === 401) {
+                    // Session expired - need to re-login
+                    alert('Session expired. Please log in again.');
+                    isAuthenticated = false;
+                    localStorage.removeItem('authenticated');
+                    router.handleRoute();
                 } else {
                     console.error('Failed to update category');
+                    alert('Failed to update category. Please try again.');
                 }
             } catch (error) {
                 console.error('Error updating category:', error);
