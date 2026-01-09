@@ -947,7 +947,7 @@ function handleUpdateTransactionCategory(req, res) {
       }
 
       // Valid categories
-      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Miscellaneous', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Unsorted'];
+      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Miscellaneous', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Ignore', 'Unsorted'];
       if (!validCategories.includes(category)) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid category' }));
