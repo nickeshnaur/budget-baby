@@ -6189,7 +6189,7 @@
 
                         const result = await response.json();
                         if (result.success) {
-                            totalSynced += result.count;
+                            totalSynced += result.newCount || 0;
                         }
                     } catch (error) {
                         console.error(`Error syncing transactions for account ${account.id}:`, error);
@@ -6197,11 +6197,11 @@
                 }
 
                 // Refresh the home page to show new transactions
+                loadTransactionsFromAPI();
                 if (totalSynced > 0) {
-                    loadTransactionsFromAPI();
-                    alert(`Successfully synced ${totalSynced} transactions! Check your home page.`);
+                    alert(`Successfully synced ${totalSynced} new transactions!`);
                 } else {
-                    alert('No new transactions found to sync.');
+                    alert('All transactions up to date. No new transactions found.');
                 }
 
             } catch (error) {

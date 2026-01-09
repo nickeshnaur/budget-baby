@@ -855,12 +855,16 @@ function handleFetchTransactions(req, res) {
             const results = await Promise.all(accounts.map(fetchTransactionsForAccount));
 
             // Process all transactions - PRESERVE existing categories
+            let newCount = 0;
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
                 // Check if transaction already exists and preserve its category
                 const existingTxn = transactions.get(txn.id);
+                const isNew = !existingTxn;
                 const existingCategory = existingTxn ? existingTxn.category : 'Unsorted';
+
+                if (isNew) newCount++;
 
                 const transaction = {
                   id: txn.id,
@@ -893,13 +897,14 @@ function handleFetchTransactions(req, res) {
               }
             }
 
-            console.log(`🎉 Total transactions fetched: ${allTransactions.length}`);
+            console.log(`🎉 Synced: ${newCount} new, ${allTransactions.length} total`);
 
             res.setHeader('Content-Type', 'application/json');
             res.writeHead(200);
             res.end(JSON.stringify({
               success: true,
               transactions: allTransactions,
+              newCount: newCount,
               count: allTransactions.length
             }));
           } catch (error) {
