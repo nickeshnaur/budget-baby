@@ -548,62 +548,113 @@ async function handleTellerAccount(req, res) {
       const { accountId: enrollmentToken, institutionName } = data;
       console.log('Connected enrollment token:', { enrollmentToken, institutionName });
 
-      // The enrollment token IS the account - store it directly
-      // Store the connected account directly using enrollment data
-      const accountData = {
-        id: enrollmentToken,
-        enrollmentToken: enrollmentToken,
-        institutionName: institutionName,
-        accountName: 'Account',
-        accountType: 'depository',
-        subtype: 'checking',
-        lastFour: '****',
-        connectedAt: new Date().toISOString()
-      };
+      // Immediately fetch REAL accounts from Teller - no placeholders
+      const https = require('https');
 
-      connectedAccounts.set(enrollmentToken, accountData);
-      console.log(`✅ Stored account: ${institutionName} - Account`);
-
-      // Save to PostgreSQL database
-      if (pool) {
-        try {
-          console.log('💾 Saving account to PostgreSQL:', { enrollmentToken, institutionName });
-          const result = await pool.query(
-            `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             ON CONFLICT (id) DO UPDATE SET
-               enrollment_token = $2,
-               institution_name = $3,
-               account_name = $4,
-               account_type = $5,
-               subtype = $6,
-               last_four = $7,
-               connected_at = $8
-             RETURNING *`,
-            [enrollmentToken, enrollmentToken, institutionName, 'Account', 'depository', 'checking', '****', new Date()]
-          );
-          console.log('✅ Account saved to PostgreSQL successfully:', result.rowCount, 'row(s) affected');
-        } catch (dbError) {
-          console.error('❌ CRITICAL: Failed to save account to database:', dbError.message);
-          console.error('Database error details:', dbError);
+      let cert, key;
+      try {
+        cert = fs.readFileSync('./certificate.pem');
+        key = fs.readFileSync('./private_key.pem');
+      } catch (error) {
+        if (process.env.TELLER_CERT_B64 && process.env.TELLER_KEY_B64) {
+          cert = Buffer.from(process.env.TELLER_CERT_B64, 'base64');
+          key = Buffer.from(process.env.TELLER_KEY_B64, 'base64');
+        } else {
+          throw new Error('Certificate files not found');
         }
-      } else {
-        console.log('⚠️ No database pool available - account only saved to file storage');
       }
 
-      // Save accounts to file as backup
-      saveAccounts(connectedAccounts);
+      const options = {
+        hostname: 'api.teller.io',
+        path: '/accounts',
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+          'Accept': 'application/json'
+        },
+        cert: cert,
+        key: key,
+        rejectUnauthorized: false
+      };
 
-      // Return success with the account data
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        success: true,
-        message: `Connected 1 account`,
-        accounts: [accountData]
-      }));
+      const tellerReq = https.request(options, (tellerRes) => {
+        let responseBody = '';
+        tellerRes.on('data', chunk => responseBody += chunk);
+        tellerRes.on('end', async () => {
+          try {
+            if (tellerRes.statusCode !== 200) {
+              console.error('Teller API error:', tellerRes.statusCode, responseBody);
+              res.writeHead(500);
+              res.end(JSON.stringify({ error: 'Failed to fetch accounts from Teller' }));
+              return;
+            }
 
-      // Use only enrollment data - no API calls needed
+            const accounts = JSON.parse(responseBody);
+            console.log(`📋 Found ${accounts.length} real accounts from Teller`);
+
+            const savedAccounts = [];
+            for (const acc of accounts) {
+              const accountData = {
+                id: acc.id,
+                enrollmentToken: enrollmentToken,
+                institutionName: acc.institution?.name || institutionName,
+                accountName: acc.name || 'Account',
+                accountType: acc.type || 'unknown',
+                subtype: acc.subtype || 'unknown',
+                lastFour: acc.last_four || '',
+                connectedAt: new Date().toISOString()
+              };
+
+              connectedAccounts.set(acc.id, accountData);
+              savedAccounts.push(accountData);
+              console.log(`✅ Stored: ${accountData.institutionName} - ${accountData.accountName} (****${accountData.lastFour})`);
+
+              // Save to PostgreSQL
+              if (pool) {
+                try {
+                  await pool.query(
+                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                     ON CONFLICT (id) DO UPDATE SET
+                       enrollment_token = $2,
+                       institution_name = $3,
+                       account_name = $4,
+                       account_type = $5,
+                       subtype = $6,
+                       last_four = $7`,
+                    [acc.id, enrollmentToken, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, new Date()]
+                  );
+                } catch (dbError) {
+                  console.error('Failed to save account:', dbError.message);
+                }
+              }
+            }
+
+            saveAccounts(connectedAccounts);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              success: true,
+              message: `Connected ${savedAccounts.length} accounts`,
+              accounts: savedAccounts
+            }));
+
+          } catch (parseError) {
+            console.error('Error parsing Teller response:', parseError);
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: 'Failed to parse account data' }));
+          }
+        });
+      });
+
+      tellerReq.on('error', (error) => {
+        console.error('Teller API request error:', error);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Failed to connect to Teller' }));
+      });
+
+      tellerReq.end();
 
     } catch (error) {
       console.error('Save account error:', error);
