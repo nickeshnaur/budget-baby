@@ -748,48 +748,8 @@ function handleFetchTransactions(req, res) {
             console.log('📋 Found accounts:', accounts.length);
             console.log('📋 Teller accounts data:', JSON.stringify(accounts, null, 2));
 
-            // Update stored account with actual details from Teller (use first account's details)
-            const firstTellerAccount = accounts[0];
-            if (firstTellerAccount) {
-              console.log('📋 First account details:', {
-                id: firstTellerAccount.id,
-                name: firstTellerAccount.name,
-                institution: firstTellerAccount.institution,
-                type: firstTellerAccount.type,
-                subtype: firstTellerAccount.subtype,
-                last_four: firstTellerAccount.last_four
-              });
-            }
-            const existingAccount = connectedAccounts.get(accountId);
-            if (existingAccount && firstTellerAccount) {
-              existingAccount.institutionName = firstTellerAccount.institution?.name || existingAccount.institutionName;
-              existingAccount.accountName = firstTellerAccount.name || existingAccount.accountName;
-              existingAccount.accountType = firstTellerAccount.type || existingAccount.accountType;
-              existingAccount.subtype = firstTellerAccount.subtype || existingAccount.subtype;
-              existingAccount.lastFour = firstTellerAccount.last_four || existingAccount.lastFour;
-              existingAccount.tellerAccountId = firstTellerAccount.id; // Store the Teller account ID too
-              connectedAccounts.set(accountId, existingAccount);
-              console.log(`📝 Updated account details: ${existingAccount.institutionName} - ${existingAccount.accountName} (****${existingAccount.lastFour})`);
-
-              // Save updated details to PostgreSQL
-              if (pool) {
-                try {
-                  await pool.query(
-                    `UPDATE accounts SET
-                      institution_name = $1,
-                      account_name = $2,
-                      account_type = $3,
-                      subtype = $4,
-                      last_four = $5
-                     WHERE id = $6`,
-                    [existingAccount.institutionName, existingAccount.accountName, existingAccount.accountType, existingAccount.subtype, existingAccount.lastFour, accountId]
-                  );
-                  console.log(`💾 Saved account details to database for ${accountId}`);
-                } catch (dbErr) {
-                  console.error('Failed to update account in database:', dbErr);
-                }
-              }
-            }
+            // Store ALL accounts from Teller and fetch transactions from each
+            console.log(`📋 Found ${accounts.length} accounts from Teller`);
 
             if (accounts.length === 0) {
               res.setHeader('Content-Type', 'application/json');
@@ -803,101 +763,130 @@ function handleFetchTransactions(req, res) {
               return;
             }
 
-            // STEP 2: Get transactions from first account
-            const firstAccount = accounts[0];
-            console.log('💳 Getting transactions for account:', firstAccount.id);
+            // Store each account from Teller
+            for (const acc of accounts) {
+              console.log(`📋 Account: ${acc.institution?.name} - ${acc.name} (****${acc.last_four})`);
 
-            const transactionsOptions = {
-              hostname: 'api.teller.io',
-              path: `/accounts/${firstAccount.id}/transactions?from_date=2026-01-01`,
-              method: 'GET',
-              headers: {
-                'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
-                'Accept': 'application/json'
-              },
-              cert: cert,
-              key: key,
-              rejectUnauthorized: false
+              // Use Teller account ID as the key for each sub-account
+              const subAccountId = acc.id;
+              const accountData = {
+                id: subAccountId,
+                enrollmentToken: accountId, // Link back to enrollment
+                institutionName: acc.institution?.name || 'Unknown',
+                accountName: acc.name || 'Account',
+                accountType: acc.type || 'unknown',
+                subtype: acc.subtype || 'unknown',
+                lastFour: acc.last_four || '',
+                connectedAt: new Date().toISOString()
+              };
+
+              connectedAccounts.set(subAccountId, accountData);
+
+              // Save to PostgreSQL
+              if (pool) {
+                try {
+                  await pool.query(
+                    `INSERT INTO accounts (id, enrollment_token, institution_name, account_name, account_type, subtype, last_four, connected_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                     ON CONFLICT (id) DO UPDATE SET
+                       institution_name = $3,
+                       account_name = $4,
+                       account_type = $5,
+                       subtype = $6,
+                       last_four = $7`,
+                    [subAccountId, accountId, accountData.institutionName, accountData.accountName, accountData.accountType, accountData.subtype, accountData.lastFour, new Date()]
+                  );
+                } catch (dbErr) {
+                  console.error('Failed to save account:', dbErr);
+                }
+              }
+            }
+
+            // STEP 2: Fetch transactions from ALL accounts
+            const allTransactions = [];
+
+            const fetchTransactionsForAccount = (acc) => {
+              return new Promise((resolve, reject) => {
+                console.log(`💳 Fetching transactions for: ${acc.institution?.name} - ${acc.name}`);
+
+                const txnOptions = {
+                  hostname: 'api.teller.io',
+                  path: `/accounts/${acc.id}/transactions?from_date=2026-01-01`,
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Basic ${Buffer.from(enrollmentToken + ':').toString('base64')}`,
+                    'Accept': 'application/json'
+                  },
+                  cert: cert,
+                  key: key,
+                  rejectUnauthorized: false
+                };
+
+                const txnReq = https.request(txnOptions, (txnRes) => {
+                  let txnBody = '';
+                  txnRes.on('data', chunk => txnBody += chunk);
+                  txnRes.on('end', () => {
+                    if (txnRes.statusCode === 200) {
+                      const txns = JSON.parse(txnBody);
+                      console.log(`  ✅ Got ${txns.length} transactions from ${acc.name}`);
+                      resolve({ account: acc, transactions: txns });
+                    } else {
+                      console.error(`  ❌ Error fetching from ${acc.name}:`, txnRes.statusCode);
+                      resolve({ account: acc, transactions: [] });
+                    }
+                  });
+                });
+                txnReq.on('error', reject);
+                txnReq.end();
+              });
             };
 
-            const transactionsReq = https.request(transactionsOptions, (transactionsRes) => {
-              let transactionsBody = '';
+            // Fetch from all accounts in parallel
+            const results = await Promise.all(accounts.map(fetchTransactionsForAccount));
 
-              transactionsRes.on('data', (chunk) => {
-                transactionsBody += chunk;
-              });
+            // Process all transactions
+            for (const result of results) {
+              const acc = result.account;
+              for (const txn of result.transactions) {
+                const transaction = {
+                  id: txn.id,
+                  accountId: acc.id, // Use the specific account ID
+                  description: txn.description,
+                  amount: -Math.abs(txn.amount),
+                  date: txn.date,
+                  status: txn.status,
+                  category: 'Unsorted',
+                  createdAt: new Date().toISOString()
+                };
 
-              transactionsRes.on('end', async () => {
-                try {
-                  if (transactionsRes.statusCode !== 200) {
-                    console.error('❌ Teller transactions API error:', transactionsRes.statusCode, transactionsBody);
-                    res.writeHead(500);
-                    res.end(JSON.stringify({
-                      error: `Teller transactions API error: ${transactionsRes.statusCode}`,
-                      details: transactionsBody
-                    }));
-                    return;
-                  }
+                transactions.set(txn.id, transaction);
+                allTransactions.push(transaction);
 
-                  const tellerTransactions = JSON.parse(transactionsBody);
-                  console.log('🎉 Successfully fetched transactions from Teller:', tellerTransactions.length);
-
-                  // Process and save transactions
-                  const processedTransactions = tellerTransactions.map(txn => {
-                    const transaction = {
-                      id: txn.id,
-                      accountId: accountId,
-                      description: txn.description,
-                      amount: -Math.abs(txn.amount),
-                      date: txn.date,
-                      status: txn.status,
-                      category: 'Unsorted',
-                      createdAt: new Date().toISOString()
-                    };
-
-                    transactions.set(txn.id, transaction);
-
-                    // Save to PostgreSQL
-                    if (pool) {
-                      pool.query(
-                        `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                         ON CONFLICT (id) DO NOTHING`,
-                        [txn.id, accountId, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
-                      ).catch(dbError => console.error('Failed to save transaction:', dbError));
-                    }
-
-                    return transaction;
-                  });
-
-                  res.setHeader('Content-Type', 'application/json');
-                  res.writeHead(200);
-                  res.end(JSON.stringify({
-                    success: true,
-                    transactions: processedTransactions,
-                    count: processedTransactions.length
-                  }));
-
-                } catch (error) {
-                  console.error('Error parsing transactions response:', error);
-                  res.writeHead(500);
-                  res.end(JSON.stringify({ error: 'Failed to parse transactions' }));
+                // Save to PostgreSQL
+                if (pool) {
+                  pool.query(
+                    `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                     ON CONFLICT (id) DO NOTHING`,
+                    [txn.id, acc.id, txn.description, -Math.abs(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                  ).catch(dbError => console.error('Failed to save transaction:', dbError));
                 }
-              });
-            });
+              }
+            }
 
-            transactionsReq.on('error', (error) => {
-              console.error('Transactions API request error:', error);
-              res.writeHead(500);
-              res.end(JSON.stringify({ error: 'Failed to fetch transactions' }));
-            });
+            console.log(`🎉 Total transactions fetched: ${allTransactions.length}`);
 
-            transactionsReq.end();
-
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              success: true,
+              transactions: allTransactions,
+              count: allTransactions.length
+            }));
           } catch (error) {
-            console.error('Error parsing accounts response:', error);
+            console.error('Error processing accounts:', error);
             res.writeHead(500);
-            res.end(JSON.stringify({ error: 'Failed to parse accounts data' }));
+            res.end(JSON.stringify({ error: 'Failed to process accounts' }));
           }
         });
       });
