@@ -3326,6 +3326,24 @@
             </div>
         </div>
 
+        <div class="section">
+            <div class="section-subtitle">Ignored</div>
+            <div id="ignore-category-section">
+                <div class="home-category-item" onclick="showCategoryDetail('ignore', 'Ignore')" style="cursor: pointer;">
+                    <div class="category-card">
+                        <div class="category-header">
+                            <div class="category-left-group">
+                                <span class="category-emoji">🚫</span>
+                                <span class="category-name">Ignored Transactions</span>
+                            </div>
+                            <span class="category-amount" id="ignore-count">0 items</span>
+                        </div>
+                        <div class="category-accent" style="background: #9e9e9e;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <button class="add-transaction-btn">
             + Add Category
         </button>
@@ -5291,6 +5309,23 @@
         </button>
     </div>
 
+    <!-- Ignore Category Detail Page -->
+    <div id="categoryDetailPage-ignore" class="container" style="display: none;">
+        <div class="category-detail-header">
+            <div class="category-detail-title">
+                🚫 Ignored Transactions
+            </div>
+            <div class="category-detail-type">Hidden from Budget</div>
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">Ignored Transactions</h3>
+            <div id="ignore-transactions-list">
+                <!-- Ignored transactions will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Electric Category Detail Page -->
     <div id="categoryDetailPage-electric" class="container" style="display: none;">
         <div class="category-detail-header">
@@ -5799,7 +5834,8 @@
                 'category-n---capital-one-annual-fee': 'category-n---capital-one-annual-fee',
                 'category-n---sw-annual-fee': 'category-n---sw-annual-fee',
                 'category-n---chase-sapphire-annual-fee': 'category-n---chase-sapphire-annual-fee',
-                'category-income': 'category-income'
+                'category-income': 'category-income',
+                'category-ignore': 'category-ignore'
             },
 
             navigate(route) {
@@ -6356,7 +6392,8 @@
                     'spotify': 'Spotify',
                     'sp-fitness': 'SP Fitness',
                     'alamo-drafthouse': 'Alamo Drafthouse',
-                    'income': 'Income'
+                    'income': 'Income',
+                    'ignore': 'Ignore'
                 };
 
                 const categoryName = categoryMap[categorySlug];
@@ -6447,7 +6484,7 @@
 
             for (const section of transactionsSections) {
                 const title = section.querySelector('.section-title');
-                if (title && (title.textContent === 'Transactions' || title.textContent === 'Deposits')) {
+                if (title && (title.textContent === 'Transactions' || title.textContent === 'Deposits' || title.textContent === 'Ignored Transactions')) {
                     transactionsSection = section;
                     break;
                 }
@@ -8770,6 +8807,16 @@
                     }
                 });
             });
+
+                // Update ignore count
+                const ignoreTransactions = result.transactions.filter(t =>
+                    t.category && t.category === 'Ignore'
+                );
+                const ignoreCountElement = document.getElementById('ignore-count');
+                if (ignoreCountElement) {
+                    const count = ignoreTransactions.length;
+                    ignoreCountElement.textContent = `${count} item${count !== 1 ? 's' : ''}`;
+                }
             } catch (error) {
                 console.error('Failed to update homepage category cards:', error);
             }
