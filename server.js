@@ -967,23 +967,8 @@ function handleFetchTransactions(req, res) {
                   }));
                 }
 
-                // Determine correct amount sign
-                // Teller types that are definitely credits (money in)
-                const creditTypes = ['deposit', 'interest'];
-                // Teller types that are definitely debits (money out)
-                const debitTypes = ['card_payment', 'atm', 'fee'];
-
-                let finalAmount = parseFloat(txn.amount);
-                const txnType = (txn.type || '').toLowerCase();
-
-                if (creditTypes.includes(txnType)) {
-                  // Force positive for credits
-                  finalAmount = Math.abs(finalAmount);
-                } else if (debitTypes.includes(txnType)) {
-                  // Force negative for debits
-                  finalAmount = -Math.abs(finalAmount);
-                }
-                // For other types (ach, transfer, etc.), trust Teller's sign
+                // Trust Teller's sign - positive is positive, negative is negative
+                const finalAmount = parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
@@ -1417,16 +1402,8 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Determine correct amount sign using Teller type
-                const creditTypes = ['deposit', 'interest'];
-                const debitTypes = ['card_payment', 'atm', 'fee'];
-                let finalAmount = parseFloat(txn.amount);
-                const txnType = (txn.type || '').toLowerCase();
-                if (creditTypes.includes(txnType)) {
-                  finalAmount = Math.abs(finalAmount);
-                } else if (debitTypes.includes(txnType)) {
-                  finalAmount = -Math.abs(finalAmount);
-                }
+                // Trust Teller's sign - positive is positive, negative is negative
+                const finalAmount = parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
