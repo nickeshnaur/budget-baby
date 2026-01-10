@@ -956,6 +956,17 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
+                // Log raw Teller data to debug amount signs
+                if (isNew && newCount <= 3) {
+                  console.log('📋 RAW TELLER TXN:', JSON.stringify({
+                    id: txn.id,
+                    amount: txn.amount,
+                    type: txn.type,
+                    description: txn.description,
+                    details: txn.details
+                  }));
+                }
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
