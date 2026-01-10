@@ -1050,9 +1050,7 @@ function handleGetTransactions(req, res) {
 
 function handleGetAccounts(req, res) {
   try {
-    // Filter out enrollment placeholders - only show real accounts with actual lastFour
-    const accounts = Array.from(connectedAccounts.values())
-      .filter(acc => acc.lastFour && acc.lastFour !== '****' && acc.lastFour !== '');
+    const accounts = Array.from(connectedAccounts.values());
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);
     res.end(JSON.stringify({ accounts }));
