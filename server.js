@@ -956,11 +956,23 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
+                // Determine if this is income based on description
+                const desc = (txn.description || '').toUpperCase();
+                const isIncome = desc.includes('PAYROLL') ||
+                                 desc.includes('DIRECT DEP') ||
+                                 desc.includes('ACH CREDIT') ||
+                                 desc.includes('DEPOSIT') ||
+                                 (desc.includes('ZELLE') && desc.includes('FROM'));
+
+                // Force correct sign: income = positive, expenses = negative
+                const rawAmount = Math.abs(parseFloat(txn.amount));
+                const amount = isIncome ? rawAmount : -rawAmount;
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
-                  amount: parseFloat(txn.amount),
+                  amount: amount,
                   date: txn.date,
                   status: txn.status,
                   category: existingCategory,
@@ -981,7 +993,7 @@ function handleFetchTransactions(req, res) {
                        amount = $4,
                        date = $5,
                        status = $6`,
-                    [txn.id, acc.id, txn.description, parseFloat(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                    [txn.id, acc.id, txn.description, amount, txn.date, txn.status, 'Unsorted', new Date()]
                   ).catch(dbError => console.error('Failed to save transaction:', dbError));
                 }
               }
@@ -1390,11 +1402,23 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
+                // Determine if this is income based on description
+                const desc = (txn.description || '').toUpperCase();
+                const isIncome = desc.includes('PAYROLL') ||
+                                 desc.includes('DIRECT DEP') ||
+                                 desc.includes('ACH CREDIT') ||
+                                 desc.includes('DEPOSIT') ||
+                                 (desc.includes('ZELLE') && desc.includes('FROM'));
+
+                // Force correct sign: income = positive, expenses = negative
+                const rawAmount = Math.abs(parseFloat(txn.amount));
+                const amount = isIncome ? rawAmount : -rawAmount;
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
-                  amount: parseFloat(txn.amount),
+                  amount: amount,
                   date: txn.date,
                   status: txn.status,
                   category: existingCategory,
@@ -1408,7 +1432,7 @@ async function syncEnrollment(enrollmentToken) {
                     `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                      ON CONFLICT (id) DO NOTHING`,
-                    [txn.id, acc.id, txn.description, parseFloat(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                    [txn.id, acc.id, txn.description, amount, txn.date, txn.status, 'Unsorted', new Date()]
                   ).catch(() => {});
                 }
               }
