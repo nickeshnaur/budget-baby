@@ -967,11 +967,29 @@ function handleFetchTransactions(req, res) {
                   }));
                 }
 
+                // Determine correct amount sign
+                // Teller types that are definitely credits (money in)
+                const creditTypes = ['deposit', 'interest'];
+                // Teller types that are definitely debits (money out)
+                const debitTypes = ['card_payment', 'atm', 'fee'];
+
+                let finalAmount = parseFloat(txn.amount);
+                const txnType = (txn.type || '').toLowerCase();
+
+                if (creditTypes.includes(txnType)) {
+                  // Force positive for credits
+                  finalAmount = Math.abs(finalAmount);
+                } else if (debitTypes.includes(txnType)) {
+                  // Force negative for debits
+                  finalAmount = -Math.abs(finalAmount);
+                }
+                // For other types (ach, transfer, etc.), trust Teller's sign
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
-                  amount: parseFloat(txn.amount),
+                  amount: finalAmount,
                   date: txn.date,
                   status: txn.status,
                   category: existingCategory,
@@ -992,7 +1010,7 @@ function handleFetchTransactions(req, res) {
                        amount = $4,
                        date = $5,
                        status = $6`,
-                    [txn.id, acc.id, txn.description, parseFloat(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                    [txn.id, acc.id, txn.description, finalAmount, txn.date, txn.status, 'Unsorted', new Date()]
                   ).catch(dbError => console.error('Failed to save transaction:', dbError));
                 }
               }
@@ -1399,11 +1417,22 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
+                // Determine correct amount sign using Teller type
+                const creditTypes = ['deposit', 'interest'];
+                const debitTypes = ['card_payment', 'atm', 'fee'];
+                let finalAmount = parseFloat(txn.amount);
+                const txnType = (txn.type || '').toLowerCase();
+                if (creditTypes.includes(txnType)) {
+                  finalAmount = Math.abs(finalAmount);
+                } else if (debitTypes.includes(txnType)) {
+                  finalAmount = -Math.abs(finalAmount);
+                }
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
-                  amount: parseFloat(txn.amount),
+                  amount: finalAmount,
                   date: txn.date,
                   status: txn.status,
                   category: existingCategory,
@@ -1417,7 +1446,7 @@ async function syncEnrollment(enrollmentToken) {
                     `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                      ON CONFLICT (id) DO NOTHING`,
-                    [txn.id, acc.id, txn.description, parseFloat(txn.amount), txn.date, txn.status, 'Unsorted', new Date()]
+                    [txn.id, acc.id, txn.description, finalAmount, txn.date, txn.status, 'Unsorted', new Date()]
                   ).catch(() => {});
                 }
               }
