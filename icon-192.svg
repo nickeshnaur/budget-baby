@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Coin background with gradient -->
+  <defs>
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80"/>
+      <stop offset="100%" style="stop-color:#22c55e"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.4)"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main coin circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#coinGrad)" stroke="#16a34a" stroke-width="3"/>
+
+  <!-- Inner ring -->
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#16a34a" stroke-width="2" opacity="0.5"/>
+
+  <!-- Dollar sign -->
+  <text x="50" y="68" font-family="Arial, sans-serif" font-size="50" font-weight="bold" fill="white" text-anchor="middle">$</text>
+
+  <!-- Shine effect -->
+  <ellipse cx="35" cy="35" rx="15" ry="10" fill="url(#shine)" transform="rotate(-45 35 35)"/>
+</svg>
