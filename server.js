@@ -959,16 +959,8 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // Log raw Teller data to debug amount signs
-                if (isNew && newCount <= 3) {
-                  console.log('📋 RAW TELLER TXN:', JSON.stringify({
-                    id: txn.id,
-                    amount: txn.amount,
-                    type: txn.type,
-                    description: txn.description,
-                    details: txn.details
-                  }));
-                }
+                // Log ALL transactions to debug amount signs
+                console.log('📋 TELLER TXN:', txn.description.substring(0, 30), '| Teller amt:', txn.amount, '| Stored amt:', -parseFloat(txn.amount));
 
                 // Negate Teller's amount: Teller sends positive for debits, we want negative
                 const finalAmount = -parseFloat(txn.amount);
