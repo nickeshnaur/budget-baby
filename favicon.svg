@@ -1,25 +1,70 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Coin background with gradient -->
   <defs>
-    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4ade80"/>
-      <stop offset="100%" style="stop-color:#22c55e"/>
-    </linearGradient>
-    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.4)"/>
-      <stop offset="50%" style="stop-color:rgba(255,255,255,0)"/>
-    </linearGradient>
+    <!-- Halftone dot pattern -->
+    <pattern id="halftone" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.5" fill="#b8860b" opacity="0.6"/>
+      <circle cx="6" cy="6" r="1" fill="#b8860b" opacity="0.4"/>
+    </pattern>
+    <pattern id="halftoneLight" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1" fill="#fff" opacity="0.3"/>
+    </pattern>
   </defs>
 
-  <!-- Main coin circle -->
-  <circle cx="50" cy="50" r="45" fill="url(#coinGrad)" stroke="#16a34a" stroke-width="3"/>
+  <!-- Outer coin edge - hand drawn wobbly circle -->
+  <path d="M50 5
+    C60 4, 75 10, 85 20
+    C96 32, 97 45, 95 55
+    C93 70, 85 82, 75 90
+    C62 98, 45 98, 32 92
+    C18 85, 8 72, 5 55
+    C2 40, 5 25, 15 15
+    C28 3, 42 4, 50 5Z"
+    fill="#ffd700"
+    stroke="#b8860b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
 
-  <!-- Inner ring -->
-  <circle cx="50" cy="50" r="38" fill="none" stroke="#16a34a" stroke-width="2" opacity="0.5"/>
+  <!-- Halftone shading on right side -->
+  <path d="M55 10
+    C70 12, 85 25, 90 45
+    C95 65, 85 85, 65 92
+    C75 80, 80 60, 78 45
+    C76 30, 68 18, 55 10Z"
+    fill="url(#halftone)"/>
 
-  <!-- Dollar sign -->
-  <text x="50" y="68" font-family="Arial, sans-serif" font-size="50" font-weight="bold" fill="white" text-anchor="middle">$</text>
+  <!-- Inner ring - wobbly -->
+  <path d="M50 15
+    C58 14, 70 18, 78 28
+    C86 38, 88 52, 85 62
+    C82 74, 72 82, 60 85
+    C48 88, 35 85, 25 75
+    C15 65, 13 50, 16 38
+    C19 26, 30 17, 42 15
+    C45 14, 48 14, 50 15Z"
+    fill="none"
+    stroke="#b8860b"
+    stroke-width="2"
+    stroke-dasharray="4 2"
+    stroke-linecap="round"/>
 
-  <!-- Shine effect -->
-  <ellipse cx="35" cy="35" rx="15" ry="10" fill="url(#shine)" transform="rotate(-45 35 35)"/>
+  <!-- Dollar sign - hand drawn style -->
+  <path d="M50 25 L50 75"
+    stroke="#b8860b"
+    stroke-width="4"
+    stroke-linecap="round"/>
+  <path d="M58 32
+    C58 32, 52 28, 45 30
+    C38 32, 36 38, 40 42
+    C44 46, 56 50, 60 55
+    C64 60, 62 68, 54 70
+    C46 72, 40 68, 40 68"
+    fill="none"
+    stroke="#b8860b"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
+  <!-- Light halftone highlight -->
+  <ellipse cx="35" cy="35" rx="12" ry="8" fill="url(#halftoneLight)" transform="rotate(-30 35 35)"/>
 </svg>
