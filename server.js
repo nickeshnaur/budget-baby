@@ -950,6 +950,8 @@ function handleFetchTransactions(req, res) {
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
+                // Skip pending transactions
+                if (txn.status === 'pending') continue;
 
                 // Check DATABASE for existing transaction
                 const isNew = !existingTxnData.has(txn.id);
@@ -957,8 +959,9 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // Negate Teller's amount - they send positive for expenses, negative for income
-                const finalAmount = -parseFloat(txn.amount);
+                // Negate amount for Bank of America (they use opposite sign convention)
+                const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
+                const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
@@ -1414,6 +1417,8 @@ async function syncEnrollment(enrollmentToken) {
             try {
               const txns = await fetchAccountTransactions(acc.id, enrollmentToken, cert, key);
               for (const txn of txns) {
+                // Skip pending transactions
+                if (txn.status === 'pending') continue;
 
                 const isNew = !existingTxnIds.has(txn.id);
                 if (isNew) newCount++;
@@ -1422,8 +1427,9 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Negate Teller's amount - they send positive for expenses, negative for income
-                const finalAmount = -parseFloat(txn.amount);
+                // Negate amount for Bank of America (they use opposite sign convention)
+                const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
+                const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
