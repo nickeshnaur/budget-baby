@@ -1,11 +1,11 @@
 {
   "name": "Budget Baby",
-  "short_name": "Budget",
+  "short_name": "Budget Baby",
   "description": "Track your budget together",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8f9fa",
-  "theme_color": "#22c55e",
+  "theme_color": "#00e676",
   "icons": [
     {
       "src": "/icon-192.png",
