@@ -950,6 +950,9 @@ function handleFetchTransactions(req, res) {
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
+                // Skip pending transactions - only sync posted ones
+                if (txn.status === 'pending') continue;
+
                 // Check DATABASE for existing transaction
                 const isNew = !existingTxnData.has(txn.id);
                 const existingCategory = existingTxnData.get(txn.id) || 'Unsorted';
@@ -1395,6 +1398,9 @@ async function syncEnrollment(enrollmentToken) {
             try {
               const txns = await fetchAccountTransactions(acc.id, enrollmentToken, cert, key);
               for (const txn of txns) {
+                // Skip pending transactions - only sync posted ones
+                if (txn.status === 'pending') continue;
+
                 const isNew = !existingTxnIds.has(txn.id);
                 if (isNew) newCount++;
 
