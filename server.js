@@ -318,27 +318,33 @@ function saveTransactions(transactionsMap) {
   }
 }
 
-// One-time migration: flip transaction signs (Teller sends positive for debits)
+// One-time migration: fix transaction signs
+// First migration flipped everything, but dummy transactions were already correct
+// This migration flips back dummy transactions to restore their correct signs
 async function migrateFlipTransactionSigns() {
   // Check if migration already ran
   if (fs.existsSync(migrationFlagFile)) {
     return;
   }
 
-  console.log('🔄 Running one-time migration: flipping transaction signs...');
+  console.log('🔄 Running one-time migration: fixing transaction signs...');
 
   let count = 0;
   for (const [id, txn] of transactions) {
-    txn.amount = -txn.amount;
-    transactions.set(id, txn);
-    count++;
+    // Only flip dummy transactions (they were already correct but got flipped)
+    // Real Teller transactions start with "txn_" and are now correct
+    if (id.startsWith('dummy')) {
+      txn.amount = -txn.amount;
+      transactions.set(id, txn);
+      count++;
 
-    // Update in PostgreSQL
-    if (pool) {
-      try {
-        await pool.query('UPDATE transactions SET amount = $1 WHERE id = $2', [txn.amount, id]);
-      } catch (err) {
-        console.error('Migration DB update failed:', err);
+      // Update in PostgreSQL
+      if (pool) {
+        try {
+          await pool.query('UPDATE transactions SET amount = $1 WHERE id = $2', [txn.amount, id]);
+        } catch (err) {
+          console.error('Migration DB update failed:', err);
+        }
       }
     }
   }
@@ -348,7 +354,7 @@ async function migrateFlipTransactionSigns() {
 
   // Mark migration as done
   fs.writeFileSync(migrationFlagFile, new Date().toISOString());
-  console.log(`✅ Migration complete: flipped signs on ${count} transactions`);
+  console.log(`✅ Migration complete: fixed signs on ${count} dummy transactions`);
 }
 
 const sessions = loadSessions();
