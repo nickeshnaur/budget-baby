@@ -173,7 +173,6 @@ async function loadFromDatabase() {
     await initializeDatabase();
     await loadFromDatabase();
     await loadSessionsFromDB();
-    await migrateFlipTransactionSigns();
   } else {
     console.log('📁 Using file storage mode - no database available');
   }
@@ -185,7 +184,6 @@ const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '.';
 const sessionFile = path.join(dataDir, 'sessions.json');
 const accountsFile = path.join(dataDir, 'accounts.json');
 const transactionsFile = path.join(dataDir, 'transactions.json');
-const migrationFlagFile = path.join(dataDir, '.migration_flip_signs_done');
 
 // Ensure data directory exists
 function ensureDataDir() {
@@ -318,45 +316,6 @@ function saveTransactions(transactionsMap) {
   }
 }
 
-// One-time migration: fix transaction signs
-// First migration flipped everything, but dummy transactions were already correct
-// This migration flips back dummy transactions to restore their correct signs
-async function migrateFlipTransactionSigns() {
-  // Check if migration already ran
-  if (fs.existsSync(migrationFlagFile)) {
-    return;
-  }
-
-  console.log('🔄 Running one-time migration: fixing transaction signs...');
-
-  let count = 0;
-  for (const [id, txn] of transactions) {
-    // Only flip dummy transactions (they were already correct but got flipped)
-    // Real Teller transactions start with "txn_" and are now correct
-    if (id.startsWith('dummy')) {
-      txn.amount = -txn.amount;
-      transactions.set(id, txn);
-      count++;
-
-      // Update in PostgreSQL
-      if (pool) {
-        try {
-          await pool.query('UPDATE transactions SET amount = $1 WHERE id = $2', [txn.amount, id]);
-        } catch (err) {
-          console.error('Migration DB update failed:', err);
-        }
-      }
-    }
-  }
-
-  // Save to JSON file
-  saveTransactions(transactions);
-
-  // Mark migration as done
-  fs.writeFileSync(migrationFlagFile, new Date().toISOString());
-  console.log(`✅ Migration complete: fixed signs on ${count} dummy transactions`);
-}
-
 const sessions = loadSessions();
 
 // Load connected accounts from files as fallback
@@ -373,9 +332,6 @@ if (!pool) {
     transactions.set(id, transaction);
   });
   console.log(`📊 Loaded ${transactions.size} transactions from files`);
-
-  // Run migration after loading
-  migrateFlipTransactionSigns();
 }
 
 // Simple session management
@@ -1047,6 +1003,9 @@ function handleFetchTransactions(req, res) {
                 }
               }
             }
+
+            // Save to JSON file for persistence
+            saveTransactions(transactions);
 
             console.log(`🎉 Synced: ${newCount} new, ${allTransactions.length} total`);
 
