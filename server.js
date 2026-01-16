@@ -961,8 +961,8 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // Use Teller's amount directly - they already use negative for expenses, positive for income
-                const finalAmount = parseFloat(txn.amount);
+                // Negate Teller's amount - they send positive for expenses, negative for income
+                const finalAmount = -parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
@@ -1430,8 +1430,8 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Use Teller's amount directly - they already use negative for expenses, positive for income
-                const finalAmount = parseFloat(txn.amount);
+                // Negate Teller's amount - they send positive for expenses, negative for income
+                const finalAmount = -parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
