@@ -959,7 +959,7 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // Negate amount for Bank of America (they use opposite sign convention)
+                // BofA uses opposite sign convention, so negate only BofA transactions
                 const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
                 const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
 
@@ -1427,7 +1427,7 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Negate amount for Bank of America (they use opposite sign convention)
+                // BofA uses opposite sign convention, so negate only BofA transactions
                 const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
                 const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
 
