@@ -966,15 +966,9 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // BofA uses opposite sign convention, so negate only BofA transactions
-                const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
+                // Teller sends all amounts as positive - negate to show expenses as negative
                 const rawAmount = parseFloat(txn.amount);
-                const finalAmount = isBofA ? -rawAmount : rawAmount;
-
-                // Log sign correction for debugging (first 3 per account)
-                if (result.transactions.indexOf(txn) < 3) {
-                  console.log(`    ${isBofA ? '🏦 BofA NEGATE' : '🔵 Other KEEP'}: "${txn.description.slice(0,25)}" raw=${rawAmount} -> final=${finalAmount}`);
-                }
+                const finalAmount = -rawAmount;
 
                 const transaction = {
                   id: txn.id,
@@ -1440,9 +1434,8 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // BofA uses opposite sign convention, so negate only BofA transactions
-                const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
-                const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
+                // Teller sends all amounts as positive - negate to show expenses as negative
+                const finalAmount = -parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
