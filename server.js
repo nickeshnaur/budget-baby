@@ -815,9 +815,7 @@ function handleFetchTransactions(req, res) {
               }
 
               // Other errors - load from memory as fallback
-              const allTransactions = Array.from(transactions.values())
-                .filter(t => t.date && t.date.startsWith('2026-01'))
-                .filter(t => t.id.startsWith('txn_'));
+              const allTransactions = Array.from(transactions.values());
 
               res.setHeader('Content-Type', 'application/json');
               res.writeHead(200);
@@ -952,8 +950,6 @@ function handleFetchTransactions(req, res) {
             for (const result of results) {
               const acc = result.account;
               for (const txn of result.transactions) {
-                // Skip pending transactions - only sync posted ones
-                if (txn.status === 'pending') continue;
 
                 // Check DATABASE for existing transaction
                 const isNew = !existingTxnData.has(txn.id);
@@ -1035,8 +1031,6 @@ function handleFetchTransactions(req, res) {
 function handleGetTransactions(req, res) {
   try {
     const allTransactions = Array.from(transactions.values())
-      .filter(txn => txn.date && txn.date >= '2026-01-01') // Only Jan 2026 onwards
-      .filter(txn => txn.status !== 'pending') // Hide pending transactions
       .map(txn => {
         // Add account info to each transaction
         const account = connectedAccounts.get(txn.accountId);
@@ -1420,8 +1414,6 @@ async function syncEnrollment(enrollmentToken) {
             try {
               const txns = await fetchAccountTransactions(acc.id, enrollmentToken, cert, key);
               for (const txn of txns) {
-                // Skip pending transactions - only sync posted ones
-                if (txn.status === 'pending') continue;
 
                 const isNew = !existingTxnIds.has(txn.id);
                 if (isNew) newCount++;
