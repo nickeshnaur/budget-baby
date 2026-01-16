@@ -455,6 +455,8 @@ function handleApiRequest(req, res, pathname) {
     handleDeleteAccount(req, res);
   } else if (pathname === '/api/account/details' && req.method === 'POST') {
     handleGetAccountDetails(req, res);
+  } else if (pathname === '/api/transactions/fix-signs' && req.method === 'POST') {
+    handleFixTransactionSigns(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -1058,6 +1060,40 @@ function handleGetTransactions(req, res) {
     console.error('Get transactions error:', error);
     res.writeHead(500);
     res.end(JSON.stringify({ error: 'Failed to get transactions' }));
+  }
+}
+
+// Fix transaction signs - flip positive expenses to negative
+async function handleFixTransactionSigns(req, res) {
+  try {
+    let fixedCount = 0;
+
+    for (const [id, txn] of transactions) {
+      // If amount is positive and category is NOT income, flip to negative
+      if (txn.amount > 0 && txn.category !== 'Income') {
+        txn.amount = -Math.abs(txn.amount);
+        transactions.set(id, txn);
+        fixedCount++;
+
+        // Update database
+        if (pool) {
+          await pool.query('UPDATE transactions SET amount = $1 WHERE id = $2', [txn.amount, id]);
+        }
+      }
+    }
+
+    // Save to JSON
+    saveTransactions(transactions);
+
+    console.log(`✅ Fixed signs on ${fixedCount} transactions`);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, fixedCount }));
+  } catch (error) {
+    console.error('Fix signs error:', error);
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: 'Failed to fix transaction signs' }));
   }
 }
 
