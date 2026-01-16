@@ -1042,6 +1042,7 @@ function handleGetTransactions(req, res) {
   try {
     const allTransactions = Array.from(transactions.values())
       .filter(txn => txn.date && txn.date >= '2026-01-01') // Only Jan 2026 onwards
+      .filter(txn => txn.status !== 'pending') // Hide pending transactions
       .map(txn => {
         // Add account info to each transaction
         const account = connectedAccounts.get(txn.accountId);
