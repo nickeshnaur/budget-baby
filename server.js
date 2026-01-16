@@ -960,10 +960,10 @@ function handleFetchTransactions(req, res) {
                 if (isNew) newCount++;
 
                 // Log ALL transactions to debug amount signs
-                console.log('📋 TELLER TXN:', txn.description.substring(0, 30), '| Teller amt:', txn.amount, '| Stored amt:', -parseFloat(txn.amount));
+                console.log('📋 TELLER TXN:', txn.description.substring(0, 30), '| amt:', txn.amount);
 
-                // Negate Teller's amount: Teller sends positive for debits, we want negative
-                const finalAmount = -parseFloat(txn.amount);
+                // Use Teller's amount directly - they already use negative for expenses, positive for income
+                const finalAmount = parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
@@ -1404,8 +1404,8 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Negate Teller's amount: Teller sends positive for debits, we want negative
-                const finalAmount = -parseFloat(txn.amount);
+                // Use Teller's amount directly - they already use negative for expenses, positive for income
+                const finalAmount = parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
