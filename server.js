@@ -970,8 +970,8 @@ function handleFetchTransactions(req, res) {
                   }));
                 }
 
-                // Trust Teller's sign - positive is positive, negative is negative
-                const finalAmount = parseFloat(txn.amount);
+                // Negate Teller's amount: Teller sends positive for debits, we want negative
+                const finalAmount = -parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
@@ -1409,8 +1409,8 @@ async function syncEnrollment(enrollmentToken) {
                   ? transactions.get(txn.id).category
                   : 'Unsorted';
 
-                // Trust Teller's sign - positive is positive, negative is negative
-                const finalAmount = parseFloat(txn.amount);
+                // Negate Teller's amount: Teller sends positive for debits, we want negative
+                const finalAmount = -parseFloat(txn.amount);
 
                 const transaction = {
                   id: txn.id,
