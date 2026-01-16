@@ -915,7 +915,14 @@ function handleFetchTransactions(req, res) {
                   txnRes.on('end', () => {
                     if (txnRes.statusCode === 200) {
                       const txns = JSON.parse(txnBody);
-                      console.log(`  ✅ Got ${txns.length} transactions from ${acc.name}`);
+                      console.log(`  ✅ Got ${txns.length} transactions from ${acc.institution?.name} - ${acc.name}`);
+                      // Log first 3 raw transactions to see exact Teller data
+                      if (txns.length > 0) {
+                        console.log(`  📊 Sample raw Teller data for ${acc.institution?.name}:`);
+                        txns.slice(0, 3).forEach(t => {
+                          console.log(`    - "${t.description}" | raw_amount: ${t.amount} | type: ${t.type} | status: ${t.status}`);
+                        });
+                      }
                       resolve({ account: acc, transactions: txns });
                     } else {
                       console.error(`  ❌ Error fetching from ${acc.name}:`, txnRes.statusCode);
@@ -961,7 +968,13 @@ function handleFetchTransactions(req, res) {
 
                 // BofA uses opposite sign convention, so negate only BofA transactions
                 const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
-                const finalAmount = isBofA ? -parseFloat(txn.amount) : parseFloat(txn.amount);
+                const rawAmount = parseFloat(txn.amount);
+                const finalAmount = isBofA ? -rawAmount : rawAmount;
+
+                // Log sign correction for debugging (first 3 per account)
+                if (result.transactions.indexOf(txn) < 3) {
+                  console.log(`    ${isBofA ? '🏦 BofA NEGATE' : '🔵 Other KEEP'}: "${txn.description.slice(0,25)}" raw=${rawAmount} -> final=${finalAmount}`);
+                }
 
                 const transaction = {
                   id: txn.id,
