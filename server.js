@@ -455,8 +455,8 @@ function handleApiRequest(req, res, pathname) {
     handleDeleteAccount(req, res);
   } else if (pathname === '/api/account/details' && req.method === 'POST') {
     handleGetAccountDetails(req, res);
-  } else if (pathname === '/api/transactions/fix-signs' && req.method === 'POST') {
-    handleFixTransactionSigns(req, res);
+  } else if (pathname === '/api/transactions/clear' && req.method === 'POST') {
+    handleClearTransactions(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -961,9 +961,6 @@ function handleFetchTransactions(req, res) {
 
                 if (isNew) newCount++;
 
-                // Log ALL transactions to debug amount signs
-                console.log('📋 TELLER TXN:', txn.description.substring(0, 30), '| amt:', txn.amount);
-
                 // Use Teller's amount directly - they already use negative for expenses, positive for income
                 const finalAmount = parseFloat(txn.amount);
 
@@ -1063,37 +1060,30 @@ function handleGetTransactions(req, res) {
   }
 }
 
-// Fix transaction signs - flip positive expenses to negative
-async function handleFixTransactionSigns(req, res) {
+async function handleClearTransactions(req, res) {
   try {
-    let fixedCount = 0;
+    const count = transactions.size;
 
-    for (const [id, txn] of transactions) {
-      // If amount is positive and category is NOT income, flip to negative
-      if (txn.amount > 0 && txn.category !== 'Income') {
-        txn.amount = -Math.abs(txn.amount);
-        transactions.set(id, txn);
-        fixedCount++;
+    // Clear in-memory
+    transactions.clear();
 
-        // Update database
-        if (pool) {
-          await pool.query('UPDATE transactions SET amount = $1 WHERE id = $2', [txn.amount, id]);
-        }
-      }
+    // Clear database
+    if (pool) {
+      await pool.query('DELETE FROM transactions');
     }
 
-    // Save to JSON
+    // Clear JSON file
     saveTransactions(transactions);
 
-    console.log(`✅ Fixed signs on ${fixedCount} transactions`);
+    console.log(`🗑️ Cleared ${count} transactions`);
 
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);
-    res.end(JSON.stringify({ success: true, fixedCount }));
+    res.end(JSON.stringify({ success: true, cleared: count }));
   } catch (error) {
-    console.error('Fix signs error:', error);
+    console.error('Clear transactions error:', error);
     res.writeHead(500);
-    res.end(JSON.stringify({ error: 'Failed to fix transaction signs' }));
+    res.end(JSON.stringify({ error: 'Failed to clear transactions' }));
   }
 }
 
