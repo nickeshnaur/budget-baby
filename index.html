@@ -7754,7 +7754,6 @@
                         'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick',
                         'Personal Chelsea', 'School', 'Giving'
                     ];
-                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
                     // Fetch all budgets in parallel
                     const budgetPromises = flexibleCategories.map(category => loadBudget(category, selectedPeriod));
