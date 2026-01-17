@@ -3529,44 +3529,25 @@
         <div class="category-budget-summary">
             <div class="budget-item">
                 <div class="budget-label">Remaining</div>
-                <div class="budget-value positive" id="food-remaining">$29.50</div>
+                <div class="budget-value positive" id="out-about-remaining">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Budgeted</div>
-                <div class="budget-value editable" contenteditable="true" id="food-budgeted" data-value="400">$400.00</div>
+                <div class="budget-value editable" contenteditable="true" id="out-about-budgeted" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
-                <div class="budget-value" id="food-rollover" data-value="0">$0.00</div>
+                <div class="budget-value" id="out-about-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Spent</div>
-                <div class="budget-value negative" id="food-spent">$0.00</div>
+                <div class="budget-value negative" id="out-about-spent">$0.00</div>
             </div>
         </div>
 
         <div class="section">
             <h3 class="section-title">Transactions</h3>
-
-            <div class="transaction-card">
-                <div class="transaction-date">12/24/25</div>
-                <div class="transaction-description">Disneyland</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #ff9800;">🍔 FOOD</div>
-                    <div class="transaction-amount">-$17.54</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-date">12/20/25</div>
-                <div class="transaction-description">Burgers and More</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #ff9800;">🍔 FOOD</div>
-                    <div class="transaction-amount">-$16.21</div>
-                </div>
-                <div class="transaction-bank">Bank of America</div>
-            </div>
+            <div id="out-about-transactions"></div>
         </div>
 
         <button class="add-transaction-btn archive-btn">
@@ -5707,24 +5688,25 @@
         <div class="category-budget-summary">
             <div class="budget-item">
                 <div class="budget-label">Remaining</div>
-                <div class="budget-value positive">$500.00</div>
+                <div class="budget-value positive" id="giving-remaining">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Budgeted</div>
-                <div class="budget-value editable" contenteditable="true" data-value="500">$500.00</div>
+                <div class="budget-value editable" contenteditable="true" id="giving-budgeted" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
-                <div class="budget-value" data-value="0">$0.00</div>
+                <div class="budget-value" id="giving-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Spent</div>
-                <div class="budget-value negative">$0.00</div>
+                <div class="budget-value negative" id="giving-spent">$0.00</div>
             </div>
         </div>
 
         <div class="section">
             <h3 class="section-title">Transactions</h3>
+            <div id="giving-transactions"></div>
         </div>
 
         <button class="add-transaction-btn archive-btn">
