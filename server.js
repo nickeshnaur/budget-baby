@@ -104,6 +104,11 @@ async function initializeDatabase() {
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS assigned_month TEXT;
     `).catch(() => {});
 
+    // Add original_date column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS original_date TEXT;
+    `).catch(() => {});
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
@@ -159,6 +164,7 @@ async function loadFromDatabase() {
         description: row.description,
         amount: parseFloat(row.amount),
         date: row.date,
+        originalDate: row.original_date,
         status: row.status,
         category: row.category,
         assignedMonth: row.assigned_month,
@@ -1338,7 +1344,7 @@ function handleUpdateTransactionDate(req, res) {
   });
   req.on('end', () => {
     try {
-      const { transactionId, date } = JSON.parse(body);
+      const { transactionId, date, originalDate } = JSON.parse(body);
 
       if (!transactionId || !date) {
         res.writeHead(400);
@@ -1348,16 +1354,20 @@ function handleUpdateTransactionDate(req, res) {
 
       if (transactions.has(transactionId)) {
         const transaction = transactions.get(transactionId);
+        // Preserve the original date if not already set
+        if (!transaction.originalDate && originalDate) {
+          transaction.originalDate = originalDate;
+        }
         transaction.date = date;
         transactions.set(transactionId, transaction);
 
-        console.log(`📅 Updated transaction ${transactionId} date to ${date}`);
+        console.log(`📅 Updated transaction ${transactionId} date to ${date} (original: ${transaction.originalDate})`);
 
         // Update in PostgreSQL database
         if (pool) {
           pool.query(
-            'UPDATE transactions SET date = $1 WHERE id = $2',
-            [date, transactionId]
+            'UPDATE transactions SET date = $1, original_date = COALESCE(original_date, $2) WHERE id = $3',
+            [date, originalDate, transactionId]
           ).catch(dbError => console.error('Failed to update transaction date in database:', dbError));
         }
 

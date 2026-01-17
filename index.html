@@ -5799,8 +5799,9 @@
             const amount = parseFloat(transaction.amount) || 0;
             const isNegative = amount < 0;
 
-            // Format the original date
-            const txnDate = new Date(transaction.date);
+            // Format the original date (use originalDate if available, otherwise current date)
+            const originalDate = transaction.originalDate || transaction.date;
+            const txnDate = new Date(originalDate);
             const originalDateStr = `${txnDate.getMonth() + 1}/${txnDate.getDate()}/${txnDate.getFullYear()}`;
 
             menu.innerHTML = `
@@ -5986,7 +5987,7 @@
             overlay.querySelector('.save-btn').addEventListener('click', async () => {
                 const newDate = overlay.querySelector('input[type="date"]').value;
                 if (newDate) {
-                    await updateTransactionDate(transactionId, newDate, isManual);
+                    await updateTransactionDate(transactionId, newDate, isManual, transaction);
                     overlay.remove();
                     // Refresh the page to show updated data
                     window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -6003,11 +6004,17 @@
         }
 
         // Update transaction date
-        async function updateTransactionDate(transactionId, newDate, isManual) {
+        async function updateTransactionDate(transactionId, newDate, isManual, transaction) {
+            // Preserve the original date if not already set
+            const originalDate = transaction.originalDate || transaction.date;
+
             if (isManual) {
                 let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
                 const index = manualTransactions.findIndex(t => t.id === transactionId);
                 if (index !== -1) {
+                    if (!manualTransactions[index].originalDate) {
+                        manualTransactions[index].originalDate = originalDate;
+                    }
                     manualTransactions[index].date = newDate;
                     localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
                 }
@@ -6017,7 +6024,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify({ transactionId, date: newDate })
+                        body: JSON.stringify({ transactionId, date: newDate, originalDate })
                     });
                     if (!response.ok) {
                         console.error('Failed to update transaction date');
