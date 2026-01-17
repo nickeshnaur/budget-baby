@@ -6710,7 +6710,7 @@
                         'personal-nick': 'flexible-monthly',
                         'personal-chelsea': 'flexible-monthly',
                         'school': 'flexible-monthly',
-                        'miscellaneous': 'flexible-monthly',
+                        'giving': 'flexible-monthly',
                         'auto-loan': 'fixed-monthly',
                         'rent': 'fixed-monthly',
                         'phone': 'fixed-annual',
@@ -6850,7 +6850,21 @@
             }
         }
 
-        function updateFlexibleCategoryCalculations(categorySlug, transactions) {
+        async function updateFlexibleCategoryCalculations(categorySlug, transactions) {
+            // Get the selected month
+            const month = getSelectedMonth(categorySlug);
+            const category = slugToCategory(categorySlug);
+
+            // Load budget from server
+            if (month && category) {
+                const budgetData = await loadBudget(category, month);
+                const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                if (budgetedElement && budgetData.amount !== null) {
+                    budgetedElement.setAttribute('data-value', budgetData.amount.toString());
+                    budgetedElement.textContent = `$${budgetData.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
+            }
+
             // Calculate total spent from all transactions for this category
             const totalSpent = transactions.reduce((sum, transaction) => {
                 const amount = Math.abs(parseFloat(transaction.amount) || 0);
@@ -6896,9 +6910,80 @@
             }
         }
 
+        // Load budget from server for a category/month
+        async function loadBudget(category, month) {
+            try {
+                const response = await fetch('/api/budgets/get', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ category, month })
+                });
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading budget:', error);
+            }
+            return { amount: null, inherited: false };
+        }
+
+        // Save budget to server
+        async function saveBudget(category, month, amount) {
+            try {
+                const response = await fetch('/api/budgets/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ category, month, amount })
+                });
+                if (!response.ok) {
+                    console.error('Failed to save budget');
+                }
+            } catch (error) {
+                console.error('Error saving budget:', error);
+            }
+        }
+
+        // Get selected month from category page
+        function getSelectedMonth(categorySlug) {
+            const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+            if (!categoryPage) return null;
+            const monthSelector = categoryPage.querySelector('.month-selector');
+            const yearSelector = categoryPage.querySelector('.year-selector');
+            const month = monthSelector ? parseInt(monthSelector.value) : new Date().getMonth() + 1;
+            const year = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
+            return `${year}-${String(month).padStart(2, '0')}`;
+        }
+
+        // Convert category slug to category name
+        function slugToCategory(slug) {
+            const mapping = {
+                'out-about': 'Out & About',
+                'grocery': 'Grocery',
+                'gas': 'Gas',
+                'auto': 'Auto',
+                'clothing': 'Clothing',
+                'gifts': 'Gifts',
+                'health-care': 'Health & Care',
+                'home': 'Home',
+                'travel': 'Travel',
+                'treats': 'Treats',
+                'personal-nick': 'Personal Nick',
+                'personal-chelsea': 'Personal Chelsea',
+                'school': 'School',
+                'giving': 'Giving'
+            };
+            return mapping[slug] || slug;
+        }
+
         function setupEditableBudgeted(categorySlug) {
             const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
             if (budgetedElement) {
+                // Mark as initialized to prevent duplicate listeners
+                if (budgetedElement.dataset.initialized) return;
+                budgetedElement.dataset.initialized = 'true';
+
                 // Handle focus: select all text for easy editing
                 budgetedElement.addEventListener('focus', function() {
                     // Store original value
@@ -6912,7 +6997,7 @@
                 });
 
                 // Handle blur: save changes and update calculations
-                budgetedElement.addEventListener('blur', function() {
+                budgetedElement.addEventListener('blur', async function() {
                     let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
                     const numericValue = parseFloat(value) || 0;
 
@@ -6924,6 +7009,13 @@
 
                     // Recalculate remaining
                     updateFlexibleCategoryRemaining(categorySlug);
+
+                    // Save to server
+                    const month = getSelectedMonth(categorySlug);
+                    const category = slugToCategory(categorySlug);
+                    if (month && category) {
+                        await saveBudget(category, month, numericValue);
+                    }
                 });
 
                 // Handle Enter key: blur the field to save

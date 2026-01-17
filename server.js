@@ -118,6 +118,18 @@ async function initializeDatabase() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS budgets (
+        id SERIAL PRIMARY KEY,
+        category TEXT NOT NULL,
+        month TEXT NOT NULL,
+        amount DECIMAL NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(category, month)
+      );
+    `);
+
     console.log('✅ Database tables initialized');
 
     // Keep existing transactions - don't delete anything
@@ -491,6 +503,10 @@ function handleApiRequest(req, res, pathname) {
     handleGetAccountDetails(req, res);
   } else if (pathname === '/api/transactions/clear' && req.method === 'POST') {
     handleClearTransactions(req, res);
+  } else if (pathname === '/api/budgets/get' && req.method === 'POST') {
+    handleGetBudget(req, res);
+  } else if (pathname === '/api/budgets/save' && req.method === 'POST') {
+    handleSaveBudget(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -1491,6 +1507,131 @@ function handleDeleteTransaction(req, res) {
       console.error('Delete transaction error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to delete transaction' }));
+    }
+  });
+}
+
+// Get budget for a category/month (with inheritance from previous month)
+function handleGetBudget(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { category, month } = JSON.parse(body);
+
+      if (!category || !month) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Category and month required' }));
+        return;
+      }
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      // First try to get budget for the exact month
+      let result = await pool.query(
+        'SELECT amount FROM budgets WHERE category = $1 AND month = $2',
+        [category, month]
+      );
+
+      if (result.rows.length > 0) {
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          amount: parseFloat(result.rows[0].amount),
+          inherited: false,
+          month: month
+        }));
+        return;
+      }
+
+      // If no budget for this month, find the most recent previous budget
+      result = await pool.query(
+        'SELECT amount, month FROM budgets WHERE category = $1 AND month < $2 ORDER BY month DESC LIMIT 1',
+        [category, month]
+      );
+
+      if (result.rows.length > 0) {
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          amount: parseFloat(result.rows[0].amount),
+          inherited: true,
+          inheritedFrom: result.rows[0].month
+        }));
+        return;
+      }
+
+      // No budget found at all
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ amount: null, inherited: false }));
+
+    } catch (error) {
+      console.error('Get budget error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to get budget' }));
+    }
+  });
+}
+
+// Save budget for a category/month
+function handleSaveBudget(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { category, month, amount } = JSON.parse(body);
+
+      if (!category || !month || amount === undefined) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Category, month, and amount required' }));
+        return;
+      }
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      // Upsert the budget
+      await pool.query(`
+        INSERT INTO budgets (category, month, amount, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (category, month)
+        DO UPDATE SET amount = $3, updated_at = NOW()
+      `, [category, month, amount]);
+
+      console.log(`💰 Saved budget for ${category} (${month}): $${amount}`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true }));
+
+    } catch (error) {
+      console.error('Save budget error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to save budget' }));
     }
   });
 }
