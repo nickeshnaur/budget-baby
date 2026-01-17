@@ -478,6 +478,31 @@
             color: #333;
         }
 
+        .month-selector-section .custom-dropdown {
+            background: #ffffff;
+            color: #000000;
+            padding: 8px 14px 6px 20px;
+            border-radius: 20px;
+            font-family: "Roboto", sans-serif;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border: 1px solid #E6E6E6;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            min-width: fit-content;
+            width: auto;
+        }
+
+        .month-selector-section .custom-dropdown:hover {
+            border-color: #333;
+        }
+
         /* Transaction Tag Colors */
         .transaction-tag.unsorted {
             background: #e9ecef;
@@ -3332,23 +3357,6 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'N - Chase Sapphire Annual Fee')" style="cursor: pointer;">
-                <div class="category-card">
-                    <div class="category-header">
-                        <div class="category-left-group">
-                            <span class="category-emoji">💰</span>
-                            <span class="category-name">N - Chase Sapphire Annual Fee</span>
-                        </div>
-                        <span class="category-amount">$7.92</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: May 1</span>
-                        </div>
-                    </div>
-                    <div class="category-accent" style="background: #673ab7;"></div>
-                </div>
-            </div>
         </div>
 
         <div class="section">
@@ -4885,59 +4893,6 @@
         </button>
     </div>
 
-    <!-- N - Chase Sapphire Annual Fee Category Detail Page -->
-    <div id="categoryDetailPage-n---chase-sapphire-annual-fee" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                💰 N - Chase Sapphire Annual Fee
-            </div>
-            <div class="category-detail-type">Annual Bills</div>
-        </div>
-
-        <div class="category-budget-summary">
-            <div class="budget-item">
-                <div class="budget-label">Actual Cost</div>
-                <div class="budget-value" id="n-chase-sapphire-annual-fee-actual-cost">--</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
-                <div class="budget-value editable" contenteditable="true" id="n-chase-sapphire-annual-fee-annual-cost" data-value="95">$95</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
-                <div class="budget-value" id="n-chase-sapphire-annual-fee-budgeted">$7.92</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Rollover</div>
-                <div class="budget-value" id="n-chase-sapphire-annual-fee-rollover">$0.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Due Date</div>
-                <div class="budget-value editable" contenteditable="true" id="n-chase-sapphire-annual-fee-due-date" data-value="May 1">May 1</div>
-            </div>
-        </div>
-
-        <div class="section">
-            <div class="month-selector-section">
-                <div class="date-selectors">
-                    <div class="custom-dropdown category-month-selector" data-value="1">
-                        <span class="dropdown-display">JAN</span>
-                        <span class="material-icons" style="font-size: 16px;">expand_more</span>
-                    </div>
-                    <div class="custom-dropdown category-year-selector" data-value="2026">
-                        <span class="dropdown-display">2026</span>
-                        <span class="material-icons" style="font-size: 16px;">expand_more</span>
-                    </div>
-                </div>
-            </div>
-            <h3 class="section-title">Transactions</h3>
-        </div>
-
-        <button class="add-transaction-btn archive-btn">
-            Archive Category
-        </button>
-    </div>
-
     <!-- Income Category Detail Page -->
     <div id="categoryDetailPage-income" class="container" style="display: none;">
         <div class="category-detail-header">
@@ -5801,7 +5756,6 @@
                 'category-c---sw-annual-fee': 'category-c---sw-annual-fee',
                 'category-n---capital-one-annual-fee': 'category-n---capital-one-annual-fee',
                 'category-n---sw-annual-fee': 'category-n---sw-annual-fee',
-                'category-n---chase-sapphire-annual-fee': 'category-n---chase-sapphire-annual-fee',
                 'category-income': 'category-income',
                 'category-ignore': 'category-ignore'
             },
@@ -8091,8 +8045,7 @@
                     { name: 'C - Capital One Annual Fee', emoji: '💳' },
                     { name: 'C - SW Annual Fee', emoji: '✈️' },
                     { name: 'N - Capital One Annual Fee', emoji: '💎' },
-                    { name: 'N - SW Annual Fee', emoji: '🛫' },
-                    { name: 'N - Chase Sapphire Annual Fee', emoji: '💰' }
+                    { name: 'N - SW Annual Fee', emoji: '🛫' }
                 ],
                 'Other': [
                     { name: 'Ignore', emoji: '🚫' }
@@ -8319,7 +8272,6 @@
                 'C - SW Annual Fee': '✈️',
                 'N - Capital One Annual Fee': '💎',
                 'N - SW Annual Fee': '🛫',
-                'N - Chase Sapphire Annual Fee': '💰',
                 'Giving': '🤝',
                 'Unsorted': '📦'
             };
@@ -8361,7 +8313,6 @@
                 'C - SW Annual Fee': '#1565c0',
                 'N - Capital One Annual Fee': '#7b1fa2',
                 'N - SW Annual Fee': '#00838f',
-                'N - Chase Sapphire Annual Fee': '#1a237e',
                 'Phone': '#795548',
                 'Costco': '#607d8b',
                 'Ignore': '#9e9e9e',
@@ -8405,7 +8356,6 @@
                 'C - SW Annual Fee': '✈️',
                 'N - Capital One Annual Fee': '💎',
                 'N - SW Annual Fee': '🛫',
-                'N - Chase Sapphire Annual Fee': '💰',
                 'Phone': '📱',
                 'Costco': '🏬',
                 'Ignore': '🚫',
