@@ -8031,11 +8031,11 @@
                         e.stopPropagation();
                         dropdown.remove();
                         if (category.name === 'Income') {
-                            // Update tag to show Income first
+                            // Update tag to show Income
                             tagElement.innerHTML = `💵 INCOME <span class="material-icons">keyboard_arrow_down</span>`;
                             tagElement.style.background = getCategoryColor('Income');
-                            // Then show month picker next to it
-                            setTimeout(() => showIncomeMonthPicker(transactionId, tagElement), 150);
+                            // Add month selector next to the tag
+                            addIncomeMonthSelector(transactionId, tagElement);
                         } else {
                             updateTransactionCategory(transactionId, category.name, tagElement);
                         }
@@ -8065,12 +8065,12 @@
             setTimeout(() => document.addEventListener('click', closeDropdown), 100);
         }
 
-        // Show month picker when assigning to Income
-        function showIncomeMonthPicker(transactionId, tagElement) {
-            // Remove any existing picker
-            const existingPicker = document.querySelector('.income-month-picker');
-            if (existingPicker) {
-                existingPicker.remove();
+        // Add month selector dropdown next to the category tag for Income
+        function addIncomeMonthSelector(transactionId, tagElement) {
+            // Remove any existing month selector for this transaction
+            const existingSelector = tagElement.parentElement.querySelector('.income-month-selector');
+            if (existingSelector) {
+                existingSelector.remove();
             }
 
             // Calculate this month and next month
@@ -8084,75 +8084,40 @@
                 nextYear += 1;
             }
 
-            // Create dropdown
-            const picker = document.createElement('div');
-            picker.className = 'income-month-picker';
-            picker.style.cssText = `
-                position: absolute;
-                background: white;
+            // Create month selector dropdown
+            const monthSelector = document.createElement('select');
+            monthSelector.className = 'income-month-selector';
+            monthSelector.style.cssText = `
+                padding: 6px 10px;
+                border-radius: 6px;
                 border: 1px solid #ccc;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1001;
-                min-width: 120px;
-                overflow: hidden;
+                font-family: "Roboto", sans-serif;
+                font-size: 12px;
+                margin-left: 8px;
+                cursor: pointer;
+                background: white;
             `;
 
-            // This Month option
-            const thisMonthOption = document.createElement('div');
+            // Add options
+            const thisMonthOption = document.createElement('option');
+            thisMonthOption.value = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
             thisMonthOption.textContent = 'This Month';
-            thisMonthOption.style.cssText = `
-                padding: 12px 16px;
-                cursor: pointer;
-                font-family: "Roboto", sans-serif;
-                font-size: 14px;
-                border-bottom: 1px solid #eee;
-            `;
-            thisMonthOption.addEventListener('mouseover', () => thisMonthOption.style.background = '#f5f5f5');
-            thisMonthOption.addEventListener('mouseout', () => thisMonthOption.style.background = 'white');
-            thisMonthOption.addEventListener('click', () => {
-                const assignedMonth = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
-                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
-                picker.remove();
-            });
-            picker.appendChild(thisMonthOption);
+            monthSelector.appendChild(thisMonthOption);
 
-            // Next Month option
-            const nextMonthOption = document.createElement('div');
+            const nextMonthOption = document.createElement('option');
+            nextMonthOption.value = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
             nextMonthOption.textContent = 'Next Month';
-            nextMonthOption.style.cssText = `
-                padding: 12px 16px;
-                cursor: pointer;
-                font-family: "Roboto", sans-serif;
-                font-size: 14px;
-            `;
-            nextMonthOption.addEventListener('mouseover', () => nextMonthOption.style.background = '#f5f5f5');
-            nextMonthOption.addEventListener('mouseout', () => nextMonthOption.style.background = 'white');
-            nextMonthOption.addEventListener('click', () => {
-                const assignedMonth = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+            monthSelector.appendChild(nextMonthOption);
+
+            // Handle selection
+            monthSelector.addEventListener('change', (e) => {
+                const assignedMonth = e.target.value;
                 updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
-                picker.remove();
+                monthSelector.remove();
             });
-            picker.appendChild(nextMonthOption);
 
-            // Position dropdown
-            const tagRect = tagElement.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-            picker.style.left = `${tagRect.left + scrollLeft}px`;
-            picker.style.top = `${tagRect.bottom + scrollTop + 5}px`;
-
-            document.body.appendChild(picker);
-
-            // Close when clicking outside
-            const closePicker = (e) => {
-                if (!picker.contains(e.target)) {
-                    picker.remove();
-                    document.removeEventListener('click', closePicker);
-                }
-            };
-            setTimeout(() => document.addEventListener('click', closePicker), 100);
+            // Insert next to the tag
+            tagElement.parentElement.insertBefore(monthSelector, tagElement.nextSibling);
         }
 
         async function updateTransactionCategory(transactionId, category, tagElement, assignedMonth = null) {
