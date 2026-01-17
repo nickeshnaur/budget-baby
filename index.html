@@ -2953,25 +2953,6 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('flexible-monthly', 'Miscellaneous')" style="cursor: pointer;">
-                <div class="category-card">
-                    <div class="category-header">
-                        <div class="category-left-group">
-                            <span class="category-emoji">🧩</span>
-                            <span class="category-name">Miscellaneous</span>
-                        </div>
-                        <span class="category-amount positive">$0.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">BUDGETED: $0</span>
-                            <span class="spent-text">SPENT: $0.00</span>
-                        </div>
-                    </div>
-                    <div class="category-accent" style="background: #a4b0be;"></div>
-                </div>
-            </div>
-
             <div class="home-category-item" onclick="showCategoryDetail('flexible-monthly', 'Giving')" style="cursor: pointer;">
                 <div class="category-card">
                     <div class="category-header">
@@ -4319,65 +4300,6 @@
             <div class="budget-item">
                 <div class="budget-label">Spent</div>
                 <div class="budget-value" id="school-spent">$0.00</div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3 class="section-title">Transactions</h3>
-        </div>
-
-        <button class="add-transaction-btn archive-btn">
-            Archive Category
-        </button>
-    </div>
-
-    <!-- Miscellaneous Category Detail Page -->
-    <div id="categoryDetailPage-miscellaneous" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🧩 Miscellaneous
-            </div>
-            <div class="category-detail-type">Flexible Monthly</div>
-        </div>
-
-        <div class="month-selector-section">
-            <div class="date-selectors">
-                <select class="month-selector">
-                    <option value="1">Jan</option>
-                    <option value="2">Feb</option>
-                    <option value="3">Mar</option>
-                    <option value="4">Apr</option>
-                    <option value="5">May</option>
-                    <option value="6">Jun</option>
-                    <option value="7">Jul</option>
-                    <option value="8">Aug</option>
-                    <option value="9">Sep</option>
-                    <option value="10">Oct</option>
-                    <option value="11">Nov</option>
-                    <option value="12">Dec</option>
-                </select>
-                <select class="year-selector">
-                    <option value="2026">2026</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="category-budget-summary">
-            <div class="budget-item">
-                <div class="budget-label">Remaining</div>
-                <div class="budget-value" id="miscellaneous-remaining">$0.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
-                <div class="budget-value editable" contenteditable="true" id="miscellaneous-budgeted" data-value="0">$0.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Rollover</div>
-                <div class="budget-value" id="miscellaneous-rollover" data-value="0">$0.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Spent</div>
-                <div class="budget-value" id="miscellaneous-spent">$0.00</div>
             </div>
         </div>
 
@@ -6423,7 +6345,6 @@
                     'personal-nick': 'Personal Nick',
                     'personal-chelsea': 'Personal Chelsea',
                     'school': 'School',
-                    'miscellaneous': 'Miscellaneous',
                     'auto-loan': 'Auto Loan',
                     'rent': 'Rent',
                     'phone': 'Phone',
@@ -8016,7 +7937,6 @@
                     { name: 'Personal Nick', emoji: '👤' },
                     { name: 'Personal Chelsea', emoji: '👤' },
                     { name: 'School', emoji: '🎓' },
-                    { name: 'Miscellaneous', emoji: '📦' },
                     { name: 'Giving', emoji: '🤝' }
                 ],
                 'Monthly Bills': [
@@ -8110,8 +8030,11 @@
                     option.addEventListener('click', () => {
                         dropdown.remove();
                         if (category.name === 'Income') {
-                            // Show month picker for Income
-                            showIncomeMonthPicker(transactionId, tagElement);
+                            // Update tag to show Income first
+                            tagElement.innerHTML = `💵 INCOME <span class="material-icons">keyboard_arrow_down</span>`;
+                            tagElement.style.background = getCategoryColor('Income');
+                            // Then show month picker next to it
+                            setTimeout(() => showIncomeMonthPicker(transactionId, tagElement), 100);
                         } else {
                             updateTransactionCategory(transactionId, category.name, tagElement);
                         }
@@ -8354,7 +8277,6 @@
                 'Personal Nick': '👨',
                 'Personal Chelsea': '👩',
                 'School': '🎓',
-                'Miscellaneous': '🧩',
                 'Auto Loan': '🚗',
                 'Rent': '🏠',
                 'Phone': '📱',
@@ -8398,7 +8320,6 @@
                 'Personal Nick': '#3f51b5',
                 'Personal Chelsea': '#e91e63',
                 'School': '#4caf50',
-                'Miscellaneous': '#757575',
                 'Giving': '#9c27b0',
                 'Auto Loan': '#f44336',
                 'Rent': '#9c27b0',
@@ -8443,7 +8364,6 @@
                 'Personal Nick': '👤',
                 'Personal Chelsea': '👤',
                 'School': '🎓',
-                'Miscellaneous': '📦',
                 'Giving': '🤝',
                 'Auto Loan': '🚗',
                 'Rent': '🏡',
@@ -8939,7 +8859,6 @@
                     ['personal-nick', 'Personal Nick', 'PERSONAL NICK'],
                     ['personal-chelsea', 'Personal Chelsea', 'PERSONAL CHELSEA'],
                     ['school', 'School', 'SCHOOL'],
-                    ['miscellaneous', 'Miscellaneous', 'MISCELLANEOUS'],
                     ['auto-loan', 'Auto Loan', 'AUTO LOAN'],
                     ['rent', 'Rent', 'RENT'],
                     ['electric', 'Electric', 'ELECTRIC'],

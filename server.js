@@ -718,7 +718,6 @@ function categorizeTransaction(description, amount) {
     'Personal Nick': { keywords: ['nick personal'], emoji: '👨', color: '#54a0ff' },
     'Personal Chelsea': { keywords: ['chelsea personal'], emoji: '👩', color: '#ff6348' },
     'School': { keywords: ['school', 'education', 'tuition'], emoji: '🎓', color: '#2ed573' },
-    'Miscellaneous': { keywords: ['misc', 'other'], emoji: '🧩', color: '#a4b0be' },
     'Unsorted': { keywords: [], emoji: '📂', color: '#999999' }
   };
 
@@ -1269,7 +1268,7 @@ function handleUpdateTransactionCategory(req, res) {
       }
 
       // Valid categories
-      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Miscellaneous', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'Insurance - Rent', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee', 'N - Chase Sapphire Annual Fee', 'Ignore', 'Unsorted'];
+      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'Insurance - Rent', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee', 'N - Chase Sapphire Annual Fee', 'Ignore', 'Unsorted'];
       if (!validCategories.includes(category)) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid category' }));
