@@ -2452,7 +2452,7 @@
             </div>
             <div class="overview-grid">
                 <div class="overview-item">
-                    <div class="overview-label">Expected Income</div>
+                    <div class="overview-label">Income</div>
                     <div class="overview-amount income">$8,000</div>
                 </div>
                 <div class="overview-item">
@@ -2517,6 +2517,25 @@
                         </div>
                     </div>
                     <div class="category-accent" style="background: #5fc4ff;"></div>
+                </div>
+            </div>
+
+            <div class="home-category-item" onclick="showCategoryDetail('flexible-monthly', 'Giving')" style="cursor: pointer;">
+                <div class="category-card">
+                    <div class="category-header">
+                        <div class="category-left-group">
+                            <span class="category-emoji">🤝</span>
+                            <span class="category-name">Giving</span>
+                        </div>
+                        <span class="category-amount positive">$0.00</span>
+                    </div>
+                    <div class="category-progress">
+                        <div class="budget-info">
+                            <span class="budget-text">BUDGETED: $500</span>
+                            <span class="spent-text">SPENT: $0.00</span>
+                        </div>
+                    </div>
+                    <div class="category-accent" style="background: #9c27b0;"></div>
                 </div>
             </div>
         </div>
@@ -3368,7 +3387,7 @@
             <h3 class="overview-month-title">Jan 2026</h3>
             <div class="overview-month-grid">
                 <div class="overview-month-item">
-                    <div class="overview-month-label">Expected Income</div>
+                    <div class="overview-month-label">Income</div>
                     <div class="overview-month-amount">$8,000</div>
                 </div>
                 <div class="overview-month-item">
@@ -3386,7 +3405,7 @@
             <h3 class="overview-month-title">Nov 2026</h3>
             <div class="overview-month-grid">
                 <div class="overview-month-item">
-                    <div class="overview-month-label">Expected Income</div>
+                    <div class="overview-month-label">Income</div>
                     <div class="overview-month-amount">$8,000</div>
                 </div>
                 <div class="overview-month-item">
@@ -3404,7 +3423,7 @@
             <h3 class="overview-month-title">Sep 2026</h3>
             <div class="overview-month-grid">
                 <div class="overview-month-item">
-                    <div class="overview-month-label">Expected Income</div>
+                    <div class="overview-month-label">Income</div>
                     <div class="overview-month-amount">$8,000</div>
                 </div>
                 <div class="overview-month-item">
@@ -5289,24 +5308,6 @@
                 <div class="budget-label">Deposits</div>
                 <div class="budget-value positive" id="income-deposits">$0.00</div>
             </div>
-            <div class="budget-item">
-                <div class="budget-label">Expected Income</div>
-                <div class="budget-value editable" contenteditable="true" id="income-expected" data-value="8000">$8,000.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Expenses</div>
-                <div class="budget-value negative" id="income-expenses">-$7,000.00</div>
-            </div>
-            <div class="budget-item">
-                <div class="budget-label">Savings</div>
-                <div class="budget-value" id="income-savings">$1,000.00</div>
-            </div>
-            <div class="budget-item">
-                <label class="budget-toggle">
-                    <input type="checkbox" id="deposits-complete-toggle">
-                    <span class="toggle-text">All deposits are in</span>
-                </label>
-            </div>
         </div>
 
         <div class="section">
@@ -6585,105 +6586,6 @@
                 depositsElement.textContent = `$${totalDeposits.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Calculate and update savings (Expected Income - Expenses)
-            updateIncomeSavingsCalculation();
-
-            // Set up editable Expected Income field
-            setupEditableExpectedIncome();
-
-            // Set up deposits toggle
-            setupDepositsToggle();
-        }
-
-        function updateIncomeSavingsCalculation() {
-            const expectedElement = document.getElementById('income-expected');
-            const expensesElement = document.getElementById('income-expenses');
-            const savingsElement = document.getElementById('income-savings');
-
-            if (expectedElement && expensesElement && savingsElement) {
-                // Get expected income value from data attribute
-                const expectedValue = parseFloat(expectedElement.getAttribute('data-value')) || 0;
-
-                // Fixed expenses for testing
-                const expensesValue = 7000; // $7,000 as requested
-
-                // Calculate savings
-                const savings = expectedValue - expensesValue;
-
-                // Update display
-                savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-                // Apply appropriate CSS class
-                savingsElement.className = savings >= 0 ? 'budget-value positive' : 'budget-value negative';
-            }
-        }
-
-        function setupEditableExpectedIncome() {
-            const expectedElement = document.getElementById('income-expected');
-            if (expectedElement) {
-                // Handle focus: select all text for easy editing
-                expectedElement.addEventListener('focus', function() {
-                    // Store original value
-                    this.setAttribute('data-original', this.textContent);
-                    // Select all text
-                    const selection = window.getSelection();
-                    const range = document.createRange();
-                    range.selectNodeContents(this);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                });
-
-                // Handle blur: save changes and update calculations
-                expectedElement.addEventListener('blur', function() {
-                    let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
-                    const numericValue = parseFloat(value) || 0;
-
-                    // Update data attribute
-                    this.setAttribute('data-value', numericValue.toString());
-
-                    // Update display format
-                    this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-                    // Recalculate savings
-                    updateIncomeSavingsCalculation();
-                });
-
-                // Handle Enter key: blur the field to save
-                expectedElement.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        this.blur();
-                    }
-                    // Handle Escape key: revert changes
-                    if (e.key === 'Escape') {
-                        e.preventDefault();
-                        const original = this.getAttribute('data-original');
-                        if (original) {
-                            this.textContent = original;
-                        }
-                        this.blur();
-                    }
-                });
-            }
-        }
-
-        function setupDepositsToggle() {
-            const toggle = document.getElementById('deposits-complete-toggle');
-            if (toggle) {
-                toggle.addEventListener('change', function() {
-                    const depositsElement = document.getElementById('income-deposits');
-                    if (depositsElement) {
-                        // Visual feedback for toggle state
-                        if (this.checked) {
-                            depositsElement.style.opacity = '0.7';
-                            console.log('All deposits marked as complete');
-                        } else {
-                            depositsElement.style.opacity = '1';
-                            console.log('Deposits status reset');
-                        }
-                    }
-                });
-            }
         }
 
         function updateFlexibleCategoryCalculations(categorySlug, transactions) {
