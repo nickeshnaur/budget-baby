@@ -7667,6 +7667,11 @@
                     // Use same category dropdown functionality (correct parameter order: transactionId, tagElement, transaction)
                     showCategoryDropdown(transaction.id, tagElement, transaction);
                 });
+
+                // Add month selector for Income transactions
+                if (transaction.category === 'Income') {
+                    addIncomeMonthSelectorToCard(transaction.id, tagElement, transaction.assignedMonth);
+                }
             }
 
             return transactionCard;
@@ -7834,6 +7839,11 @@
 
                 showCategoryDropdown(transaction.id, tagElement, transaction);
             });
+
+            // Add month selector for Income transactions
+            if (transaction.category === 'Income') {
+                addIncomeMonthSelectorToCard(transaction.id, tagElement, transaction.assignedMonth);
+            }
 
             return txnEl;
         }
@@ -8114,6 +8124,89 @@
                 const assignedMonth = e.target.value;
                 updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
                 monthSelector.remove();
+                // Add the persistent month selector
+                addIncomeMonthSelectorToCard(transactionId, tagElement, assignedMonth);
+            });
+
+            // Insert next to the tag
+            tagElement.parentElement.insertBefore(monthSelector, tagElement.nextSibling);
+        }
+
+        // Add month selector to existing Income transaction cards
+        function addIncomeMonthSelectorToCard(transactionId, tagElement, currentAssignedMonth) {
+            // Remove any existing month selector for this transaction
+            const existingSelector = tagElement.parentElement.querySelector('.income-month-selector');
+            if (existingSelector) {
+                existingSelector.remove();
+            }
+
+            // Calculate this month and next month
+            const now = new Date();
+            const thisMonth = now.getMonth() + 1;
+            const thisYear = now.getFullYear();
+            let nextMonth = thisMonth + 1;
+            let nextYear = thisYear;
+            if (nextMonth > 12) {
+                nextMonth = 1;
+                nextYear += 1;
+            }
+
+            const thisMonthValue = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
+            const nextMonthValue = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+
+            // Create month selector dropdown
+            const monthSelector = document.createElement('select');
+            monthSelector.className = 'income-month-selector';
+            monthSelector.style.cssText = `
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+                font-family: "Roboto", sans-serif;
+                font-size: 12px;
+                margin-left: 8px;
+                cursor: pointer;
+                background: white;
+            `;
+
+            // Add options
+            const thisMonthOption = document.createElement('option');
+            thisMonthOption.value = thisMonthValue;
+            thisMonthOption.textContent = 'This Month';
+            monthSelector.appendChild(thisMonthOption);
+
+            const nextMonthOption = document.createElement('option');
+            nextMonthOption.value = nextMonthValue;
+            nextMonthOption.textContent = 'Next Month';
+            monthSelector.appendChild(nextMonthOption);
+
+            // Set current value if it matches one of the options
+            if (currentAssignedMonth === thisMonthValue) {
+                monthSelector.value = thisMonthValue;
+            } else if (currentAssignedMonth === nextMonthValue) {
+                monthSelector.value = nextMonthValue;
+            } else if (currentAssignedMonth) {
+                // If it's a different month, add it as an option
+                const customOption = document.createElement('option');
+                customOption.value = currentAssignedMonth;
+                const [year, month] = currentAssignedMonth.split('-');
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                customOption.textContent = `${monthNames[parseInt(month) - 1]} ${year}`;
+                monthSelector.insertBefore(customOption, thisMonthOption);
+                monthSelector.value = currentAssignedMonth;
+            } else {
+                // Default to this month
+                monthSelector.value = thisMonthValue;
+            }
+
+            // Handle selection change
+            monthSelector.addEventListener('change', (e) => {
+                const assignedMonth = e.target.value;
+                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
+            });
+
+            // Prevent click from bubbling to parent elements
+            monthSelector.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
 
             // Insert next to the tag
