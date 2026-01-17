@@ -21,7 +21,7 @@
 
         body {
             font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-            background-color: #f8f9fa;
+            background-color: #000000;
             color: #333;
             line-height: 1.4;
         }
@@ -5740,6 +5740,53 @@
     <script src="https://cdn.teller.io/connect/connect.js"></script>
 
     <script>
+        // =====================================================
+        // SINGLE SOURCE OF TRUTH: Category Configuration
+        // All category definitions MUST reference this config
+        // =====================================================
+        const CATEGORY_CONFIG = [
+            // Flexible Monthly Categories
+            { slug: 'out-about', displayName: 'Out & About', transactionName: 'OUT & ABOUT', type: 'flexible-monthly' },
+            { slug: 'grocery', displayName: 'Grocery', transactionName: 'GROCERY', type: 'flexible-monthly' },
+            { slug: 'gas', displayName: 'Gas', transactionName: 'GAS', type: 'flexible-monthly' },
+            { slug: 'auto', displayName: 'Auto', transactionName: 'AUTO', type: 'flexible-monthly' },
+            { slug: 'clothing', displayName: 'Clothing', transactionName: 'CLOTHING', type: 'flexible-monthly' },
+            { slug: 'gifts', displayName: 'Gifts', transactionName: 'GIFTS', type: 'flexible-monthly' },
+            { slug: 'health-care', displayName: 'Health & Care', transactionName: 'HEALTH & CARE', type: 'flexible-monthly' },
+            { slug: 'home', displayName: 'Home', transactionName: 'HOME', type: 'flexible-monthly' },
+            { slug: 'travel', displayName: 'Travel', transactionName: 'TRAVEL', type: 'flexible-monthly' },
+            { slug: 'treats', displayName: 'Treats', transactionName: 'TREATS', type: 'flexible-monthly' },
+            { slug: 'personal-nick', displayName: 'Personal Nick', transactionName: 'PERSONAL NICK', type: 'flexible-monthly' },
+            { slug: 'personal-chelsea', displayName: 'Personal Chelsea', transactionName: 'PERSONAL CHELSEA', type: 'flexible-monthly' },
+            { slug: 'school', displayName: 'School', transactionName: 'SCHOOL', type: 'flexible-monthly' },
+            { slug: 'giving', displayName: 'Giving', transactionName: 'GIVING', type: 'flexible-monthly' },
+            // Fixed Monthly Categories
+            { slug: 'auto-loan', displayName: 'Auto Loan', transactionName: 'AUTO LOAN', type: 'fixed-monthly' },
+            { slug: 'rent', displayName: 'Rent', transactionName: 'RENT', type: 'fixed-monthly' },
+            { slug: 'electric', displayName: 'Electric', transactionName: 'ELECTRIC', type: 'fixed-monthly' },
+            { slug: 'insurance-auto', displayName: 'Insurance Auto', transactionName: 'INSURANCE AUTO', type: 'fixed-monthly' },
+            { slug: 'nw-mutual', displayName: 'NW Mutual', transactionName: 'NW MUTUAL', type: 'fixed-monthly' },
+            { slug: 'internet', displayName: 'Internet', transactionName: 'INTERNET', type: 'fixed-monthly' },
+            { slug: 'spotify', displayName: 'Spotify', transactionName: 'SPOTIFY', type: 'fixed-monthly' },
+            { slug: 'sp-fitness', displayName: 'SP Fitness', transactionName: 'SP FITNESS', type: 'fixed-monthly' },
+            { slug: 'alamo-drafthouse', displayName: 'Alamo Drafthouse', transactionName: 'ALAMO DRAFTHOUSE', type: 'fixed-monthly' },
+            // Fixed Annual Categories
+            { slug: 'phone', displayName: 'Phone', transactionName: 'PHONE', type: 'fixed-annual' },
+            { slug: 'costco', displayName: 'Costco', transactionName: 'COSTCO', type: 'fixed-annual' },
+            // Special Categories
+            { slug: 'income', displayName: 'Income', transactionName: 'INCOME', type: 'income' },
+            { slug: 'ignore', displayName: 'Ignore', transactionName: 'IGNORE', type: 'ignore' }
+        ];
+
+        // Helper functions derived from CATEGORY_CONFIG
+        const SLUG_TO_DISPLAY = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.slug, c.displayName]));
+        const SLUG_TO_TYPE = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.slug, c.type]));
+        const DISPLAY_TO_SLUG = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.displayName, c.slug]));
+        const FLEXIBLE_MONTHLY_CATEGORIES = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+        const FLEXIBLE_MONTHLY_NAMES = FLEXIBLE_MONTHLY_CATEGORIES.map(c => c.displayName);
+        const ALL_CATEGORY_SLUGS = CATEGORY_CONFIG.map(c => c.slug);
+        // =====================================================
+
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
 
         // Helper function to convert transaction descriptions to Title Case
@@ -6619,38 +6666,8 @@
 
         async function loadCategoryTransactions(categorySlug) {
             try {
-                // Convert category slug back to proper category name
-                const categoryMap = {
-                    'out-about': 'Out & About',
-                    'grocery': 'Grocery',
-                    'gas': 'Gas',
-                    'auto': 'Auto',
-                    'clothing': 'Clothing',
-                    'gifts': 'Gifts',
-                    'health-care': 'Health & Care',
-                    'home': 'Home',
-                    'travel': 'Travel',
-                    'treats': 'Treats',
-                    'personal-nick': 'Personal Nick',
-                    'personal-chelsea': 'Personal Chelsea',
-                    'school': 'School',
-                    'auto-loan': 'Auto Loan',
-                    'rent': 'Rent',
-                    'phone': 'Phone',
-                    'costco': 'Costco',
-                    'giving': 'Giving',
-                    'electric': 'Electric',
-                    'insurance-auto': 'Insurance Auto',
-                    'nw-mutual': 'NW Mutual',
-                    'internet': 'Internet',
-                    'spotify': 'Spotify',
-                    'sp-fitness': 'SP Fitness',
-                    'alamo-drafthouse': 'Alamo Drafthouse',
-                    'income': 'Income',
-                    'ignore': 'Ignore'
-                };
-
-                const categoryName = categoryMap[categorySlug];
+                // Convert category slug back to proper category name using centralized config
+                const categoryName = SLUG_TO_DISPLAY[categorySlug];
                 if (!categoryName) {
                     console.error('Unknown category slug:', categorySlug);
                     return;
@@ -6686,30 +6703,8 @@
                     updateCategoryPageTransactions(categorySlug, allCategoryTransactions);
 
                     // Special handling for different category page calculations
-                    // Systematic category type handling
-                    const categoryTypes = {
-                        'income': 'income',
-                        'out-about': 'flexible-monthly',
-                        'grocery': 'flexible-monthly',
-                        'gas': 'flexible-monthly',
-                        'auto': 'flexible-monthly',
-                        'clothing': 'flexible-monthly',
-                        'gifts': 'flexible-monthly',
-                        'health-care': 'flexible-monthly',
-                        'home': 'flexible-monthly',
-                        'travel': 'flexible-monthly',
-                        'treats': 'flexible-monthly',
-                        'personal-nick': 'flexible-monthly',
-                        'personal-chelsea': 'flexible-monthly',
-                        'school': 'flexible-monthly',
-                        'giving': 'flexible-monthly',
-                        'auto-loan': 'fixed-monthly',
-                        'rent': 'fixed-monthly',
-                        'phone': 'fixed-annual',
-                        'costco': 'fixed-annual'
-                    };
-
-                    const categoryType = categoryTypes[categorySlug];
+                    // Uses centralized SLUG_TO_TYPE mapping
+                    const categoryType = SLUG_TO_TYPE[categorySlug];
 
                     if (categoryType === 'income') {
                         updateIncomePageCalculations(allCategoryTransactions);
@@ -6948,25 +6943,9 @@
             return `${year}-${String(month).padStart(2, '0')}`;
         }
 
-        // Convert category slug to category name
+        // Convert category slug to category name using centralized config
         function slugToCategory(slug) {
-            const mapping = {
-                'out-about': 'Out & About',
-                'grocery': 'Grocery',
-                'gas': 'Gas',
-                'auto': 'Auto',
-                'clothing': 'Clothing',
-                'gifts': 'Gifts',
-                'health-care': 'Health & Care',
-                'home': 'Home',
-                'travel': 'Travel',
-                'treats': 'Treats',
-                'personal-nick': 'Personal Nick',
-                'personal-chelsea': 'Personal Chelsea',
-                'school': 'School',
-                'giving': 'Giving'
-            };
-            return mapping[slug] || slug;
+            return SLUG_TO_DISPLAY[slug] || slug;
         }
 
         function setupEditableBudgeted(categorySlug) {
@@ -7748,15 +7727,9 @@
                         }
                     }
 
-                    // Calculate total budgeted amount from all flexible monthly categories
-                    const flexibleCategories = [
-                        'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts',
-                        'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick',
-                        'Personal Chelsea', 'School', 'Giving'
-                    ];
-
+                    // Calculate total budgeted amount from all flexible monthly categories using centralized config
                     // Fetch all budgets in parallel
-                    const budgetPromises = flexibleCategories.map(category => loadBudget(category, selectedPeriod));
+                    const budgetPromises = FLEXIBLE_MONTHLY_NAMES.map(category => loadBudget(category, selectedPeriod));
                     const budgetResults = await Promise.all(budgetPromises);
 
                     const totalBudgeted = budgetResults.reduce((sum, budgetData) => {
@@ -8920,22 +8893,25 @@
             }
         }
 
-        // Update fixed monthly categories (Auto Loan, Rent)
+        // Update fixed monthly categories using centralized config
         function updateFixedMonthlyCategoryData(transactions) {
-            updateCategoryCalculations('auto-loan', 'AUTO LOAN', transactions);
-            updateCategoryCalculations('rent', 'RENT', transactions);
+            CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly').forEach(category => {
+                updateCategoryCalculations(category.slug, category.transactionName, transactions);
+            });
         }
 
-        // Update fixed annual categories (Phone, Costco)
+        // Update fixed annual categories using centralized config
         function updateFixedAnnualCategoryData(transactions) {
-            updateFixedAnnualCalculations('phone', 'PHONE', transactions);
-            updateFixedAnnualCalculations('costco', 'COSTCO', transactions);
+            CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual').forEach(category => {
+                updateFixedAnnualCalculations(category.slug, category.transactionName, transactions);
+            });
         }
 
-        // Update flexible monthly categories (Food, Grocery)
+        // Update all flexible monthly categories using centralized config
         function updateFlexibleMonthlyCategoryData(transactions) {
-            updateFlexibleCalculations('food', 'FOOD', transactions);
-            updateFlexibleCalculations('grocery', 'GROCERY', transactions);
+            FLEXIBLE_MONTHLY_CATEGORIES.forEach(category => {
+                updateFlexibleCalculations(category.slug, category.transactionName, transactions);
+            });
         }
 
         // Update income category
@@ -9158,34 +9134,10 @@
                     return;
                 }
 
-                // Define category mappings: [categorySlug, displayName, categoryNameForTransactions]
-                const categories = [
-                    ['out-about', 'Out & About', 'OUT & ABOUT'],
-                    ['grocery', 'Grocery', 'GROCERY'],
-                    ['gas', 'Gas', 'GAS'],
-                    ['auto', 'Auto', 'AUTO'],
-                    ['clothing', 'Clothing', 'CLOTHING'],
-                    ['gifts', 'Gifts', 'GIFTS'],
-                    ['health-care', 'Health & Care', 'HEALTH & CARE'],
-                    ['home', 'Home', 'HOME'],
-                    ['travel', 'Travel', 'TRAVEL'],
-                    ['treats', 'Treats', 'TREATS'],
-                    ['personal-nick', 'Personal Nick', 'PERSONAL NICK'],
-                    ['personal-chelsea', 'Personal Chelsea', 'PERSONAL CHELSEA'],
-                    ['school', 'School', 'SCHOOL'],
-                    ['giving', 'Giving', 'GIVING'],
-                    ['auto-loan', 'Auto Loan', 'AUTO LOAN'],
-                    ['rent', 'Rent', 'RENT'],
-                    ['electric', 'Electric', 'ELECTRIC'],
-                    ['insurance-auto', 'Insurance Auto', 'INSURANCE AUTO'],
-                    ['nw-mutual', 'NW Mutual', 'NW MUTUAL'],
-                    ['internet', 'Internet', 'INTERNET'],
-                    ['spotify', 'Spotify', 'SPOTIFY'],
-                    ['sp-fitness', 'SP Fitness', 'SP FITNESS'],
-                    ['alamo-drafthouse', 'Alamo Drafthouse', 'ALAMO DRAFTHOUSE'],
-                    ['phone', 'Phone', 'PHONE'],
-                    ['costco', 'Costco', 'COSTCO']
-                ];
+                // Use centralized CATEGORY_CONFIG - generates array of [slug, displayName, transactionName]
+                const categories = CATEGORY_CONFIG
+                    .filter(c => c.type !== 'income' && c.type !== 'ignore')
+                    .map(c => [c.slug, c.displayName, c.transactionName]);
 
                 // Get selected month/year from categories page selectors or use current date as fallback
                 let selectedMonth = currentMonth;
@@ -9208,13 +9160,12 @@
                     return transactionMonth === selectedMonth && transactionYear === selectedYear;
                 });
 
-                // Load all budgets from server in parallel
+                // Load all budgets from server in parallel using centralized FLEXIBLE_MONTHLY_NAMES
                 const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-                const flexibleCategoryNames = ['Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving'];
-                const budgetPromises = flexibleCategoryNames.map(name => loadBudget(name, selectedPeriod));
+                const budgetPromises = FLEXIBLE_MONTHLY_NAMES.map(name => loadBudget(name, selectedPeriod));
                 const budgetResults = await Promise.all(budgetPromises);
                 const budgetMap = {};
-                flexibleCategoryNames.forEach((name, index) => {
+                FLEXIBLE_MONTHLY_NAMES.forEach((name, index) => {
                     budgetMap[name] = budgetResults[index].amount || 0;
                 });
 
