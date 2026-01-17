@@ -8027,14 +8027,15 @@
                         option.style.background = 'white';
                     });
 
-                    option.addEventListener('click', () => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         dropdown.remove();
                         if (category.name === 'Income') {
                             // Update tag to show Income first
                             tagElement.innerHTML = `💵 INCOME <span class="material-icons">keyboard_arrow_down</span>`;
                             tagElement.style.background = getCategoryColor('Income');
                             // Then show month picker next to it
-                            setTimeout(() => showIncomeMonthPicker(transactionId, tagElement), 100);
+                            setTimeout(() => showIncomeMonthPicker(transactionId, tagElement), 150);
                         } else {
                             updateTransactionCategory(transactionId, category.name, tagElement);
                         }
