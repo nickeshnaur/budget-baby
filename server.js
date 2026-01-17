@@ -471,6 +471,12 @@ function handleApiRequest(req, res, pathname) {
     handleGetTransactions(req, res);
   } else if (pathname === '/api/transactions/update-category' && req.method === 'POST') {
     handleUpdateTransactionCategory(req, res);
+  } else if (pathname === '/api/transactions/update-date' && req.method === 'POST') {
+    handleUpdateTransactionDate(req, res);
+  } else if (pathname === '/api/transactions/update-amount' && req.method === 'POST') {
+    handleUpdateTransactionAmount(req, res);
+  } else if (pathname === '/api/transactions/delete' && req.method === 'POST') {
+    handleDeleteTransaction(req, res);
   } else if (pathname === '/api/accounts' && req.method === 'GET') {
     handleGetAccounts(req, res);
   } else if (pathname === '/api/account/delete' && req.method === 'POST') {
@@ -1315,6 +1321,166 @@ function handleUpdateTransactionCategory(req, res) {
       console.error('Update category error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to update category' }));
+    }
+  });
+}
+
+function handleUpdateTransactionDate(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', () => {
+    try {
+      const { transactionId, date } = JSON.parse(body);
+
+      if (!transactionId || !date) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Transaction ID and date required' }));
+        return;
+      }
+
+      if (transactions.has(transactionId)) {
+        const transaction = transactions.get(transactionId);
+        transaction.date = date;
+        transactions.set(transactionId, transaction);
+
+        console.log(`📅 Updated transaction ${transactionId} date to ${date}`);
+
+        // Update in PostgreSQL database
+        if (pool) {
+          pool.query(
+            'UPDATE transactions SET date = $1 WHERE id = $2',
+            [date, transactionId]
+          ).catch(dbError => console.error('Failed to update transaction date in database:', dbError));
+        }
+
+        // Save to file as backup
+        saveTransactions(transactions);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, transaction }));
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Transaction not found' }));
+      }
+    } catch (error) {
+      console.error('Update date error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to update date' }));
+    }
+  });
+}
+
+function handleUpdateTransactionAmount(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', () => {
+    try {
+      const { transactionId, amount } = JSON.parse(body);
+
+      if (!transactionId || amount === undefined) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Transaction ID and amount required' }));
+        return;
+      }
+
+      if (transactions.has(transactionId)) {
+        const transaction = transactions.get(transactionId);
+        transaction.amount = amount;
+        transactions.set(transactionId, transaction);
+
+        console.log(`💰 Updated transaction ${transactionId} amount to ${amount}`);
+
+        // Update in PostgreSQL database
+        if (pool) {
+          pool.query(
+            'UPDATE transactions SET amount = $1 WHERE id = $2',
+            [amount, transactionId]
+          ).catch(dbError => console.error('Failed to update transaction amount in database:', dbError));
+        }
+
+        // Save to file as backup
+        saveTransactions(transactions);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, transaction }));
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Transaction not found' }));
+      }
+    } catch (error) {
+      console.error('Update amount error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to update amount' }));
+    }
+  });
+}
+
+function handleDeleteTransaction(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', () => {
+    try {
+      const { transactionId } = JSON.parse(body);
+
+      if (!transactionId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Transaction ID required' }));
+        return;
+      }
+
+      if (transactions.has(transactionId)) {
+        transactions.delete(transactionId);
+
+        console.log(`🗑️ Deleted transaction ${transactionId}`);
+
+        // Delete from PostgreSQL database
+        if (pool) {
+          pool.query(
+            'DELETE FROM transactions WHERE id = $1',
+            [transactionId]
+          ).catch(dbError => console.error('Failed to delete transaction from database:', dbError));
+        }
+
+        // Save to file as backup
+        saveTransactions(transactions);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Transaction not found' }));
+      }
+    } catch (error) {
+      console.error('Delete transaction error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to delete transaction' }));
     }
   });
 }

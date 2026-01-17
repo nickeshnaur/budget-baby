@@ -5774,6 +5774,314 @@
             return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
         }
 
+        // Three-dot menu for transaction cards
+        function showTransactionMenu(transactionId, menuButton, transaction, isManual = false) {
+            // Remove any existing menu
+            const existingMenu = document.querySelector('.transaction-menu-dropdown');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            const menu = document.createElement('div');
+            menu.className = 'transaction-menu-dropdown';
+            menu.style.cssText = `
+                position: absolute;
+                top: 32px;
+                right: 8px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                min-width: 180px;
+                overflow: hidden;
+            `;
+
+            const amount = parseFloat(transaction.amount) || 0;
+            const isNegative = amount < 0;
+
+            // Format the original date
+            const txnDate = new Date(transaction.date);
+            const originalDateStr = `${txnDate.getMonth() + 1}/${txnDate.getDate()}/${txnDate.getFullYear()}`;
+
+            menu.innerHTML = `
+                <div class="menu-header" style="
+                    padding: 12px 16px;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 12px;
+                    color: #666;
+                    border-bottom: 1px solid #eee;
+                    background: #f9f9f9;
+                ">
+                    Original Date: ${originalDateStr}
+                </div>
+                <div class="menu-option edit-date-option" style="
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 14px;
+                    border-bottom: 1px solid #eee;
+                ">
+                    <span class="material-icons" style="font-size: 18px;">edit_calendar</span>
+                    Edit Date
+                </div>
+                <label class="menu-option toggle-sign-option" style="
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 14px;
+                    border-bottom: 1px solid #eee;
+                ">
+                    <input type="checkbox" class="sign-checkbox" ${isNegative ? '' : 'checked'} style="
+                        width: 16px;
+                        height: 16px;
+                        cursor: pointer;
+                    ">
+                    Positive Amount
+                </label>
+                <div class="menu-option delete-option" style="
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 14px;
+                    color: #ff4444;
+                ">
+                    <span class="material-icons" style="font-size: 18px;">delete</span>
+                    Delete
+                </div>
+            `;
+
+            // Add hover effects
+            menu.querySelectorAll('.menu-option').forEach(option => {
+                option.addEventListener('mouseenter', () => {
+                    if (!option.classList.contains('delete-option')) {
+                        option.style.background = '#f5f5f5';
+                    } else {
+                        option.style.background = '#ffeeee';
+                    }
+                });
+                option.addEventListener('mouseleave', () => {
+                    option.style.background = 'white';
+                });
+            });
+
+            // Edit Date click handler
+            menu.querySelector('.edit-date-option').addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.remove();
+                showDatePicker(transactionId, transaction, isManual);
+            });
+
+            // Toggle Sign checkbox handler
+            menu.querySelector('.sign-checkbox').addEventListener('change', (e) => {
+                e.stopPropagation();
+                const shouldBePositive = e.target.checked;
+                const currentAmount = parseFloat(transaction.amount) || 0;
+                const isCurrentlyPositive = currentAmount >= 0;
+
+                // Only toggle if the state doesn't match
+                if (shouldBePositive !== isCurrentlyPositive) {
+                    menu.remove();
+                    toggleTransactionSign(transactionId, transaction, isManual);
+                }
+            });
+
+            // Delete click handler
+            menu.querySelector('.delete-option').addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.remove();
+                if (isManual) {
+                    deleteTransaction(transactionId);
+                } else {
+                    deleteApiTransaction(transactionId);
+                }
+            });
+
+            menuButton.parentElement.appendChild(menu);
+
+            // Close menu when clicking outside
+            const closeMenu = (e) => {
+                if (!menu.contains(e.target) && e.target !== menuButton) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeMenu), 100);
+        }
+
+        // Show date picker for editing transaction date
+        function showDatePicker(transactionId, transaction, isManual) {
+            const card = document.querySelector(`[data-transaction-id="${transactionId}"]`);
+            if (!card) return;
+
+            // Create date picker overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'date-picker-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+
+            const currentDate = new Date(transaction.date);
+            const formattedDate = currentDate.toISOString().split('T')[0];
+
+            overlay.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                    font-family: 'Roboto', sans-serif;
+                ">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px;">Edit Transaction Date</h3>
+                    <input type="date" value="${formattedDate}" style="
+                        padding: 12px;
+                        font-size: 16px;
+                        border: 1px solid #ccc;
+                        border-radius: 8px;
+                        width: 200px;
+                    ">
+                    <div style="display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end;">
+                        <button class="cancel-btn" style="
+                            padding: 10px 20px;
+                            border: 1px solid #ccc;
+                            background: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">Cancel</button>
+                        <button class="save-btn" style="
+                            padding: 10px 20px;
+                            border: none;
+                            background: #3dda52;
+                            color: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">Save</button>
+                    </div>
+                </div>
+            `;
+
+            overlay.querySelector('.cancel-btn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            overlay.querySelector('.save-btn').addEventListener('click', async () => {
+                const newDate = overlay.querySelector('input[type="date"]').value;
+                if (newDate) {
+                    await updateTransactionDate(transactionId, newDate, isManual);
+                    overlay.remove();
+                    // Refresh the page to show updated data
+                    window.dispatchEvent(new HashChangeEvent('hashchange'));
+                }
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+
+            document.body.appendChild(overlay);
+        }
+
+        // Update transaction date
+        async function updateTransactionDate(transactionId, newDate, isManual) {
+            if (isManual) {
+                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                const index = manualTransactions.findIndex(t => t.id === transactionId);
+                if (index !== -1) {
+                    manualTransactions[index].date = newDate;
+                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+                }
+            } else {
+                try {
+                    const response = await fetch('/api/transactions/update-date', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ transactionId, date: newDate })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to update transaction date');
+                    }
+                } catch (error) {
+                    console.error('Error updating transaction date:', error);
+                }
+            }
+        }
+
+        // Toggle transaction sign (positive/negative)
+        async function toggleTransactionSign(transactionId, transaction, isManual) {
+            const currentAmount = parseFloat(transaction.amount) || 0;
+            const newAmount = -currentAmount;
+
+            if (isManual) {
+                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                const index = manualTransactions.findIndex(t => t.id === transactionId);
+                if (index !== -1) {
+                    manualTransactions[index].amount = newAmount;
+                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+                }
+            } else {
+                try {
+                    const response = await fetch('/api/transactions/update-amount', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ transactionId, amount: newAmount })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to update transaction amount');
+                    }
+                } catch (error) {
+                    console.error('Error updating transaction amount:', error);
+                }
+            }
+
+            // Refresh the page to show updated data
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+
+        // Delete API transaction
+        async function deleteApiTransaction(transactionId) {
+            if (!confirm('Are you sure you want to delete this transaction?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/transactions/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ transactionId })
+                });
+                if (response.ok) {
+                    window.dispatchEvent(new HashChangeEvent('hashchange'));
+                } else {
+                    console.error('Failed to delete transaction');
+                }
+            } catch (error) {
+                console.error('Error deleting transaction:', error);
+            }
+        }
+
         // Router for handling navigation with URLs
         const router = {
             routes: {
@@ -6487,12 +6795,8 @@
             const selectedYear = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
             const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-            // Filter income transactions by assignedMonth (or transaction date if no assignedMonth)
+            // Filter income transactions by transaction date
             const filteredIncomeTransactions = incomeTransactions.filter(transaction => {
-                // Use assignedMonth if available, otherwise use transaction date
-                if (transaction.assignedMonth) {
-                    return transaction.assignedMonth === selectedPeriod;
-                }
                 if (!transaction.date) return false;
                 const txnDate = new Date(transaction.date);
                 return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
@@ -7310,25 +7614,15 @@
 
                     // Helper to check if transaction is in selected period
                     const isInSelectedPeriod = (transaction) => {
-                        // For Income, use assignedMonth if available
-                        if (transaction.category === 'Income' && transaction.assignedMonth) {
-                            return transaction.assignedMonth === selectedPeriod;
-                        }
-                        // Otherwise use transaction date
                         if (!transaction.date) return false;
                         const txnDate = new Date(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     };
 
-                    // Calculate total income (Income category with assignedMonth matching)
+                    // Calculate total income (Income category filtered by date)
                     const totalIncome = result.transactions.reduce((sum, transaction) => {
-                        if (transaction.category === 'Income') {
-                            // Use assignedMonth if available, otherwise use transaction date
-                            const incomeMonth = transaction.assignedMonth ||
-                                (transaction.date ? `${new Date(transaction.date).getFullYear()}-${String(new Date(transaction.date).getMonth() + 1).padStart(2, '0')}` : null);
-                            if (incomeMonth === selectedPeriod) {
-                                return sum + Math.abs(parseFloat(transaction.amount) || 0);
-                            }
+                        if (transaction.category === 'Income' && isInSelectedPeriod(transaction)) {
+                            return sum + Math.abs(parseFloat(transaction.amount) || 0);
                         }
                         return sum;
                     }, 0);
@@ -7628,23 +7922,24 @@
             transactionCard.style.position = 'relative';
 
             transactionCard.innerHTML = `
-                <button class="delete-btn" onclick="deleteTransaction('${transaction.id}')" style="
+                <button class="menu-btn" style="
                     position: absolute;
                     top: 8px;
                     right: 8px;
                     background: none;
                     border: none;
-                    color: #ff4444;
+                    color: #666;
                     cursor: pointer;
-                    font-size: 24px;
-                    padding: 0;
-                    width: 24px;
-                    height: 24px;
+                    font-size: 20px;
+                    padding: 4px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 10;
-                " title="Delete transaction">×</button>
+                    border-radius: 50%;
+                " title="More options">
+                    <span class="material-icons">more_vert</span>
+                </button>
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
                     <div class="transaction-description">${toTitleCase(transaction.description)}</div>
@@ -7659,19 +7954,28 @@
                 </div>
             `;
 
+            // Add click event for three-dot menu
+            const menuBtn = transactionCard.querySelector('.menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showTransactionMenu(transaction.id, menuBtn, transaction, true);
+                });
+                menuBtn.addEventListener('mouseenter', () => {
+                    menuBtn.style.background = '#f0f0f0';
+                });
+                menuBtn.addEventListener('mouseleave', () => {
+                    menuBtn.style.background = 'none';
+                });
+            }
+
             // Add click event for category tag to allow re-categorization
             const tagElement = transactionCard.querySelector('.clickable-tag');
             if (tagElement) {
                 tagElement.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Use same category dropdown functionality (correct parameter order: transactionId, tagElement, transaction)
                     showCategoryDropdown(transaction.id, tagElement, transaction);
                 });
-
-                // Add month selector for Income transactions
-                if (transaction.category === 'Income') {
-                    addIncomeMonthSelectorToCard(transaction.id, tagElement, transaction.assignedMonth);
-                }
             }
 
             return transactionCard;
@@ -7784,10 +8088,12 @@
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
             const amount = Math.abs(parseFloat(transaction.amount)).toFixed(2);
             const isDebit = parseFloat(transaction.amount) < 0;
+            const isManual = transaction.id && transaction.id.startsWith('manual_');
 
             const txnEl = document.createElement('div');
             txnEl.className = 'transaction-card';
             txnEl.dataset.transactionId = transaction.id;
+            txnEl.setAttribute('data-transaction-id', transaction.id);
             txnEl.style.position = 'relative';
 
             // All transaction tags are clickable for re-categorization
@@ -7795,22 +8101,24 @@
             const categoryEmoji = getCategoryEmoji(transaction.category);
 
             txnEl.innerHTML = `
-                ${transaction.id && transaction.id.startsWith('manual_') ? `<button class="delete-btn" onclick="deleteTransaction('${transaction.id}')" style="
+                <button class="menu-btn" style="
                     position: absolute;
                     top: 8px;
                     right: 8px;
-                    width: 24px;
-                    height: 24px;
-                    border: none;
                     background: none;
-                    font-size: 24px;
-                    cursor: pointer;
+                    border: none;
                     color: #666;
-                    z-index: 10;
+                    cursor: pointer;
+                    font-size: 20px;
+                    padding: 4px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                ">×</button>` : ''}
+                    z-index: 10;
+                    border-radius: 50%;
+                " title="More options">
+                    <span class="material-icons">more_vert</span>
+                </button>
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
                     <div class="transaction-description">${toTitleCase(transaction.description)}</div>
@@ -7821,9 +8129,24 @@
                         ${categoryEmoji} ${transaction.category.toUpperCase()}
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
-                    <div class="transaction-bank">${transaction.id && transaction.id.startsWith('manual_') ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
+                    <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
                 </div>
             `;
+
+            // Add click event for three-dot menu
+            const menuBtn = txnEl.querySelector('.menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showTransactionMenu(transaction.id, menuBtn, transaction, isManual);
+                });
+                menuBtn.addEventListener('mouseenter', () => {
+                    menuBtn.style.background = '#f0f0f0';
+                });
+                menuBtn.addEventListener('mouseleave', () => {
+                    menuBtn.style.background = 'none';
+                });
+            }
 
             // Add click event for ALL transactions to allow re-categorization
             const tagElement = txnEl.querySelector('.clickable-tag');
@@ -7839,11 +8162,6 @@
 
                 showCategoryDropdown(transaction.id, tagElement, transaction);
             });
-
-            // Add month selector for Income transactions
-            if (transaction.category === 'Income') {
-                addIncomeMonthSelectorToCard(transaction.id, tagElement, transaction.assignedMonth);
-            }
 
             return txnEl;
         }
@@ -8040,15 +8358,7 @@
                     option.addEventListener('click', (e) => {
                         e.stopPropagation();
                         dropdown.remove();
-                        if (category.name === 'Income') {
-                            // Update tag to show Income
-                            tagElement.innerHTML = `💵 INCOME <span class="material-icons">keyboard_arrow_down</span>`;
-                            tagElement.style.background = getCategoryColor('Income');
-                            // Add month selector next to the tag
-                            addIncomeMonthSelector(transactionId, tagElement);
-                        } else {
-                            updateTransactionCategory(transactionId, category.name, tagElement);
-                        }
+                        updateTransactionCategory(transactionId, category.name, tagElement);
                     });
 
                     dropdown.appendChild(option);
@@ -8075,145 +8385,7 @@
             setTimeout(() => document.addEventListener('click', closeDropdown), 100);
         }
 
-        // Add month selector dropdown next to the category tag for Income
-        function addIncomeMonthSelector(transactionId, tagElement) {
-            // Remove any existing month selector for this transaction
-            const existingSelector = tagElement.parentElement.querySelector('.income-month-selector');
-            if (existingSelector) {
-                existingSelector.remove();
-            }
-
-            // Calculate this month and next month
-            const now = new Date();
-            const thisMonth = now.getMonth() + 1;
-            const thisYear = now.getFullYear();
-            let nextMonth = thisMonth + 1;
-            let nextYear = thisYear;
-            if (nextMonth > 12) {
-                nextMonth = 1;
-                nextYear += 1;
-            }
-
-            // Create month selector dropdown
-            const monthSelector = document.createElement('select');
-            monthSelector.className = 'income-month-selector';
-            monthSelector.style.cssText = `
-                padding: 6px 10px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                font-family: "Roboto", sans-serif;
-                font-size: 12px;
-                margin-left: 8px;
-                cursor: pointer;
-                background: white;
-            `;
-
-            // Add options
-            const thisMonthOption = document.createElement('option');
-            thisMonthOption.value = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
-            thisMonthOption.textContent = 'This Month';
-            monthSelector.appendChild(thisMonthOption);
-
-            const nextMonthOption = document.createElement('option');
-            nextMonthOption.value = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
-            nextMonthOption.textContent = 'Next Month';
-            monthSelector.appendChild(nextMonthOption);
-
-            // Handle selection
-            monthSelector.addEventListener('change', (e) => {
-                const assignedMonth = e.target.value;
-                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
-                monthSelector.remove();
-                // Add the persistent month selector
-                addIncomeMonthSelectorToCard(transactionId, tagElement, assignedMonth);
-            });
-
-            // Insert next to the tag
-            tagElement.parentElement.insertBefore(monthSelector, tagElement.nextSibling);
-        }
-
-        // Add month selector to existing Income transaction cards
-        function addIncomeMonthSelectorToCard(transactionId, tagElement, currentAssignedMonth) {
-            // Remove any existing month selector for this transaction
-            const existingSelector = tagElement.parentElement.querySelector('.income-month-selector');
-            if (existingSelector) {
-                existingSelector.remove();
-            }
-
-            // Calculate this month and next month
-            const now = new Date();
-            const thisMonth = now.getMonth() + 1;
-            const thisYear = now.getFullYear();
-            let nextMonth = thisMonth + 1;
-            let nextYear = thisYear;
-            if (nextMonth > 12) {
-                nextMonth = 1;
-                nextYear += 1;
-            }
-
-            const thisMonthValue = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
-            const nextMonthValue = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
-
-            // Create month selector dropdown
-            const monthSelector = document.createElement('select');
-            monthSelector.className = 'income-month-selector';
-            monthSelector.style.cssText = `
-                padding: 6px 10px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                font-family: "Roboto", sans-serif;
-                font-size: 12px;
-                margin-left: 8px;
-                cursor: pointer;
-                background: white;
-            `;
-
-            // Add options
-            const thisMonthOption = document.createElement('option');
-            thisMonthOption.value = thisMonthValue;
-            thisMonthOption.textContent = 'This Month';
-            monthSelector.appendChild(thisMonthOption);
-
-            const nextMonthOption = document.createElement('option');
-            nextMonthOption.value = nextMonthValue;
-            nextMonthOption.textContent = 'Next Month';
-            monthSelector.appendChild(nextMonthOption);
-
-            // Set current value if it matches one of the options
-            if (currentAssignedMonth === thisMonthValue) {
-                monthSelector.value = thisMonthValue;
-            } else if (currentAssignedMonth === nextMonthValue) {
-                monthSelector.value = nextMonthValue;
-            } else if (currentAssignedMonth) {
-                // If it's a different month, add it as an option
-                const customOption = document.createElement('option');
-                customOption.value = currentAssignedMonth;
-                const [year, month] = currentAssignedMonth.split('-');
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                customOption.textContent = `${monthNames[parseInt(month) - 1]} ${year}`;
-                monthSelector.insertBefore(customOption, thisMonthOption);
-                monthSelector.value = currentAssignedMonth;
-            } else {
-                // Default to this month
-                monthSelector.value = thisMonthValue;
-            }
-
-            // Handle selection change
-            monthSelector.addEventListener('change', (e) => {
-                const assignedMonth = e.target.value;
-                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
-            });
-
-            // Prevent click from bubbling to parent elements
-            monthSelector.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-
-            // Insert next to the tag
-            tagElement.parentElement.insertBefore(monthSelector, tagElement.nextSibling);
-        }
-
-        async function updateTransactionCategory(transactionId, category, tagElement, assignedMonth = null) {
+        async function updateTransactionCategory(transactionId, category, tagElement) {
             // Check if it's a manual transaction
             if (transactionId.startsWith('manual_')) {
                 // Handle manual transaction category update
@@ -8223,9 +8395,6 @@
                 if (transactionIndex !== -1) {
                     // Update the category in localStorage
                     manualTransactions[transactionIndex].category = category;
-                    if (assignedMonth) {
-                        manualTransactions[transactionIndex].assignedMonth = assignedMonth;
-                    }
                     localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
 
                     // Update the tag visually
@@ -8269,21 +8438,13 @@
 
             // Handle API transactions (existing functionality)
             try {
-                const requestBody = {
-                    transactionId: transactionId,
-                    category: category
-                };
-                if (assignedMonth) {
-                    requestBody.assignedMonth = assignedMonth;
-                }
-
                 const response = await fetch('/api/transactions/update-category', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({ transactionId, category })
                 });
 
                 if (response.ok) {
