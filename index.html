@@ -2488,6 +2488,20 @@
                 <h2 class="section-title">Categories</h2>
                 <button class="see-all" onclick="showCategories()">SEE ALL</button>
             </div>
+
+            <div class="home-category-item" onclick="showCategoryDetail('income', 'Income')" style="cursor: pointer;">
+                <div class="category-card">
+                    <div class="category-header">
+                        <div class="category-left-group">
+                            <span class="category-emoji">💵</span>
+                            <span class="category-name">Income</span>
+                        </div>
+                        <span class="category-amount positive" id="home-income-amount">$0.00</span>
+                    </div>
+                    <div class="category-accent" style="background: #4CAF50;"></div>
+                </div>
+            </div>
+
             <div class="section-subtitle">Flexible Categories</div>
 
             <div class="home-category-item" onclick="showCategoryDetail('flexible-monthly', 'Out & About')" style="cursor: pointer;">
@@ -6353,14 +6367,27 @@
         function loadManualTransactions() {
             const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
 
+            // Get selected month/year from transactions page selector
+            const monthSelector = document.getElementById('transactions-month-selector');
+            const yearSelector = document.getElementById('transactions-year-selector');
+            const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+            const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
+
+            // Filter by selected month/year
+            const filteredTransactions = manualTransactions.filter(transaction => {
+                if (!transaction.date) return false;
+                const txnDate = new Date(transaction.date);
+                return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+            });
+
             // Sort transactions by date (most recent first)
-            manualTransactions.sort((a, b) => {
+            filteredTransactions.sort((a, b) => {
                 const dateA = new Date(a.date);
                 const dateB = new Date(b.date);
                 return dateB - dateA; // Most recent first
             });
 
-            manualTransactions.forEach(transaction => {
+            filteredTransactions.forEach(transaction => {
                 // Check if transaction should go in assigned or unassigned section
                 if (transaction.category && transaction.category !== 'Unsorted') {
                     // Add to assigned section if categorized
@@ -6537,9 +6564,14 @@
             const yearSelector = incomePage ? incomePage.querySelector('.year-selector') : null;
             const selectedMonth = monthSelector ? parseInt(monthSelector.value) : new Date().getMonth() + 1;
             const selectedYear = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
+            const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-            // Filter income transactions by selected month/year
+            // Filter income transactions by assignedMonth (or transaction date if no assignedMonth)
             const filteredIncomeTransactions = incomeTransactions.filter(transaction => {
+                // Use assignedMonth if available, otherwise use transaction date
+                if (transaction.assignedMonth) {
+                    return transaction.assignedMonth === selectedPeriod;
+                }
                 if (!transaction.date) return false;
                 const txnDate = new Date(transaction.date);
                 return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
@@ -7353,26 +7385,43 @@
                     const yearSelector = document.getElementById('dashboard-year-selector');
                     const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
                     const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
+                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-                    // Filter transactions by selected month/year
-                    const filteredTransactions = result.transactions.filter(transaction => {
+                    // Helper to check if transaction is in selected period
+                    const isInSelectedPeriod = (transaction) => {
+                        // For Income, use assignedMonth if available
+                        if (transaction.category === 'Income' && transaction.assignedMonth) {
+                            return transaction.assignedMonth === selectedPeriod;
+                        }
+                        // Otherwise use transaction date
                         if (!transaction.date) return false;
                         const txnDate = new Date(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
-                    });
+                    };
 
-                    // Calculate total income (Income category)
-                    const totalIncome = filteredTransactions.reduce((sum, transaction) => {
+                    // Calculate total income (Income category with assignedMonth matching)
+                    const totalIncome = result.transactions.reduce((sum, transaction) => {
                         if (transaction.category === 'Income') {
-                            return sum + Math.abs(parseFloat(transaction.amount) || 0);
+                            // Use assignedMonth if available, otherwise use transaction date
+                            const incomeMonth = transaction.assignedMonth ||
+                                (transaction.date ? `${new Date(transaction.date).getFullYear()}-${String(new Date(transaction.date).getMonth() + 1).padStart(2, '0')}` : null);
+                            if (incomeMonth === selectedPeriod) {
+                                return sum + Math.abs(parseFloat(transaction.amount) || 0);
+                            }
                         }
                         return sum;
                     }, 0);
 
-                    // Calculate total expenses (all categories except Income and Ignore)
-                    const totalExpenses = filteredTransactions.reduce((sum, transaction) => {
+                    // Calculate total expenses (all categories except Income and Ignore, filtered by date)
+                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
                         const category = transaction.category || 'Unsorted';
                         if (category === 'Income' || category === 'Ignore') {
+                            return sum;
+                        }
+                        // Filter by transaction date for expenses
+                        if (!transaction.date) return sum;
+                        const txnDate = new Date(transaction.date);
+                        if (txnDate.getMonth() + 1 !== selectedMonth || txnDate.getFullYear() !== selectedYear) {
                             return sum;
                         }
                         return sum + Math.abs(parseFloat(transaction.amount) || 0);
@@ -7385,6 +7434,12 @@
                     const incomeElement = document.getElementById('home-overview-income');
                     if (incomeElement) {
                         incomeElement.textContent = `$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    }
+
+                    // Update income category card amount
+                    const homeIncomeAmount = document.getElementById('home-income-amount');
+                    if (homeIncomeAmount) {
+                        homeIncomeAmount.textContent = `$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                     }
 
                     // Update expenses display
@@ -8053,8 +8108,13 @@
                     });
 
                     option.addEventListener('click', () => {
-                        updateTransactionCategory(transactionId, category.name, tagElement);
                         dropdown.remove();
+                        if (category.name === 'Income') {
+                            // Show month picker for Income
+                            showIncomeMonthPicker(transactionId, tagElement);
+                        } else {
+                            updateTransactionCategory(transactionId, category.name, tagElement);
+                        }
                     });
 
                     dropdown.appendChild(option);
@@ -8081,7 +8141,104 @@
             setTimeout(() => document.addEventListener('click', closeDropdown), 100);
         }
 
-        async function updateTransactionCategory(transactionId, category, tagElement) {
+        // Show month picker when assigning to Income
+        function showIncomeMonthPicker(transactionId, tagElement) {
+            // Remove any existing picker
+            const existingPicker = document.querySelector('.income-month-picker');
+            if (existingPicker) {
+                existingPicker.remove();
+            }
+
+            // Create picker
+            const picker = document.createElement('div');
+            picker.className = 'income-month-picker';
+            picker.style.cssText = `
+                position: absolute;
+                background: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1001;
+                padding: 16px;
+                min-width: 200px;
+            `;
+
+            // Header
+            const header = document.createElement('div');
+            header.textContent = 'Assign to which month?';
+            header.style.cssText = `
+                font-family: "Roboto", sans-serif;
+                font-weight: 600;
+                font-size: 14px;
+                margin-bottom: 12px;
+                color: #333;
+            `;
+            picker.appendChild(header);
+
+            // Month options
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            // Show current month and next 3 months
+            for (let i = 0; i < 4; i++) {
+                let month = currentMonth + i;
+                let year = currentYear;
+                if (month > 12) {
+                    month -= 12;
+                    year += 1;
+                }
+
+                const option = document.createElement('div');
+                option.textContent = `${months[month - 1]} ${year}`;
+                option.style.cssText = `
+                    padding: 10px 12px;
+                    cursor: pointer;
+                    border-radius: 6px;
+                    font-family: "Roboto", sans-serif;
+                    font-size: 14px;
+                    margin-bottom: 4px;
+                `;
+
+                option.addEventListener('mouseover', () => {
+                    option.style.background = '#f0f0f0';
+                });
+
+                option.addEventListener('mouseout', () => {
+                    option.style.background = 'white';
+                });
+
+                option.addEventListener('click', () => {
+                    const assignedMonth = `${year}-${String(month).padStart(2, '0')}`;
+                    updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
+                    picker.remove();
+                });
+
+                picker.appendChild(option);
+            }
+
+            // Position picker
+            const tagRect = tagElement.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            picker.style.left = `${tagRect.left + scrollLeft}px`;
+            picker.style.top = `${tagRect.bottom + scrollTop + 5}px`;
+
+            document.body.appendChild(picker);
+
+            // Close when clicking outside
+            const closePicker = (e) => {
+                if (!picker.contains(e.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closePicker);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closePicker), 100);
+        }
+
+        async function updateTransactionCategory(transactionId, category, tagElement, assignedMonth = null) {
             // Check if it's a manual transaction
             if (transactionId.startsWith('manual_')) {
                 // Handle manual transaction category update
@@ -8091,6 +8248,9 @@
                 if (transactionIndex !== -1) {
                     // Update the category in localStorage
                     manualTransactions[transactionIndex].category = category;
+                    if (assignedMonth) {
+                        manualTransactions[transactionIndex].assignedMonth = assignedMonth;
+                    }
                     localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
 
                     // Update the tag visually
@@ -8134,16 +8294,21 @@
 
             // Handle API transactions (existing functionality)
             try {
+                const requestBody = {
+                    transactionId: transactionId,
+                    category: category
+                };
+                if (assignedMonth) {
+                    requestBody.assignedMonth = assignedMonth;
+                }
+
                 const response = await fetch('/api/transactions/update-category', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify({
-                        transactionId: transactionId,
-                        category: category
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (response.ok) {

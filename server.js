@@ -93,10 +93,16 @@ async function initializeDatabase() {
         date TEXT,
         status TEXT,
         category TEXT,
+        assigned_month TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         FOREIGN KEY(account_id) REFERENCES accounts(id)
       );
     `);
+
+    // Add assigned_month column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS assigned_month TEXT;
+    `).catch(() => {});
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sessions (
@@ -155,6 +161,7 @@ async function loadFromDatabase() {
         date: row.date,
         status: row.status,
         category: row.category,
+        assignedMonth: row.assigned_month,
         createdAt: row.created_at
       });
     });
@@ -1253,7 +1260,7 @@ function handleUpdateTransactionCategory(req, res) {
   });
   req.on('end', () => {
     try {
-      const { transactionId, category } = JSON.parse(body);
+      const { transactionId, category, assignedMonth } = JSON.parse(body);
 
       if (!transactionId || !category) {
         res.writeHead(400);
@@ -1273,16 +1280,26 @@ function handleUpdateTransactionCategory(req, res) {
       if (transactions.has(transactionId)) {
         const transaction = transactions.get(transactionId);
         transaction.category = category;
+        if (assignedMonth) {
+          transaction.assignedMonth = assignedMonth;
+        }
         transactions.set(transactionId, transaction);
 
-        console.log(`📝 Updated transaction ${transactionId} category to ${category}`);
+        console.log(`📝 Updated transaction ${transactionId} category to ${category}${assignedMonth ? ` (assigned to ${assignedMonth})` : ''}`);
 
         // Update in PostgreSQL database
         if (pool) {
-          pool.query(
-            'UPDATE transactions SET category = $1 WHERE id = $2',
-            [category, transactionId]
-          ).catch(dbError => console.error('Failed to update transaction in database:', dbError));
+          if (assignedMonth) {
+            pool.query(
+              'UPDATE transactions SET category = $1, assigned_month = $2 WHERE id = $3',
+              [category, assignedMonth, transactionId]
+            ).catch(dbError => console.error('Failed to update transaction in database:', dbError));
+          } else {
+            pool.query(
+              'UPDATE transactions SET category = $1 WHERE id = $2',
+              [category, transactionId]
+            ).catch(dbError => console.error('Failed to update transaction in database:', dbError));
+          }
         }
 
         // Save to file as backup
