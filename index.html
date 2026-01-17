@@ -8149,7 +8149,18 @@
                 existingPicker.remove();
             }
 
-            // Create picker
+            // Calculate this month and next month
+            const now = new Date();
+            const thisMonth = now.getMonth() + 1;
+            const thisYear = now.getFullYear();
+            let nextMonth = thisMonth + 1;
+            let nextYear = thisYear;
+            if (nextMonth > 12) {
+                nextMonth = 1;
+                nextYear += 1;
+            }
+
+            // Create dropdown
             const picker = document.createElement('div');
             picker.className = 'income-month-picker';
             picker.style.cssText = `
@@ -8159,66 +8170,48 @@
                 border-radius: 8px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 1001;
-                padding: 16px;
-                min-width: 200px;
+                min-width: 120px;
+                overflow: hidden;
             `;
 
-            // Header
-            const header = document.createElement('div');
-            header.textContent = 'Assign to which month?';
-            header.style.cssText = `
+            // This Month option
+            const thisMonthOption = document.createElement('div');
+            thisMonthOption.textContent = 'This Month';
+            thisMonthOption.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
                 font-family: "Roboto", sans-serif;
-                font-weight: 600;
                 font-size: 14px;
-                margin-bottom: 12px;
-                color: #333;
+                border-bottom: 1px solid #eee;
             `;
-            picker.appendChild(header);
+            thisMonthOption.addEventListener('mouseover', () => thisMonthOption.style.background = '#f5f5f5');
+            thisMonthOption.addEventListener('mouseout', () => thisMonthOption.style.background = 'white');
+            thisMonthOption.addEventListener('click', () => {
+                const assignedMonth = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
+                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
+                picker.remove();
+            });
+            picker.appendChild(thisMonthOption);
 
-            // Month options
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            // Next Month option
+            const nextMonthOption = document.createElement('div');
+            nextMonthOption.textContent = 'Next Month';
+            nextMonthOption.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
+                font-family: "Roboto", sans-serif;
+                font-size: 14px;
+            `;
+            nextMonthOption.addEventListener('mouseover', () => nextMonthOption.style.background = '#f5f5f5');
+            nextMonthOption.addEventListener('mouseout', () => nextMonthOption.style.background = 'white');
+            nextMonthOption.addEventListener('click', () => {
+                const assignedMonth = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+                updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
+                picker.remove();
+            });
+            picker.appendChild(nextMonthOption);
 
-            // Show current month and next 3 months
-            for (let i = 0; i < 4; i++) {
-                let month = currentMonth + i;
-                let year = currentYear;
-                if (month > 12) {
-                    month -= 12;
-                    year += 1;
-                }
-
-                const option = document.createElement('div');
-                option.textContent = `${months[month - 1]} ${year}`;
-                option.style.cssText = `
-                    padding: 10px 12px;
-                    cursor: pointer;
-                    border-radius: 6px;
-                    font-family: "Roboto", sans-serif;
-                    font-size: 14px;
-                    margin-bottom: 4px;
-                `;
-
-                option.addEventListener('mouseover', () => {
-                    option.style.background = '#f0f0f0';
-                });
-
-                option.addEventListener('mouseout', () => {
-                    option.style.background = 'white';
-                });
-
-                option.addEventListener('click', () => {
-                    const assignedMonth = `${year}-${String(month).padStart(2, '0')}`;
-                    updateTransactionCategory(transactionId, 'Income', tagElement, assignedMonth);
-                    picker.remove();
-                });
-
-                picker.appendChild(option);
-            }
-
-            // Position picker
+            // Position dropdown
             const tagRect = tagElement.getBoundingClientRect();
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
