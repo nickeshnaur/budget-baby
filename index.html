@@ -8840,6 +8840,10 @@
                 });
 
                 categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
+                    // Skip fixed-annual categories - they show due date, not budgeted/spent
+                    const categoryType = SLUG_TO_TYPE[categorySlug];
+                    if (categoryType === 'fixed-annual') return;
+
                     // Get budgeted from server (via budgetMap) or fallback to element
                     const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
                     const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
