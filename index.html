@@ -4284,6 +4284,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="phone-due-date" data-value="Jul 11">Jul 11</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="phone-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4356,6 +4360,10 @@
             <div class="budget-item">
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="costco-due-date" data-value="Oct 2">Oct 2</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="costco-status">Pending</div>
             </div>
         </div>
 
@@ -4430,6 +4438,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-rent-due-date" data-value="Feb 24">Feb 24</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="insurance-rent-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4482,6 +4494,10 @@
             <div class="budget-item">
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="letterboxd-due-date" data-value="Jan 1">Jan 1</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="letterboxd-status">Pending</div>
             </div>
         </div>
 
@@ -4536,6 +4552,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="grammarly-due-date" data-value="Dec 9">Dec 9</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="grammarly-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4588,6 +4608,10 @@
             <div class="budget-item">
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="domain-due-date" data-value="Mar 9">Mar 9</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="domain-status">Pending</div>
             </div>
         </div>
 
@@ -4642,6 +4666,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="google-one-due-date" data-value="Jun 10">Jun 10</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="google-one-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4694,6 +4722,10 @@
             <div class="budget-item">
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="c-capital-one-annual-fee-due-date" data-value="Dec 21">Dec 21</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="c-capital-one-annual-fee-status">Pending</div>
             </div>
         </div>
 
@@ -4748,6 +4780,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="c-sw-annual-fee-due-date" data-value="Mar 1">Mar 1</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="c-sw-annual-fee-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4801,6 +4837,10 @@
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="n-capital-one-annual-fee-due-date" data-value="Jan 18">Jan 18</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="n-capital-one-annual-fee-status">Pending</div>
+            </div>
         </div>
 
         <div class="section">
@@ -4853,6 +4893,10 @@
             <div class="budget-item">
                 <div class="budget-label">Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="n-sw-annual-fee-due-date" data-value="Jul 1">Jul 1</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="n-sw-annual-fee-status">Pending</div>
             </div>
         </div>
 
@@ -5395,16 +5439,16 @@
             { slug: 'personal-chelsea', displayName: 'Personal Chelsea', transactionName: 'PERSONAL CHELSEA', type: 'flexible-monthly' },
             { slug: 'school', displayName: 'School', transactionName: 'SCHOOL', type: 'flexible-monthly' },
             { slug: 'giving', displayName: 'Giving', transactionName: 'GIVING', type: 'flexible-monthly' },
-            // Fixed Monthly Categories
-            { slug: 'auto-loan', displayName: 'Auto Loan', transactionName: 'AUTO LOAN', type: 'fixed-monthly' },
-            { slug: 'rent', displayName: 'Rent', transactionName: 'RENT', type: 'fixed-monthly' },
-            { slug: 'electric', displayName: 'Electric', transactionName: 'ELECTRIC', type: 'fixed-monthly' },
-            { slug: 'insurance-auto', displayName: 'Insurance Auto', transactionName: 'INSURANCE AUTO', type: 'fixed-monthly' },
-            { slug: 'nw-mutual', displayName: 'NW Mutual', transactionName: 'NW MUTUAL', type: 'fixed-monthly' },
-            { slug: 'internet', displayName: 'Internet', transactionName: 'INTERNET', type: 'fixed-monthly' },
-            { slug: 'spotify', displayName: 'Spotify', transactionName: 'SPOTIFY', type: 'fixed-monthly' },
-            { slug: 'sp-fitness', displayName: 'SP Fitness', transactionName: 'SP FITNESS', type: 'fixed-monthly' },
-            { slug: 'alamo-drafthouse', displayName: 'Alamo Drafthouse', transactionName: 'ALAMO DRAFTHOUSE', type: 'fixed-monthly' },
+            // Fixed Monthly Categories (with dueDay for sorting)
+            { slug: 'auto-loan', displayName: 'Auto Loan', transactionName: 'AUTO LOAN', type: 'fixed-monthly', dueDay: 30 },
+            { slug: 'rent', displayName: 'Rent', transactionName: 'RENT', type: 'fixed-monthly', dueDay: 1 },
+            { slug: 'electric', displayName: 'Electric', transactionName: 'ELECTRIC', type: 'fixed-monthly', dueDay: 8 },
+            { slug: 'insurance-auto', displayName: 'Insurance Auto', transactionName: 'INSURANCE AUTO', type: 'fixed-monthly', dueDay: 27 },
+            { slug: 'nw-mutual', displayName: 'NW Mutual', transactionName: 'NW MUTUAL', type: 'fixed-monthly', dueDay: 9 },
+            { slug: 'internet', displayName: 'Internet', transactionName: 'INTERNET', type: 'fixed-monthly', dueDay: 25 },
+            { slug: 'spotify', displayName: 'Spotify', transactionName: 'SPOTIFY', type: 'fixed-monthly', dueDay: 3 },
+            { slug: 'sp-fitness', displayName: 'SP Fitness', transactionName: 'SP FITNESS', type: 'fixed-monthly', dueDay: 1 },
+            { slug: 'alamo-drafthouse', displayName: 'Alamo Drafthouse', transactionName: 'ALAMO DRAFTHOUSE', type: 'fixed-monthly', dueDay: 22 },
             // Fixed Annual Categories
             { slug: 'phone', displayName: 'Phone', transactionName: 'PHONE', type: 'fixed-annual' },
             { slug: 'costco', displayName: 'Costco', transactionName: 'COSTCO', type: 'fixed-annual' },
@@ -5429,6 +5473,7 @@
         const DISPLAY_TO_SLUG = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.displayName, c.slug]));
         const FLEXIBLE_MONTHLY_CATEGORIES = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
         const FLEXIBLE_MONTHLY_NAMES = FLEXIBLE_MONTHLY_CATEGORIES.map(c => c.displayName);
+        const FIXED_MONTHLY_SORTED = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly').sort((a, b) => a.dueDay - b.dueDay);
         const ALL_CATEGORY_SLUGS = CATEGORY_CONFIG.map(c => c.slug);
         // =====================================================
 
@@ -6961,6 +7006,18 @@
                 rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
+            // Update status based on whether there are transactions for selected month
+            const statusElement = document.getElementById(`${categorySlug}-status`);
+            if (statusElement) {
+                if (transactions && transactions.length > 0) {
+                    statusElement.textContent = 'Paid';
+                    statusElement.className = 'budget-value positive';
+                } else {
+                    statusElement.textContent = 'Pending';
+                    statusElement.className = 'budget-value';
+                }
+            }
+
             // Set up editable functionality for annual cost
             setupEditableFixedAnnualCost(categorySlug);
 
@@ -8041,17 +8098,7 @@
                     { name: 'School', emoji: '🎓' },
                     { name: 'Giving', emoji: '🤝' }
                 ],
-                'Monthly Bills': [
-                    { name: 'Auto Loan', emoji: '🚗' },
-                    { name: 'Rent', emoji: '🏡' },
-                    { name: 'Electric', emoji: '⚡' },
-                    { name: 'Insurance Auto', emoji: '🚙' },
-                    { name: 'NW Mutual', emoji: '🏦' },
-                    { name: 'Internet', emoji: '🌐' },
-                    { name: 'Spotify', emoji: '🎵' },
-                    { name: 'SP Fitness', emoji: '💪' },
-                    { name: 'Alamo Drafthouse', emoji: '🎬' }
-                ],
+                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName) })),
                 'Annual Bills': [
                     { name: 'Phone', emoji: '📱' },
                     { name: 'Costco', emoji: '🏬' },
@@ -8875,9 +8922,6 @@
                 categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
                     const categoryType = SLUG_TO_TYPE[categorySlug];
 
-                    // Skip fixed-annual categories - they show due date, not budgeted/spent
-                    if (categoryType === 'fixed-annual') return;
-
                     // Calculate transactions for this category
                     const categoryTransactions = filteredTransactions.filter(t =>
                         t.category && t.category.toUpperCase() === transactionCategoryName
@@ -8893,8 +8937,22 @@
                             let budgetInfoDiv = card.querySelector('.budget-info');
                             const progressBarContainer = card.querySelector('.progress-bar-container');
 
+                            // Handle fixed-annual categories - show Paid or Due date
+                            if (categoryType === 'fixed-annual') {
+                                if (categoryTransactions.length > 0) {
+                                    // Has transactions: show total and "Paid ✓"
+                                    if (categoryAmountElement) {
+                                        categoryAmountElement.textContent = `$${totalSpent.toFixed(2)}`;
+                                        categoryAmountElement.className = 'category-amount';
+                                    }
+                                    if (budgetInfoDiv) {
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
+                                    }
+                                }
+                                // If no transactions, leave the existing due date display
+                            }
                             // Handle fixed-monthly categories differently
-                            if (categoryType === 'fixed-monthly') {
+                            else if (categoryType === 'fixed-monthly') {
                                 // Get budgeted value and due date from category detail page
                                 const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
                                 const dueDateElement = document.getElementById(`${categorySlug}-due-date`);
@@ -9011,7 +9069,49 @@
         }
 
         // Initialize date filtering when page loads
+        // Sort monthly bills section on home page by due date
+        function sortMonthlyBillsOnHomePage() {
+            // Find the Monthly Bills section
+            const sections = document.querySelectorAll('#categoriesPage .section');
+            let monthlyBillsSection = null;
+
+            sections.forEach(section => {
+                const subtitle = section.querySelector('.section-subtitle');
+                if (subtitle && subtitle.textContent.trim() === 'Monthly Bills') {
+                    monthlyBillsSection = section;
+                }
+            });
+
+            if (!monthlyBillsSection) return;
+
+            // Get all category items in this section
+            const categoryItems = Array.from(monthlyBillsSection.querySelectorAll('.home-category-item'));
+
+            // Create a map of display name to due day from FIXED_MONTHLY_SORTED
+            const dueDayMap = {};
+            FIXED_MONTHLY_SORTED.forEach(c => {
+                dueDayMap[c.displayName] = c.dueDay;
+            });
+
+            // Sort by due day
+            categoryItems.sort((a, b) => {
+                const nameA = a.querySelector('.category-name')?.textContent.trim() || '';
+                const nameB = b.querySelector('.category-name')?.textContent.trim() || '';
+                const dueDayA = dueDayMap[nameA] || 99;
+                const dueDayB = dueDayMap[nameB] || 99;
+                return dueDayA - dueDayB;
+            });
+
+            // Reappend items in sorted order
+            categoryItems.forEach(item => {
+                monthlyBillsSection.appendChild(item);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Sort monthly bills by due date
+            sortMonthlyBillsOnHomePage();
+
             // Add event listeners to all month and year selectors
             const monthSelectors = document.querySelectorAll('.month-selector');
             const yearSelectors = document.querySelectorAll('.year-selector');
