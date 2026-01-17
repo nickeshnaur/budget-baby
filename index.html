@@ -6937,69 +6937,27 @@
             const annualCostElement = document.getElementById(`${categorySlug}-annual-cost`);
             const annualCost = annualCostElement ? parseFloat(annualCostElement.getAttribute('data-value')) || 0 : 0;
 
-            // Process actual transactions to calculate actual cost
-            let actualCostThisYear = 0;
-            const currentYear = new Date().getFullYear();
+            // Calculate total from transactions (already filtered by selected month)
+            let totalThisMonth = 0;
 
             if (transactions && transactions.length > 0) {
-                // Filter transactions for this year
-                const thisYearTransactions = transactions.filter(transaction => {
-                    const transactionDate = new Date(transaction.date);
-                    return transactionDate.getFullYear() === currentYear;
-                });
-
                 // Sum up the costs (use absolute value since amounts might be negative)
-                actualCostThisYear = thisYearTransactions.reduce((sum, transaction) => {
+                totalThisMonth = transactions.reduce((sum, transaction) => {
                     return sum + Math.abs(transaction.amount);
                 }, 0);
             }
 
-            // Update Total field
+            // Update Total field - sum of transactions for selected month
             const actualCostElement = document.getElementById(`${categorySlug}-total`);
             if (actualCostElement) {
-                if (actualCostThisYear > 0) {
-                    actualCostElement.textContent = `$${actualCostThisYear.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-                    // Auto-update projected cost based on actual cost
-                    // If we have actual transactions, update the projected annual cost
-                    const updatedProjectedCost = actualCostThisYear;
-                    if (annualCostElement && Math.abs(updatedProjectedCost - annualCost) > 0.01) {
-                        // Update the annual projected cost
-                        annualCostElement.setAttribute('data-value', updatedProjectedCost.toString());
-                        annualCostElement.textContent = `$${updatedProjectedCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-                        // Use updated cost for calculations
-                        const newAnnualCost = updatedProjectedCost;
-
-                        // Recalculate budgeted amount with new projected cost
-                        const monthlyBudgeted = newAnnualCost / 12;
-                        const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-                        if (budgetedElement) {
-                            budgetedElement.textContent = `$${monthlyBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                        }
-
-                        // Recalculate rollover with new projected cost
-                        const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
-                        if (rolloverElement) {
-                            const rollover = calculateRollover(categorySlug, newAnnualCost);
-                            rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                        }
-
-                        return; // Exit early since we've updated everything with new cost
-                    }
+                if (totalThisMonth > 0) {
+                    actualCostElement.textContent = `$${totalThisMonth.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                 } else {
                     actualCostElement.textContent = '--';
                 }
             }
 
-            // Calculate budgeted amount (Annual Cost ÷ 12) - only if no auto-update occurred
-            const monthlyBudgeted = annualCost / 12;
-            const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-            if (budgetedElement) {
-                budgetedElement.textContent = `$${monthlyBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            }
-
-            // Calculate rollover based on current month vs due month - only if no auto-update occurred
+            // Calculate rollover based on current month vs due month
             const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
             if (rolloverElement) {
                 const rollover = calculateRollover(categorySlug, annualCost);
@@ -7011,10 +6969,10 @@
             if (statusElement) {
                 if (transactions && transactions.length > 0) {
                     statusElement.textContent = 'Paid';
-                    statusElement.className = 'budget-value positive';
+                    statusElement.style.color = '#09bc00';
                 } else {
                     statusElement.textContent = 'Pending';
-                    statusElement.className = 'budget-value';
+                    statusElement.style.color = '';
                 }
             }
 
