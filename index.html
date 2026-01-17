@@ -2029,6 +2029,8 @@
             margin-bottom: 12px;
             border: 1px solid #E6E6E6;
             text-align: left;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .transaction-card .transaction-date {
@@ -2120,6 +2122,12 @@
 
         .transactions-section {
             margin-bottom: 12px;
+            width: 100%;
+        }
+
+        .transactions-section .unassigned,
+        .transactions-section .assigned {
+            width: 100%;
         }
 
         .transactions-section .date-selectors {
@@ -2453,15 +2461,15 @@
             <div class="overview-grid">
                 <div class="overview-item">
                     <div class="overview-label">Income</div>
-                    <div class="overview-amount income">$8,000</div>
+                    <div class="overview-amount income" id="home-overview-income">$0.00</div>
                 </div>
                 <div class="overview-item">
                     <div class="overview-label">Expenses</div>
-                    <div class="overview-amount expenses">-$7,000</div>
+                    <div class="overview-amount expenses" id="home-overview-expenses">$0.00</div>
                 </div>
                 <div class="overview-item">
                     <div class="overview-label">Savings</div>
-                    <div class="overview-amount savings">$1,000</div>
+                    <div class="overview-amount savings" id="home-overview-savings">$0.00</div>
                 </div>
             </div>
         </div>
@@ -5308,6 +5316,14 @@
                 <div class="budget-label">Deposits</div>
                 <div class="budget-value positive" id="income-deposits">$0.00</div>
             </div>
+            <div class="budget-item">
+                <div class="budget-label">Expenses</div>
+                <div class="budget-value negative" id="income-expenses">$0.00</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Savings</div>
+                <div class="budget-value" id="income-savings">$0.00</div>
+            </div>
         </div>
 
         <div class="section">
@@ -6573,7 +6589,7 @@
             });
         }
 
-        function updateIncomePageCalculations(incomeTransactions) {
+        async function updateIncomePageCalculations(incomeTransactions) {
             // Calculate total deposits from all Income transactions
             const totalDeposits = incomeTransactions.reduce((sum, transaction) => {
                 const amount = parseFloat(transaction.amount) || 0;
@@ -6586,6 +6602,46 @@
                 depositsElement.textContent = `$${totalDeposits.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
+            // Fetch all transactions to calculate expenses
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+
+                if (response.ok && result.transactions) {
+                    // Calculate total expenses (all categories except Income and Ignore)
+                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
+                        const category = transaction.category || 'Unsorted';
+                        // Skip Income and Ignore categories
+                        if (category === 'Income' || category === 'Ignore') {
+                            return sum;
+                        }
+                        const amount = parseFloat(transaction.amount) || 0;
+                        // Expenses are negative amounts, so we use absolute value
+                        return sum + Math.abs(amount);
+                    }, 0);
+
+                    // Update expenses display
+                    const expensesElement = document.getElementById('income-expenses');
+                    if (expensesElement) {
+                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    }
+
+                    // Calculate and update savings (Deposits - Expenses)
+                    const savings = totalDeposits - totalExpenses;
+                    const savingsElement = document.getElementById('income-savings');
+                    if (savingsElement) {
+                        if (savings >= 0) {
+                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                            savingsElement.className = 'budget-value positive';
+                        } else {
+                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                            savingsElement.className = 'budget-value negative';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to calculate expenses:', error);
+            }
         }
 
         function updateFlexibleCategoryCalculations(categorySlug, transactions) {
@@ -7227,16 +7283,22 @@
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
-                // Add click event listeners for custom dropdowns
-                monthSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(monthSelector, 'month');
-                });
+                // Only add event listeners once
+                if (!monthSelector.hasAttribute('data-initialized')) {
+                    monthSelector.setAttribute('data-initialized', 'true');
+                    monthSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(monthSelector, 'month');
+                    });
+                }
 
-                yearSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(yearSelector, 'year');
-                });
+                if (!yearSelector.hasAttribute('data-initialized')) {
+                    yearSelector.setAttribute('data-initialized', 'true');
+                    yearSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(yearSelector, 'year');
+                    });
+                }
             }
         }
 
@@ -7259,16 +7321,22 @@
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
-                // Add click event listeners for custom dropdowns
-                monthSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(monthSelector, 'month');
-                });
+                // Only add event listeners once
+                if (!monthSelector.hasAttribute('data-initialized')) {
+                    monthSelector.setAttribute('data-initialized', 'true');
+                    monthSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(monthSelector, 'month');
+                    });
+                }
 
-                yearSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(yearSelector, 'year');
-                });
+                if (!yearSelector.hasAttribute('data-initialized')) {
+                    yearSelector.setAttribute('data-initialized', 'true');
+                    yearSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(yearSelector, 'year');
+                    });
+                }
             }
         }
 
@@ -7291,16 +7359,81 @@
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
-                // Add click handlers
-                monthSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(monthSelector, 'month');
-                });
+                // Only add event listeners once
+                if (!monthSelector.hasAttribute('data-initialized')) {
+                    monthSelector.setAttribute('data-initialized', 'true');
+                    monthSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(monthSelector, 'month');
+                    });
+                }
 
-                yearSelector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showCustomDropdown(yearSelector, 'year');
-                });
+                if (!yearSelector.hasAttribute('data-initialized')) {
+                    yearSelector.setAttribute('data-initialized', 'true');
+                    yearSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(yearSelector, 'year');
+                    });
+                }
+            }
+
+            // Update home overview with dynamic data
+            updateHomeOverview();
+        }
+
+        // Update home page overview with dynamic income, expenses, and savings
+        async function updateHomeOverview() {
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+
+                if (response.ok && result.transactions) {
+                    // Calculate total income (Income category)
+                    const totalIncome = result.transactions.reduce((sum, transaction) => {
+                        if (transaction.category === 'Income') {
+                            return sum + Math.abs(parseFloat(transaction.amount) || 0);
+                        }
+                        return sum;
+                    }, 0);
+
+                    // Calculate total expenses (all categories except Income and Ignore)
+                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
+                        const category = transaction.category || 'Unsorted';
+                        if (category === 'Income' || category === 'Ignore') {
+                            return sum;
+                        }
+                        return sum + Math.abs(parseFloat(transaction.amount) || 0);
+                    }, 0);
+
+                    // Calculate savings
+                    const savings = totalIncome - totalExpenses;
+
+                    // Update income display
+                    const incomeElement = document.getElementById('home-overview-income');
+                    if (incomeElement) {
+                        incomeElement.textContent = `$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    }
+
+                    // Update expenses display
+                    const expensesElement = document.getElementById('home-overview-expenses');
+                    if (expensesElement) {
+                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    }
+
+                    // Update savings display
+                    const savingsElement = document.getElementById('home-overview-savings');
+                    if (savingsElement) {
+                        if (savings >= 0) {
+                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                            savingsElement.className = 'overview-amount savings';
+                        } else {
+                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                            savingsElement.className = 'overview-amount expenses';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to update home overview:', error);
             }
         }
 
