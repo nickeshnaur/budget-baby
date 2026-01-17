@@ -9208,13 +9208,24 @@
                     return transactionMonth === selectedMonth && transactionYear === selectedYear;
                 });
 
+                // Load all budgets from server in parallel
+                const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+                const flexibleCategoryNames = ['Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving'];
+                const budgetPromises = flexibleCategoryNames.map(name => loadBudget(name, selectedPeriod));
+                const budgetResults = await Promise.all(budgetPromises);
+                const budgetMap = {};
+                flexibleCategoryNames.forEach((name, index) => {
+                    budgetMap[name] = budgetResults[index].amount || 0;
+                });
+
                 categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
-                    // Get budgeted and rollover amounts from category detail page
+                    // Get budgeted from server (via budgetMap) or fallback to element
                     const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
                     const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
                     if (!budgetedElement) return;
 
-                    const budgetedValue = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
+                    // Use server budget if available, otherwise fall back to element value
+                    const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
                     const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
 
                     // Calculate spent amount from actual transactions
