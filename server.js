@@ -166,11 +166,26 @@ async function loadFromDatabase() {
   }
 }
 
+// Delete transactions before 2026-01-01
+async function cleanupOldTransactions() {
+  if (!pool) return;
+
+  try {
+    const result = await pool.query("DELETE FROM transactions WHERE date < '2026-01-01'");
+    if (result.rowCount > 0) {
+      console.log(`🗑️ Deleted ${result.rowCount} transactions before 2026-01-01`);
+    }
+  } catch (error) {
+    console.error('Failed to cleanup old transactions:', error);
+  }
+}
+
 // Initialize and load data on startup
 (async () => {
   if (pool) {
     console.log('🔄 Initializing PostgreSQL database...');
     await initializeDatabase();
+    await cleanupOldTransactions();
     await loadFromDatabase();
     await loadSessionsFromDB();
   } else {

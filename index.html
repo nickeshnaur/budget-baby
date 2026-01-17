@@ -5823,10 +5823,6 @@
                 <button class="setting-button">Change Password</button>
             </div>
 
-            <div class="setting-item">
-                <div class="setting-label">Data Sync</div>
-                <button class="setting-button" onclick="syncTransactions()">Sync Transactions</button>
-            </div>
         </div>
     </div>
 
@@ -5989,7 +5985,6 @@
                 const isDummyData = window.location.hostname === 'localhost' && window.location.port === '3000';
 
                 if (isDummyData) {
-                    // In local testing mode, just show a message without disrupting the view
                     console.log('Sync clicked (dummy data mode - no actual sync performed)');
                     return;
                 }
@@ -6003,11 +5998,20 @@
                     return;
                 }
 
-                console.log('Syncing new transactions...');
-                let totalSynced = 0;
+                // Filter to only sync connected accounts (not disconnected ones)
+                const connectedAccounts = accountsResult.accounts.filter(a => a.status !== 'disconnected');
 
-                // Fetch only new transactions for each connected account
-                for (const account of accountsResult.accounts) {
+                if (connectedAccounts.length === 0) {
+                    alert('All accounts need reconnection. Please remove and reconnect your bank accounts.');
+                    return;
+                }
+
+                alert('Syncing transactions from your connected accounts...');
+                let totalSynced = 0;
+                let newDisconnected = [];
+
+                // Fetch transactions for each connected account
+                for (const account of connectedAccounts) {
                     try {
                         const response = await fetch('/api/transactions/fetch', {
                             method: 'POST',
@@ -6021,21 +6025,32 @@
 
                         const result = await response.json();
                         if (result.success) {
-                            totalSynced += result.count;
+                            totalSynced += result.newCount || 0;
+                        } else if (result.disconnected) {
+                            newDisconnected.push(account.institutionName + ' ' + (account.lastFour || ''));
                         }
                     } catch (error) {
                         console.error(`Error syncing transactions for account ${account.id}:`, error);
                     }
                 }
 
-                // Only show result if we actually synced transactions
+                // Refresh UI
+                loadTransactionsFromAPI();
+                updateHomeOverview();
+
+                // Build result message
+                let message = '';
                 if (totalSynced > 0) {
-                    console.log(`Successfully synced ${totalSynced} new transactions`);
-                    // Don't reload the entire view - this preserves categorized transactions
-                    alert(`Synced ${totalSynced} new transactions. Check your dashboard for new items.`);
+                    message = `Synced ${totalSynced} new transactions.`;
                 } else {
-                    console.log('No new transactions found');
+                    message = 'All transactions up to date.';
                 }
+
+                if (newDisconnected.length > 0) {
+                    message += `\n\nThese accounts need reconnection:\n${newDisconnected.join('\n')}`;
+                }
+
+                alert(message);
             } catch (error) {
                 console.error('Error syncing transactions:', error);
                 alert('Failed to sync transactions. Please try again.');
@@ -6209,80 +6224,6 @@
             } catch (error) {
                 console.error('Error removing account:', error);
                 alert('Failed to remove account');
-            }
-        }
-
-        async function syncTransactions() {
-            try {
-                // Get all connected accounts
-                const accountsResponse = await fetch('/api/accounts');
-                const accountsResult = await accountsResponse.json();
-
-                if (!accountsResult.accounts || accountsResult.accounts.length === 0) {
-                    alert('No connected accounts found. Please connect a bank account first.');
-                    return;
-                }
-
-                // Filter to only sync connected accounts (not disconnected ones)
-                const connectedAccounts = accountsResult.accounts.filter(a => a.status !== 'disconnected');
-                const disconnectedCount = accountsResult.accounts.length - connectedAccounts.length;
-
-                if (connectedAccounts.length === 0) {
-                    alert('All accounts need reconnection. Please remove and reconnect your bank accounts.');
-                    return;
-                }
-
-                alert('Syncing transactions from your connected accounts...');
-                let totalSynced = 0;
-                let newDisconnected = [];
-
-                // Fetch transactions for each connected account
-                for (const account of connectedAccounts) {
-                    try {
-                        const response = await fetch('/api/transactions/fetch', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                accountId: account.id
-                            })
-                        });
-
-                        const result = await response.json();
-                        if (result.success) {
-                            totalSynced += result.newCount || 0;
-                        } else if (result.disconnected) {
-                            // Account became disconnected during sync
-                            newDisconnected.push(account.institutionName + ' ' + (account.lastFour || ''));
-                        }
-                    } catch (error) {
-                        console.error(`Error syncing transactions for account ${account.id}:`, error);
-                    }
-                }
-
-                // Refresh accounts list to show updated status
-                loadConnectedAccounts();
-                loadTransactionsFromAPI();
-
-                // Build result message
-                let message = '';
-                if (totalSynced > 0) {
-                    message = `Synced ${totalSynced} new transactions.`;
-                } else {
-                    message = 'All transactions up to date.';
-                }
-                if (newDisconnected.length > 0) {
-                    message += `\n\n${newDisconnected.length} account(s) need reconnection:\n${newDisconnected.join('\n')}\n\nGo to Profile to remove and reconnect.`;
-                }
-                if (disconnectedCount > 0 && newDisconnected.length === 0) {
-                    message += `\n\n(${disconnectedCount} account(s) skipped - need reconnection)`;
-                }
-                alert(message);
-
-            } catch (error) {
-                console.error('Error syncing transactions:', error);
-                alert('Failed to sync transactions. Please try again.');
             }
         }
 
@@ -6590,10 +6531,24 @@
         }
 
         async function updateIncomePageCalculations(incomeTransactions) {
-            // Calculate total deposits from all Income transactions
-            const totalDeposits = incomeTransactions.reduce((sum, transaction) => {
+            // Get selected month/year from Income page selectors
+            const incomePage = document.getElementById('categoryDetailPage-income');
+            const monthSelector = incomePage ? incomePage.querySelector('.month-selector') : null;
+            const yearSelector = incomePage ? incomePage.querySelector('.year-selector') : null;
+            const selectedMonth = monthSelector ? parseInt(monthSelector.value) : new Date().getMonth() + 1;
+            const selectedYear = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
+
+            // Filter income transactions by selected month/year
+            const filteredIncomeTransactions = incomeTransactions.filter(transaction => {
+                if (!transaction.date) return false;
+                const txnDate = new Date(transaction.date);
+                return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+            });
+
+            // Calculate total deposits from filtered Income transactions
+            const totalDeposits = filteredIncomeTransactions.reduce((sum, transaction) => {
                 const amount = parseFloat(transaction.amount) || 0;
-                return sum + Math.abs(amount); // Use absolute value for income
+                return sum + Math.abs(amount);
             }, 0);
 
             // Update deposits display
@@ -6608,15 +6563,20 @@
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
+                    // Filter all transactions by selected month/year
+                    const filteredTransactions = result.transactions.filter(transaction => {
+                        if (!transaction.date) return false;
+                        const txnDate = new Date(transaction.date);
+                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+                    });
+
                     // Calculate total expenses (all categories except Income and Ignore)
-                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
+                    const totalExpenses = filteredTransactions.reduce((sum, transaction) => {
                         const category = transaction.category || 'Unsorted';
-                        // Skip Income and Ignore categories
                         if (category === 'Income' || category === 'Ignore') {
                             return sum;
                         }
                         const amount = parseFloat(transaction.amount) || 0;
-                        // Expenses are negative amounts, so we use absolute value
                         return sum + Math.abs(amount);
                     }, 0);
 
@@ -7388,8 +7348,21 @@
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
+                    // Get selected month/year from dashboard selectors
+                    const monthSelector = document.getElementById('dashboard-month-selector');
+                    const yearSelector = document.getElementById('dashboard-year-selector');
+                    const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+                    const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
+
+                    // Filter transactions by selected month/year
+                    const filteredTransactions = result.transactions.filter(transaction => {
+                        if (!transaction.date) return false;
+                        const txnDate = new Date(transaction.date);
+                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+                    });
+
                     // Calculate total income (Income category)
-                    const totalIncome = result.transactions.reduce((sum, transaction) => {
+                    const totalIncome = filteredTransactions.reduce((sum, transaction) => {
                         if (transaction.category === 'Income') {
                             return sum + Math.abs(parseFloat(transaction.amount) || 0);
                         }
@@ -7397,7 +7370,7 @@
                     }, 0);
 
                     // Calculate total expenses (all categories except Income and Ignore)
-                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
+                    const totalExpenses = filteredTransactions.reduce((sum, transaction) => {
                         const category = transaction.category || 'Unsorted';
                         if (category === 'Income' || category === 'Ignore') {
                             return sum;
@@ -7539,6 +7512,9 @@
                 // Reload transactions or update categories based on which page is active
                 if (parentElement.id.includes('categories')) {
                     updateHomepageCategoryCards();
+                } else if (parentElement.id.includes('dashboard')) {
+                    loadTransactionsFromAPI();
+                    updateHomeOverview();
                 } else {
                     loadTransactionsFromAPI();
                 }
