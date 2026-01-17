@@ -5389,6 +5389,7 @@
         // Helper functions derived from CATEGORY_CONFIG
         const SLUG_TO_DISPLAY = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.slug, c.displayName]));
         const SLUG_TO_TYPE = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.slug, c.type]));
+        const SLUG_TO_TRANSACTION_NAME = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.slug, c.transactionName]));
         const DISPLAY_TO_SLUG = Object.fromEntries(CATEGORY_CONFIG.map(c => [c.displayName, c.slug]));
         const FLEXIBLE_MONTHLY_CATEGORIES = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
         const FLEXIBLE_MONTHLY_NAMES = FLEXIBLE_MONTHLY_CATEGORIES.map(c => c.displayName);
@@ -6275,9 +6276,9 @@
 
         async function loadCategoryTransactions(categorySlug) {
             try {
-                // Convert category slug back to proper category name using centralized config
-                const categoryName = SLUG_TO_DISPLAY[categorySlug];
-                if (!categoryName) {
+                // Convert category slug to transaction name for matching (uppercase)
+                const transactionName = SLUG_TO_TRANSACTION_NAME[categorySlug];
+                if (!transactionName) {
                     console.error('Unknown category slug:', categorySlug);
                     return;
                 }
@@ -6301,7 +6302,7 @@
                 if (response.ok && result.transactions) {
                     // Filter transactions for this specific category AND selected month/year
                     const categoryTransactions = result.transactions.filter(transaction => {
-                        if (transaction.category !== categoryName) return false;
+                        if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
                         const txnDate = new Date(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     });
@@ -6309,7 +6310,7 @@
                     // Also get manual transactions from localStorage for this category
                     const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
                     const manualCategoryTransactions = manualTransactions.filter(transaction => {
-                        if (transaction.category !== categoryName) return false;
+                        if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
                         const txnDate = new Date(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     });
