@@ -8873,101 +8873,128 @@
                 });
 
                 categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
-                    // Skip fixed-annual categories - they show due date, not budgeted/spent
                     const categoryType = SLUG_TO_TYPE[categorySlug];
+
+                    // Skip fixed-annual categories - they show due date, not budgeted/spent
                     if (categoryType === 'fixed-annual') return;
 
-                    // Get budgeted from server (via budgetMap) or fallback to element
-                    const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-                    const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
-                    if (!budgetedElement) return;
-
-                    // Use server budget if available, otherwise fall back to element value
-                    const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
-                    const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
-
-                    // Calculate spent amount from actual transactions
+                    // Calculate transactions for this category
                     const categoryTransactions = filteredTransactions.filter(t =>
                         t.category && t.category.toUpperCase() === transactionCategoryName
                     );
-                    const spentValue = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                    const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
 
-                    // Calculate remaining: (Budgeted + Rollover) - Spent
-                    const remainingValue = (budgetedValue + rolloverValue) - spentValue;
-
-                    // Update homepage card budgeted/spent info
+                    // Update homepage card
                     const homeCards = document.querySelectorAll(`.home-category-item`);
                     homeCards.forEach(card => {
-                        const categoryName = card.querySelector('.category-name');
-                        if (categoryName && categoryName.textContent.trim() === displayName) {
-                            // Update the main category amount (top right) to show remaining value
+                        const categoryNameEl = card.querySelector('.category-name');
+                        if (categoryNameEl && categoryNameEl.textContent.trim() === displayName) {
                             const categoryAmountElement = card.querySelector('.category-amount');
-                            if (categoryAmountElement) {
-                                const sign = remainingValue >= 0 ? '' : '-';
-                                categoryAmountElement.textContent = `${sign}$${Math.abs(remainingValue).toFixed(2)}`;
-                                // Apply positive/negative styling
-                                categoryAmountElement.className = remainingValue >= 0 ? 'category-amount positive' : 'category-amount negative';
-                            }
-
-                            // Find or create budget info section
                             let budgetInfoDiv = card.querySelector('.budget-info');
-                            if (!budgetInfoDiv) {
-                                budgetInfoDiv = document.createElement('div');
-                                budgetInfoDiv.className = 'budget-info';
-                                budgetInfoDiv.style.display = 'flex';
-                                budgetInfoDiv.style.justifyContent = 'space-between';
-                                budgetInfoDiv.style.marginTop = '8px';
-
-                                const progressDiv = card.querySelector('.category-progress');
-                                if (progressDiv) {
-                                    progressDiv.appendChild(budgetInfoDiv);
-                                }
-                            }
-
-                            // Update budget info content
-                            budgetInfoDiv.innerHTML = `
-                                <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
-                                <span class="spent-text">SPENT: $${spentValue.toFixed(2)}</span>
-                            `;
-
-                            // Update progress bar
                             const progressBarContainer = card.querySelector('.progress-bar-container');
-                            if (!progressBarContainer && budgetedValue > 0) {
-                                const progressContainer = document.createElement('div');
-                                progressContainer.className = 'progress-bar-container';
-                                progressContainer.style.width = '100%';
-                                progressContainer.style.height = '2px';
-                                progressContainer.style.backgroundColor = '#e6e6e6';
-                                progressContainer.style.borderRadius = '1px';
-                                progressContainer.style.marginBottom = '8px';
 
-                                const progressBar = document.createElement('div');
-                                progressBar.className = 'progress-bar';
-                                progressBar.style.height = '100%';
-                                progressBar.style.backgroundColor = '#737373';
-                                progressBar.style.borderRadius = '1px';
-                                progressBar.style.transition = 'width 0.3s ease';
+                            // Handle fixed-monthly categories differently
+                            if (categoryType === 'fixed-monthly') {
+                                // Get budgeted value and due date from category detail page
+                                const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                                const dueDateElement = document.getElementById(`${categorySlug}-due-date`);
+                                const budgetedValue = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value')) || 0 : 0;
+                                const dueDate = dueDateElement ? dueDateElement.textContent.trim() : '';
 
-                                const percentage = budgetedValue > 0 ? Math.min((spentValue / budgetedValue) * 100, 100) : 0;
-                                progressBar.style.width = `${percentage}%`;
-
-                                progressContainer.appendChild(progressBar);
-
-                                const progressDiv = card.querySelector('.category-progress');
-                                if (progressDiv) {
-                                    progressDiv.insertBefore(progressContainer, budgetInfoDiv);
+                                // Remove progress bar if exists
+                                if (progressBarContainer) {
+                                    progressBarContainer.remove();
                                 }
-                            } else if (progressBarContainer && budgetedValue > 0) {
-                                // Update existing progress bar
-                                const progressBar = progressBarContainer.querySelector('.progress-bar');
-                                if (progressBar) {
-                                    const percentage = Math.min((spentValue / budgetedValue) * 100, 100);
+
+                                if (categoryTransactions.length > 0) {
+                                    // Has transactions: show total and "Paid ✓"
+                                    if (categoryAmountElement) {
+                                        categoryAmountElement.textContent = `$${totalSpent.toFixed(2)}`;
+                                        categoryAmountElement.className = 'category-amount';
+                                    }
+                                    if (budgetInfoDiv) {
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
+                                    }
+                                } else {
+                                    // No transactions: show budgeted and due date
+                                    if (categoryAmountElement) {
+                                        categoryAmountElement.textContent = `$${budgetedValue.toFixed(2)}`;
+                                        categoryAmountElement.className = 'category-amount';
+                                    }
+                                    if (budgetInfoDiv) {
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
+                                    }
+                                }
+                            } else {
+                                // Flexible-monthly categories: show remaining, budgeted/spent, progress bar
+                                const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                                const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
+                                if (!budgetedElement) return;
+
+                                const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
+                                const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
+                                const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
+
+                                if (categoryAmountElement) {
+                                    const sign = remainingValue >= 0 ? '' : '-';
+                                    categoryAmountElement.textContent = `${sign}$${Math.abs(remainingValue).toFixed(2)}`;
+                                    categoryAmountElement.className = remainingValue >= 0 ? 'category-amount positive' : 'category-amount negative';
+                                }
+
+                                if (!budgetInfoDiv) {
+                                    budgetInfoDiv = document.createElement('div');
+                                    budgetInfoDiv.className = 'budget-info';
+                                    budgetInfoDiv.style.display = 'flex';
+                                    budgetInfoDiv.style.justifyContent = 'space-between';
+                                    budgetInfoDiv.style.marginTop = '8px';
+                                    const progressDiv = card.querySelector('.category-progress');
+                                    if (progressDiv) {
+                                        progressDiv.appendChild(budgetInfoDiv);
+                                    }
+                                }
+
+                                budgetInfoDiv.innerHTML = `
+                                    <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
+                                    <span class="spent-text">SPENT: $${totalSpent.toFixed(2)}</span>
+                                `;
+
+                                // Update progress bar
+                                if (!progressBarContainer && budgetedValue > 0) {
+                                    const progressContainer = document.createElement('div');
+                                    progressContainer.className = 'progress-bar-container';
+                                    progressContainer.style.width = '100%';
+                                    progressContainer.style.height = '2px';
+                                    progressContainer.style.backgroundColor = '#e6e6e6';
+                                    progressContainer.style.borderRadius = '1px';
+                                    progressContainer.style.marginBottom = '8px';
+
+                                    const progressBar = document.createElement('div');
+                                    progressBar.className = 'progress-bar';
+                                    progressBar.style.height = '100%';
+                                    progressBar.style.backgroundColor = '#737373';
+                                    progressBar.style.borderRadius = '1px';
+                                    progressBar.style.transition = 'width 0.3s ease';
+
+                                    const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
                                     progressBar.style.width = `${percentage}%`;
+
+                                    progressContainer.appendChild(progressBar);
+
+                                    const progressDiv = card.querySelector('.category-progress');
+                                    if (progressDiv) {
+                                        progressDiv.insertBefore(progressContainer, budgetInfoDiv);
+                                    }
+                                } else if (progressBarContainer && budgetedValue > 0) {
+                                    const progressBar = progressBarContainer.querySelector('.progress-bar');
+                                    if (progressBar) {
+                                        const percentage = Math.min((totalSpent / budgetedValue) * 100, 100);
+                                        progressBar.style.width = `${percentage}%`;
+                                    }
                                 }
                             }
-                    }
+                        }
+                    });
                 });
-            });
 
                 // Update ignore count
                 const ignoreTransactions = result.transactions.filter(t =>
