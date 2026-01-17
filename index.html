@@ -4270,7 +4270,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="phone-budgeted">$38.62</div>
+                <div class="budget-value editable" contenteditable="true" id="phone-budgeted" data-value="38.62">$38.62</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4347,7 +4347,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="costco-budgeted">$5.42</div>
+                <div class="budget-value editable" contenteditable="true" id="costco-budgeted" data-value="5.42">$5.42</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4424,7 +4424,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="insurance-rent-budgeted">$10.58</div>
+                <div class="budget-value editable" contenteditable="true" id="insurance-rent-budgeted" data-value="10.58">$10.58</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4481,7 +4481,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="letterboxd-budgeted">$1.58</div>
+                <div class="budget-value editable" contenteditable="true" id="letterboxd-budgeted" data-value="1.58">$1.58</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4538,7 +4538,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="grammarly-budgeted">$12.00</div>
+                <div class="budget-value editable" contenteditable="true" id="grammarly-budgeted" data-value="12.00">$12.00</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4595,7 +4595,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="domain-budgeted">$1.67</div>
+                <div class="budget-value editable" contenteditable="true" id="domain-budgeted" data-value="1.67">$1.67</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4652,7 +4652,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="google-one-budgeted">$1.67</div>
+                <div class="budget-value editable" contenteditable="true" id="google-one-budgeted" data-value="1.67">$1.67</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4709,7 +4709,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="c-capital-one-annual-fee-budgeted">$7.92</div>
+                <div class="budget-value editable" contenteditable="true" id="c-capital-one-annual-fee-budgeted" data-value="7.92">$7.92</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4766,7 +4766,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="c-sw-annual-fee-budgeted">$12.42</div>
+                <div class="budget-value editable" contenteditable="true" id="c-sw-annual-fee-budgeted" data-value="12.42">$12.42</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4823,7 +4823,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="n-capital-one-annual-fee-budgeted">$32.92</div>
+                <div class="budget-value editable" contenteditable="true" id="n-capital-one-annual-fee-budgeted" data-value="32.92">$32.92</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -4880,7 +4880,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label">Monthly Budgeted</div>
-                <div class="budget-value" id="n-sw-annual-fee-budgeted">$19.08</div>
+                <div class="budget-value editable" contenteditable="true" id="n-sw-annual-fee-budgeted" data-value="19.08">$19.08</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label">Rollover</div>
@@ -8761,10 +8761,26 @@
 
             const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-            // Update Total - show $0.00 if no transactions, otherwise actual amount
+            // Update Total - show -- if no transactions, otherwise sum of transactions for that month
             const actualElement = document.getElementById(`${categorySlug}-total`);
             if (actualElement) {
-                actualElement.textContent = `$${totalSpent.toFixed(2)}`;
+                if (totalSpent > 0) {
+                    actualElement.textContent = `$${totalSpent.toFixed(2)}`;
+                } else {
+                    actualElement.textContent = '--';
+                }
+            }
+
+            // Update Status on detail page - Paid if transactions exist, otherwise Pending
+            const statusElement = document.getElementById(`${categorySlug}-status`);
+            if (statusElement) {
+                if (totalSpent > 0) {
+                    statusElement.textContent = 'Paid';
+                    statusElement.style.color = '#09bc00';
+                } else {
+                    statusElement.textContent = 'Pending';
+                    statusElement.style.color = '';
+                }
             }
 
             // Update rollover amount (recalculate based on current month)
@@ -8778,16 +8794,12 @@
                 }
             }
 
-            // Update paid status for fixed annual
+            // Update paid status for fixed annual on home page card
             const paidElement = document.querySelector(`#category-${categorySlug} .category-due`);
             if (paidElement) {
                 if (totalSpent > 0) {
-                    // Show paid status
-                    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     paidElement.innerHTML = `<span style="color: #09bc00;">✓</span>`;
                 } else {
-                    // Show not paid with annual due date format (Month Day)
-                    const dueDate = getAnnualDueDateForCategory(categorySlug);
                     paidElement.innerHTML = `<span style="color: #ff0000;">✗</span>`;
                 }
             }
