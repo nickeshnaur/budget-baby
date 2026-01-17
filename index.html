@@ -478,31 +478,6 @@
             color: #333;
         }
 
-        .month-selector-section .custom-dropdown {
-            background: #ffffff;
-            color: #000000;
-            padding: 8px 14px 6px 20px;
-            border-radius: 20px;
-            font-family: "Roboto", sans-serif;
-            font-weight: 900;
-            font-size: 12px;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            border: 1px solid #E6E6E6;
-            cursor: pointer;
-            outline: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            position: relative;
-            min-width: fit-content;
-            width: auto;
-        }
-
-        .month-selector-section .custom-dropdown:hover {
-            border-color: #333;
-        }
-
         /* Transaction Tag Colors */
         .transaction-tag.unsorted {
             background: #e9ecef;
@@ -2164,7 +2139,8 @@
             margin-bottom: 12px;
         }
 
-        .transactions-section .custom-dropdown {
+        /* Custom Dropdown - Single source of truth for all dropdown styling */
+        .custom-dropdown {
             background: #ffffff;
             color: #000000;
             padding: 8px 14px 6px 20px;
@@ -2185,7 +2161,7 @@
             width: auto;
         }
 
-        .transactions-section .custom-dropdown:hover {
+        .custom-dropdown:hover {
             border-color: #333;
         }
 
