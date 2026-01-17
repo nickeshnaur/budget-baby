@@ -7756,13 +7756,13 @@
                     ];
                     const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-                    let totalBudgeted = 0;
-                    for (const category of flexibleCategories) {
-                        const budgetData = await loadBudget(category, selectedPeriod);
-                        if (budgetData.amount !== null) {
-                            totalBudgeted += budgetData.amount;
-                        }
-                    }
+                    // Fetch all budgets in parallel
+                    const budgetPromises = flexibleCategories.map(category => loadBudget(category, selectedPeriod));
+                    const budgetResults = await Promise.all(budgetPromises);
+
+                    const totalBudgeted = budgetResults.reduce((sum, budgetData) => {
+                        return sum + (budgetData.amount || 0);
+                    }, 0);
 
                     // Update budgeted display
                     const budgetedElement = document.getElementById('home-overview-budgeted');
