@@ -285,6 +285,7 @@
         }
 
         .overview-amount.income { color: #333; }
+        .overview-amount.budgeted { color: #333; }
         .overview-amount.expenses { color: #333; }
         .overview-amount.savings { color: #4caf50; }
 
@@ -2462,6 +2463,10 @@
                 <div class="overview-item">
                     <div class="overview-label">Income</div>
                     <div class="overview-amount income" id="home-overview-income">$0.00</div>
+                </div>
+                <div class="overview-item">
+                    <div class="overview-label">Budgeted</div>
+                    <div class="overview-amount budgeted" id="home-overview-budgeted">$0.00</div>
                 </div>
                 <div class="overview-item">
                     <div class="overview-label">Expenses</div>
@@ -7741,6 +7746,28 @@
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount expenses';
                         }
+                    }
+
+                    // Calculate total budgeted amount from all flexible monthly categories
+                    const flexibleCategories = [
+                        'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts',
+                        'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick',
+                        'Personal Chelsea', 'School', 'Giving'
+                    ];
+                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+
+                    let totalBudgeted = 0;
+                    for (const category of flexibleCategories) {
+                        const budgetData = await loadBudget(category, selectedPeriod);
+                        if (budgetData.amount !== null) {
+                            totalBudgeted += budgetData.amount;
+                        }
+                    }
+
+                    // Update budgeted display
+                    const budgetedElement = document.getElementById('home-overview-budgeted');
+                    if (budgetedElement) {
+                        budgetedElement.textContent = `$${totalBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                     }
                 }
             } catch (error) {
