@@ -8939,6 +8939,9 @@
 
                             // Handle fixed-annual categories - show Paid or Due date
                             if (categoryType === 'fixed-annual') {
+                                if (budgetInfoDiv) {
+                                    budgetInfoDiv.style.justifyContent = 'flex-end';
+                                }
                                 if (categoryTransactions.length > 0) {
                                     // Has transactions: show total and "Paid ✓"
                                     if (categoryAmountElement) {
@@ -8962,6 +8965,11 @@
                                 // Remove progress bar if exists
                                 if (progressBarContainer) {
                                     progressBarContainer.remove();
+                                }
+
+                                // Align to right for monthly bills
+                                if (budgetInfoDiv) {
+                                    budgetInfoDiv.style.justifyContent = 'flex-end';
                                 }
 
                                 if (categoryTransactions.length > 0) {
