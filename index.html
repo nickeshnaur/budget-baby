@@ -6857,6 +6857,20 @@
             }
         }
 
+        // Helper functions to save/retrieve monthly budgeted amounts per category/month/year
+        function saveMonthlyBudgeted(categorySlug, month, year, amount) {
+            const key = `monthlyBudgeted_${categorySlug}_${year}`;
+            let data = JSON.parse(localStorage.getItem(key) || '{}');
+            data[month] = amount;
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        function getMonthlyBudgeted(categorySlug, month, year, defaultValue) {
+            const key = `monthlyBudgeted_${categorySlug}_${year}`;
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            return data[month] !== undefined ? data[month] : defaultValue;
+        }
+
         function calculateRollover(categorySlug, annualCost) {
             // Get the due date from the DOM element
             const dueDateElement = document.getElementById(`${categorySlug}-due-date`);
@@ -6971,26 +6985,37 @@
                 }
             }
 
-            // Calculate rollover: selectedMonth × monthlyBudgeted (cumulative)
+            // Calculate rollover: sum of all previous months' budgeted amounts
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                // Get selected month from the page selector
+                // Get selected month/year from the page selector
                 const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
                 let selectedMonth = new Date().getMonth() + 1;
+                let selectedYear = new Date().getFullYear();
                 if (categoryPage) {
                     const monthSelector = categoryPage.querySelector('.category-month-selector');
+                    const yearSelector = categoryPage.querySelector('.category-year-selector');
                     if (monthSelector) {
                         selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
                     }
+                    if (yearSelector) {
+                        selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
+                    }
                 }
 
-                // Get monthly budgeted value
+                // Get current monthly budgeted value and save it for this month
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                const monthlyBudgeted = monthlyBudgetedElement ?
+                const currentMonthlyBudgeted = monthlyBudgetedElement ?
                     parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                // Rollover = selectedMonth × monthlyBudgeted
-                const rollover = selectedMonth * monthlyBudgeted;
+                // Save current month's budgeted amount to localStorage
+                saveMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, currentMonthlyBudgeted);
+
+                // Sum up all previous months' budgeted amounts for rollover
+                let rollover = 0;
+                for (let month = 1; month < selectedMonth; month++) {
+                    rollover += getMonthlyBudgeted(elementSlug, month, selectedYear, currentMonthlyBudgeted);
+                }
                 rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
@@ -8774,23 +8799,34 @@
                 }
             }
 
-            // Update rollover amount: selectedMonth × monthlyBudgeted (cumulative)
+            // Update rollover amount: sum of all previous months' budgeted amounts
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                // Get selected month from categories page or detail page selector
+                // Get selected month/year from categories page selector
                 let selectedMonth = new Date().getMonth() + 1;
+                let selectedYear = new Date().getFullYear();
                 const categoryMonthSelector = document.getElementById('categories-month-selector');
+                const categoryYearSelector = document.getElementById('categories-year-selector');
                 if (categoryMonthSelector) {
                     selectedMonth = parseInt(categoryMonthSelector.getAttribute('data-value')) || selectedMonth;
                 }
+                if (categoryYearSelector) {
+                    selectedYear = parseInt(categoryYearSelector.getAttribute('data-value')) || selectedYear;
+                }
 
-                // Get monthly budgeted value
+                // Get current monthly budgeted value
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                const monthlyBudgeted = monthlyBudgetedElement ?
+                const currentMonthlyBudgeted = monthlyBudgetedElement ?
                     parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                // Rollover = selectedMonth × monthlyBudgeted
-                const rolloverAmount = selectedMonth * monthlyBudgeted;
+                // Save current month's budgeted amount to localStorage
+                saveMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, currentMonthlyBudgeted);
+
+                // Sum up all previous months' budgeted amounts for rollover
+                let rolloverAmount = 0;
+                for (let month = 1; month < selectedMonth; month++) {
+                    rolloverAmount += getMonthlyBudgeted(elementSlug, month, selectedYear, currentMonthlyBudgeted);
+                }
                 rolloverElement.textContent = `$${rolloverAmount.toFixed(2)}`;
             }
 
