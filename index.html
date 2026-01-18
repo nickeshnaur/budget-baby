@@ -9026,17 +9026,29 @@
                     .filter(c => c.type !== 'income' && c.type !== 'ignore')
                     .map(c => [c.slug, c.displayName, c.transactionName]);
 
-                // Get selected month/year from categories page selectors or use current date as fallback
+                // Get selected month/year from page selectors or use current date as fallback
                 let selectedMonth = currentMonth;
                 let selectedYear = currentYear;
 
-                const categoryMonthSelector = document.getElementById('categories-month-selector');
-                const categoryYearSelector = document.getElementById('categories-year-selector');
+                // Check dashboard selectors first (home page)
+                const dashboardMonthSelector = document.getElementById('dashboard-month-selector');
+                const dashboardYearSelector = document.getElementById('dashboard-year-selector');
+                const dashboardPage = document.getElementById('dashboard');
 
-                if (categoryMonthSelector && categoryYearSelector &&
-                    document.getElementById('categoriesPage').style.display !== 'none') {
-                    selectedMonth = parseInt(categoryMonthSelector.getAttribute('data-value')) || currentMonth;
-                    selectedYear = parseInt(categoryYearSelector.getAttribute('data-value')) || currentYear;
+                if (dashboardMonthSelector && dashboardYearSelector && dashboardPage &&
+                    dashboardPage.style.display !== 'none') {
+                    selectedMonth = parseInt(dashboardMonthSelector.getAttribute('data-value')) || currentMonth;
+                    selectedYear = parseInt(dashboardYearSelector.getAttribute('data-value')) || currentYear;
+                } else {
+                    // Fall back to categories page selectors
+                    const categoryMonthSelector = document.getElementById('categories-month-selector');
+                    const categoryYearSelector = document.getElementById('categories-year-selector');
+
+                    if (categoryMonthSelector && categoryYearSelector &&
+                        document.getElementById('categoriesPage').style.display !== 'none') {
+                        selectedMonth = parseInt(categoryMonthSelector.getAttribute('data-value')) || currentMonth;
+                        selectedYear = parseInt(categoryYearSelector.getAttribute('data-value')) || currentYear;
+                    }
                 }
 
                 // Filter transactions for selected period
