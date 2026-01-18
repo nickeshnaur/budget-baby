@@ -9074,16 +9074,24 @@
                             let budgetInfoDiv = card.querySelector('.budget-info');
                             const progressBarContainer = card.querySelector('.progress-bar-container');
 
-                            // Handle fixed-annual categories - show Monthly Budgeted and Paid/due date
+                            // Handle fixed-annual categories - show Monthly Budgeted (adjusted for negative pot if paid)
                             if (categoryType === 'fixed-annual') {
                                 // Get monthly budgeted value from detail page
                                 const monthlyBudgetedElement = document.getElementById(`${categorySlug}-budgeted`);
                                 const monthlyBudgeted = monthlyBudgetedElement ?
                                     parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                                // Always show Monthly Budgeted amount
+                                // Get pot value from detail page
+                                const potElement = document.getElementById(`${categorySlug}-rollover`);
+                                const potValue = potElement ?
+                                    parseFloat(potElement.textContent.replace(/[^0-9.-]/g, '')) * (potElement.textContent.includes('-') ? -1 : 1) : 0;
+
+                                // Calculate display amount: monthly_budgeted + max(0, -pot)
+                                // If pot is negative (shortfall), add the shortfall to monthly budgeted
+                                const displayAmount = monthlyBudgeted + Math.max(0, -potValue);
+
                                 if (categoryAmountElement) {
-                                    categoryAmountElement.textContent = `$${monthlyBudgeted.toFixed(2)}`;
+                                    categoryAmountElement.textContent = `$${displayAmount.toFixed(2)}`;
                                     categoryAmountElement.className = 'category-amount';
                                 }
 
