@@ -9201,8 +9201,14 @@
                                     if (budgetInfoDiv) {
                                         budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
                                     }
+                                } else {
+                                    // No transactions: show due date
+                                    const dueDateElement = document.getElementById(`${elementSlug}-due-date`);
+                                    const dueDate = dueDateElement ? dueDateElement.textContent.trim() : '';
+                                    if (budgetInfoDiv && dueDate) {
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
+                                    }
                                 }
-                                // If no transactions, leave the existing due date display
                             }
                             // Handle fixed-monthly categories differently
                             else if (categoryType === 'fixed-monthly') {
