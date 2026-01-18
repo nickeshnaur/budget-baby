@@ -2398,7 +2398,7 @@
 
     <!-- App Header -->
     <div class="app-header">
-        <img src="BudgetBaby-Logo-4.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
+        <img src="BudgetBaby-Logo.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
         <div class="header-actions">
             <!-- Refresh/Sync Icon -->
             <svg class="header-icon" onclick="syncTransactionsFromHeader()" viewBox="0 0 24 24">
@@ -6963,6 +6963,21 @@
             const annualCostElement = document.getElementById(`${elementSlug}-annual-cost`);
             const annualCost = annualCostElement ? parseFloat(annualCostElement.getAttribute('data-value')) || 0 : 0;
 
+            // Get selected month/year from the page selector (needed for multiple calculations below)
+            const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+            let selectedMonth = new Date().getMonth() + 1;
+            let selectedYear = new Date().getFullYear();
+            if (categoryPage) {
+                const monthSelector = categoryPage.querySelector('.category-month-selector');
+                const yearSelector = categoryPage.querySelector('.category-year-selector');
+                if (monthSelector) {
+                    selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
+                }
+                if (yearSelector) {
+                    selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
+                }
+            }
+
             // Calculate total from transactions (already filtered by selected month)
             let totalThisMonth = 0;
 
@@ -6986,21 +7001,6 @@
             // Calculate pot/rollover: sum of budgeted amounts through current month - year's transactions
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                // Get selected month/year from the page selector
-                const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
-                let selectedMonth = new Date().getMonth() + 1;
-                let selectedYear = new Date().getFullYear();
-                if (categoryPage) {
-                    const monthSelector = categoryPage.querySelector('.category-month-selector');
-                    const yearSelector = categoryPage.querySelector('.category-year-selector');
-                    if (monthSelector) {
-                        selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
-                    }
-                    if (yearSelector) {
-                        selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
-                    }
-                }
-
                 // Get monthly budgeted value - prefer localStorage, fall back to HTML
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                 const htmlBudgeted = monthlyBudgetedElement ?
