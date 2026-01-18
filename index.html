@@ -6554,19 +6554,10 @@
             existingTransactions.forEach(el => el.remove());
 
             // Add real transactions using the same component function
+            // Transactions are already filtered by month/year before being passed here
             transactions.forEach(transaction => {
                 const transactionElement = createDashboardTransactionElement(transaction);
                 transactionsSection.appendChild(transactionElement);
-
-                // Apply filtering to newly added transactions
-                const dateElement = transactionElement.querySelector('.transaction-date');
-                if (dateElement) {
-                    const dateString = dateElement.textContent.trim();
-                    const shouldShow = isTransactionInSelectedPeriod(dateString);
-                    if (!shouldShow) {
-                        transactionElement.style.display = 'none';
-                    }
-                }
             });
         }
 
