@@ -9084,7 +9084,7 @@
                                 // Get pot value from detail page
                                 const potElement = document.getElementById(`${categorySlug}-rollover`);
                                 const potValue = potElement ?
-                                    parseFloat(potElement.textContent.replace(/[^0-9.-]/g, '')) * (potElement.textContent.includes('-') ? -1 : 1) : 0;
+                                    parseFloat(potElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
                                 // Calculate display amount: monthly_budgeted + max(0, -pot)
                                 // If pot is negative (shortfall), add the shortfall to monthly budgeted
