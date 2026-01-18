@@ -9076,13 +9076,16 @@
 
                             // Handle fixed-annual categories - show Monthly Budgeted (adjusted for negative pot if paid)
                             if (categoryType === 'fixed-annual') {
+                                // Normalize slug: convert triple dashes to single dashes for element ID lookups
+                                const elementSlug = categorySlug.replace(/---/g, '-');
+
                                 // Get monthly budgeted value from detail page
-                                const monthlyBudgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                                const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                                 const monthlyBudgeted = monthlyBudgetedElement ?
                                     parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
                                 // Get pot value from detail page
-                                const potElement = document.getElementById(`${categorySlug}-rollover`);
+                                const potElement = document.getElementById(`${elementSlug}-rollover`);
                                 const potValue = potElement ?
                                     parseFloat(potElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
