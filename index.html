@@ -9084,10 +9084,22 @@
                                 const monthlyBudgeted = monthlyBudgetedElement ?
                                     parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                                // Get pot value from detail page
-                                const potElement = document.getElementById(`${elementSlug}-rollover`);
-                                const potValue = potElement ?
-                                    parseFloat(potElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                                // Calculate pot directly: sum of budgeted through selectedMonth - transactions through selectedMonth
+                                let totalBudgeted = 0;
+                                for (let month = 1; month <= selectedMonth; month++) {
+                                    totalBudgeted += getMonthlyBudgeted(elementSlug, month, selectedYear, monthlyBudgeted);
+                                }
+
+                                // Get all transactions for this category through selected month
+                                const yearTransactionsForCategory = result.transactions.filter(t => {
+                                    if (!t.category || t.category.toUpperCase() !== transactionCategoryName) return false;
+                                    const txnDate = new Date(t.date);
+                                    return txnDate.getFullYear() === selectedYear && txnDate.getMonth() + 1 <= selectedMonth;
+                                });
+                                const totalSpentThroughMonth = yearTransactionsForCategory.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+                                // Pot = what we've saved - what we've spent
+                                const potValue = totalBudgeted - totalSpentThroughMonth;
 
                                 // Calculate display amount: monthly_budgeted + max(0, -pot)
                                 // If pot is negative (shortfall), add the shortfall to monthly budgeted
