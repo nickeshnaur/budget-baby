@@ -283,7 +283,7 @@
 
         .overview-amount.income { color: #333; }
         .overview-amount.budgeted { color: #333; }
-        .overview-amount.expenses { color: #333; }
+        .overview-amount.negative-savings { color: #e74c3c; }
         .overview-amount.savings { color: #4caf50; }
 
         /* Transactions Section */
@@ -7704,7 +7704,7 @@
                             savingsElement.className = 'overview-amount savings';
                         } else {
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                            savingsElement.className = 'overview-amount expenses';
+                            savingsElement.className = 'overview-amount negative-savings';
                         }
                     }
                 }
@@ -8785,8 +8785,6 @@
             updateFixedAnnualCategoryData(filteredTransactions);
             updateFlexibleMonthlyCategoryData(filteredTransactions);
             updateIncomeCategoryData(filteredTransactions);
-            // Update dashboard overview section
-            updateDashboardOverview(filteredTransactions);
         }
 
         // Helper function to extract all transactions from DOM elements
