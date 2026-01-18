@@ -132,14 +132,9 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .app-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #000000;
-            margin: 0;
+        .app-logo {
+            height: 36px;
             cursor: pointer;
-            transition: color 0.3s ease;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -147,8 +142,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .app-title:hover {
-            color: #b794f4;
+        .app-logo:hover {
+            opacity: 0.8;
         }
 
         .header-actions {
@@ -2403,7 +2398,7 @@
 
     <!-- App Header -->
     <div class="app-header">
-        <h1 class="app-title" onclick="showDashboard()">Budget Baby</h1>
+        <img src="BudgetBaby-Logo.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
         <div class="header-actions">
             <!-- Refresh/Sync Icon -->
             <svg class="header-icon" onclick="syncTransactionsFromHeader()" viewBox="0 0 24 24">
