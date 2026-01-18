@@ -3354,113 +3354,8 @@
         <div class="page-header">
             <h2 class="page-title">Overview</h2>
         </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Jan 2026</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$8,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,000</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Nov 2026</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$8,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,000</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Sep 2026</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$8,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,000</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Aug 2025</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$9,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,200</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,800</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Oct 2025</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$9,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,200</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,800</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="overview-month">
-            <h3 class="overview-month-title">Dec 2025</h3>
-            <div class="overview-month-grid">
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Income</div>
-                    <div class="overview-month-amount">$9,000</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Expenses</div>
-                    <div class="overview-month-amount negative">-$7,200</div>
-                </div>
-                <div class="overview-month-item">
-                    <div class="overview-month-label">Savings</div>
-                    <div class="overview-month-amount savings">$1,800</div>
-                </div>
-            </div>
+        <div id="overview-months-container">
+            <!-- Month cards will be dynamically generated -->
         </div>
     </div>
 
@@ -5918,6 +5813,7 @@
                     updateHomepageCategoryCards();
                 } else if (hash === 'overview') {
                     document.getElementById('overviewPage').style.display = 'block';
+                    updateOverviewPage();
                 } else if (hash === 'profile') {
                     document.getElementById('profilePage').style.display = 'block';
                     loadConnectedAccounts();
@@ -7710,6 +7606,155 @@
                 }
             } catch (error) {
                 console.error('Failed to update home overview:', error);
+            }
+        }
+
+        // Update Overview Page with real data for each month
+        async function updateOverviewPage() {
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+
+                if (!response.ok || !result.transactions) return;
+
+                const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                const allTransactions = [...result.transactions, ...manualTransactions];
+
+                // Determine months range - from Jan 2025 to current month
+                const currentDate = new Date();
+                const currentMonth = currentDate.getMonth() + 1;
+                const currentYear = currentDate.getFullYear();
+
+                // Build list of months from current going back to Jan 2025
+                const months = [];
+                let year = currentYear;
+                let month = currentMonth;
+                while (year > 2025 || (year === 2025 && month >= 1)) {
+                    months.push({ month, year });
+                    month--;
+                    if (month < 1) {
+                        month = 12;
+                        year--;
+                    }
+                    if (year < 2025) break;
+                }
+
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                let html = '';
+
+                for (const { month: selectedMonth, year: selectedYear } of months) {
+                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+
+                    const isInPeriod = (transaction) => {
+                        if (!transaction.date) return false;
+                        const txnDate = new Date(transaction.date);
+                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+                    };
+
+                    // Calculate Income
+                    const totalIncome = allTransactions.reduce((sum, t) => {
+                        if (t.category === 'Income' && isInPeriod(t)) {
+                            return sum + Math.abs(parseFloat(t.amount) || 0);
+                        }
+                        return sum;
+                    }, 0);
+
+                    // Calculate Expenses
+                    let totalExpenses = 0;
+
+                    // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
+                    const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+                    for (const category of flexibleMonthlyCategories) {
+                        const budgetResult = await loadBudget(category.displayName, selectedPeriod);
+                        const budgeted = budgetResult.amount || 0;
+                        const spent = allTransactions
+                            .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
+                            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                        totalExpenses += Math.max(budgeted, spent);
+                    }
+
+                    // 2. MONTHLY BILLS: budgeted if pending, total if paid
+                    const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
+                    for (const category of monthlyBillCategories) {
+                        const elementSlug = category.slug.replace(/---/g, '-');
+                        const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                        const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                        const categoryTransactions = allTransactions.filter(t =>
+                            t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t)
+                        );
+
+                        if (categoryTransactions.length > 0) {
+                            const total = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            totalExpenses += total;
+                        } else {
+                            totalExpenses += budgeted;
+                        }
+                    }
+
+                    // 3. ANNUAL BILLS: monthly budgeted + extra monthly needed
+                    const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
+                    for (const category of annualBillCategories) {
+                        const elementSlug = category.slug.replace(/---/g, '-');
+                        const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                        const monthlyBudgeted = monthlyBudgetedElement ?
+                            parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                        const yearTransactions = allTransactions.filter(t => {
+                            if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+
+                        let runningPot = 0;
+                        for (let m = 1; m <= selectedMonth; m++) {
+                            const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, monthlyBudgeted);
+                            runningPot += mBudgeted;
+
+                            const monthSpent = yearTransactions
+                                .filter(t => {
+                                    const txnDate = new Date(t.date);
+                                    return txnDate.getMonth() + 1 === m;
+                                })
+                                .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            runningPot -= monthSpent;
+
+                            if (runningPot < 0 && m < selectedMonth) {
+                                runningPot = 0;
+                            }
+                        }
+
+                        const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                        totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
+                    }
+
+                    const savings = totalIncome - totalExpenses;
+                    const savingsColor = savings >= 0 ? '#4caf50' : '#e74c3c';
+
+                    html += `
+                        <div class="overview-month">
+                            <h3 class="overview-month-title">${monthNames[selectedMonth - 1]} ${selectedYear}</h3>
+                            <div class="overview-month-grid">
+                                <div class="overview-month-item">
+                                    <div class="overview-month-label">Income</div>
+                                    <div class="overview-month-amount">$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                </div>
+                                <div class="overview-month-item">
+                                    <div class="overview-month-label">Expenses</div>
+                                    <div class="overview-month-amount negative">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                </div>
+                                <div class="overview-month-item">
+                                    <div class="overview-month-label">Savings</div>
+                                    <div class="overview-month-amount" style="color: ${savingsColor}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('overview-months-container').innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update overview page:', error);
             }
         }
 
