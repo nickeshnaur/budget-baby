@@ -9077,6 +9077,10 @@
                     return;
                 }
 
+                // Also include manual transactions from localStorage
+                const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                result.transactions = [...result.transactions, ...manualTransactions];
+
                 // Use centralized CATEGORY_CONFIG - generates array of [slug, displayName, transactionName]
                 const categories = CATEGORY_CONFIG
                     .filter(c => c.type !== 'income' && c.type !== 'ignore')
