@@ -2398,7 +2398,7 @@
 
     <!-- App Header -->
     <div class="app-header">
-        <img src="BudgetBaby-Logo-2.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
+        <img src="BudgetBaby-Logo-3.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
         <div class="header-actions">
             <!-- Refresh/Sync Icon -->
             <svg class="header-icon" onclick="syncTransactionsFromHeader()" viewBox="0 0 24 24">
@@ -7001,13 +7001,20 @@
                     }
                 }
 
-                // Get current monthly budgeted value and save it for this month
+                // Get monthly budgeted value - prefer localStorage, fall back to HTML
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                const currentMonthlyBudgeted = monthlyBudgetedElement ?
+                const htmlBudgeted = monthlyBudgetedElement ?
                     parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                // Save current month's budgeted amount to localStorage
-                saveMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, currentMonthlyBudgeted);
+                // Check if there's a saved value in localStorage for this month
+                const savedBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, null);
+                const currentMonthlyBudgeted = savedBudgeted !== null ? savedBudgeted : htmlBudgeted;
+
+                // Update the display if we have a saved value different from HTML
+                if (monthlyBudgetedElement && savedBudgeted !== null) {
+                    monthlyBudgetedElement.setAttribute('data-value', savedBudgeted.toString());
+                    monthlyBudgetedElement.textContent = `$${savedBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
 
                 // Sum up budgeted amounts from month 1 through selectedMonth (inclusive)
                 let totalBudgeted = 0;
