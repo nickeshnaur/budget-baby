@@ -6971,10 +6971,26 @@
                 }
             }
 
-            // Calculate rollover based on current month vs due month
+            // Calculate rollover: selectedMonth × monthlyBudgeted (cumulative)
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                const rollover = calculateRollover(elementSlug, annualCost);
+                // Get selected month from the page selector
+                const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+                let selectedMonth = new Date().getMonth() + 1;
+                if (categoryPage) {
+                    const monthSelector = categoryPage.querySelector('.category-month-selector');
+                    if (monthSelector) {
+                        selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
+                    }
+                }
+
+                // Get monthly budgeted value
+                const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                const monthlyBudgeted = monthlyBudgetedElement ?
+                    parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                // Rollover = selectedMonth × monthlyBudgeted
+                const rollover = selectedMonth * monthlyBudgeted;
                 rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
@@ -8758,15 +8774,24 @@
                 }
             }
 
-            // Update rollover amount (recalculate based on current month)
+            // Update rollover amount: selectedMonth × monthlyBudgeted (cumulative)
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                const annualCostElement = document.getElementById(`${elementSlug}-annual-cost`);
-                if (annualCostElement) {
-                    const annualCost = parseFloat(annualCostElement.dataset.value || '0');
-                    const rolloverAmount = calculateRollover(elementSlug, annualCost);
-                    rolloverElement.textContent = `$${rolloverAmount.toFixed(2)}`;
+                // Get selected month from categories page or detail page selector
+                let selectedMonth = new Date().getMonth() + 1;
+                const categoryMonthSelector = document.getElementById('categories-month-selector');
+                if (categoryMonthSelector) {
+                    selectedMonth = parseInt(categoryMonthSelector.getAttribute('data-value')) || selectedMonth;
                 }
+
+                // Get monthly budgeted value
+                const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                const monthlyBudgeted = monthlyBudgetedElement ?
+                    parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                // Rollover = selectedMonth × monthlyBudgeted
+                const rolloverAmount = selectedMonth * monthlyBudgeted;
+                rolloverElement.textContent = `$${rolloverAmount.toFixed(2)}`;
             }
 
             // Update paid status for fixed annual on home page card
