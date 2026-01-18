@@ -4932,6 +4932,64 @@
         </button>
     </div>
 
+    <!-- Netflix Category Detail Page (TEST) -->
+    <div id="categoryDetailPage-netflix" class="container" style="display: none;">
+        <div class="category-detail-header">
+            <div class="category-detail-title">
+                🎬 Netflix
+            </div>
+            <div class="category-detail-type">Annual Bills</div>
+        </div>
+
+        <div class="month-selector-section" style="margin-bottom: 16px;">
+            <div class="date-selectors">
+                <div class="custom-dropdown category-month-selector" data-value="1">
+                    <span class="dropdown-display">JAN</span>
+                    <span class="material-icons" style="font-size: 16px;">expand_more</span>
+                </div>
+                <div class="custom-dropdown category-year-selector" data-value="2026">
+                    <span class="dropdown-display">2026</span>
+                    <span class="material-icons" style="font-size: 16px;">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-budget-summary">
+            <div class="budget-item">
+                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-value editable" contenteditable="true" id="netflix-annual-cost" data-value="120">$120</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-value editable" contenteditable="true" id="netflix-budgeted" data-value="10">$10</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Pot</div>
+                <div class="budget-value" id="netflix-rollover">$0.00</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Due Date</div>
+                <div class="budget-value editable" contenteditable="true" id="netflix-due-date" data-value="Dec 1">Dec 1</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Status</div>
+                <div class="budget-value" id="netflix-status">Pending</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label">Total</div>
+                <div class="budget-value" id="netflix-total">--</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">Transactions</h3>
+        </div>
+
+        <button class="add-transaction-btn archive-btn">
+            Archive Category
+        </button>
+    </div>
+
     <!-- Income Category Detail Page -->
     <div id="categoryDetailPage-income" class="container" style="display: none;">
         <div class="category-detail-header">
@@ -5472,6 +5530,7 @@
             { slug: 'c---sw-annual-fee', displayName: 'C - SW Annual Fee', transactionName: 'C - SW ANNUAL FEE', type: 'fixed-annual' },
             { slug: 'n---capital-one-annual-fee', displayName: 'N - Capital One Annual Fee', transactionName: 'N - CAPITAL ONE ANNUAL FEE', type: 'fixed-annual' },
             { slug: 'n---sw-annual-fee', displayName: 'N - SW Annual Fee', transactionName: 'N - SW ANNUAL FEE', type: 'fixed-annual' },
+            { slug: 'netflix', displayName: 'Netflix', transactionName: 'NETFLIX', type: 'fixed-annual' },
             // Special Categories
             { slug: 'income', displayName: 'Income', transactionName: 'INCOME', type: 'income' },
             { slug: 'ignore', displayName: 'Ignore', transactionName: 'IGNORE', type: 'ignore' }
@@ -6431,7 +6490,19 @@
                     } else if (categoryType === 'fixed-monthly') {
                         updateFixedMonthlyCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-annual') {
-                        updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions);
+                        // For annual bills, also get all transactions for the entire year (for pot calculation)
+                        const yearTransactions = result.transactions.filter(transaction => {
+                            if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
+                            const txnDate = new Date(transaction.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+                        const manualYearTransactions = manualTransactions.filter(transaction => {
+                            if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
+                            const txnDate = new Date(transaction.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+                        const allYearTransactions = [...yearTransactions, ...manualYearTransactions];
+                        updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions, allYearTransactions);
                     }
                 } else {
                     console.log('No transactions found or error:', result.error);
@@ -6957,7 +7028,7 @@
             return rollover;
         }
 
-        function updateFixedAnnualDetailPage(categorySlug, transactions) {
+        function updateFixedAnnualDetailPage(categorySlug, transactions, yearTransactions = []) {
             // Normalize slug: convert triple dashes to single dashes for element ID lookups
             const elementSlug = categorySlug.replace(/---/g, '-');
 
@@ -6985,7 +7056,7 @@
                 }
             }
 
-            // Calculate rollover: sum of all previous months' budgeted amounts
+            // Calculate pot/rollover: sum of budgeted amounts through current month - year's transactions
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
                 // Get selected month/year from the page selector
@@ -7011,12 +7082,31 @@
                 // Save current month's budgeted amount to localStorage
                 saveMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, currentMonthlyBudgeted);
 
-                // Sum up all previous months' budgeted amounts for rollover
-                let rollover = 0;
-                for (let month = 1; month < selectedMonth; month++) {
-                    rollover += getMonthlyBudgeted(elementSlug, month, selectedYear, currentMonthlyBudgeted);
+                // Sum up budgeted amounts from month 1 through selectedMonth (inclusive)
+                let totalBudgeted = 0;
+                for (let month = 1; month <= selectedMonth; month++) {
+                    totalBudgeted += getMonthlyBudgeted(elementSlug, month, selectedYear, currentMonthlyBudgeted);
                 }
-                rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+                // Calculate total spent this year (sum of all year's transactions)
+                let totalSpentThisYear = 0;
+                if (yearTransactions && yearTransactions.length > 0) {
+                    totalSpentThisYear = yearTransactions.reduce((sum, transaction) => {
+                        return sum + Math.abs(transaction.amount);
+                    }, 0);
+                }
+
+                // Pot = what we've saved - what we've spent
+                const pot = totalBudgeted - totalSpentThisYear;
+
+                // Format pot display (show negative if in the red)
+                if (pot < 0) {
+                    rolloverElement.textContent = `-$${Math.abs(pot).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    rolloverElement.style.color = '#ff4444';
+                } else {
+                    rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    rolloverElement.style.color = '';
+                }
             }
 
             // Update status based on whether there are transactions for selected month
