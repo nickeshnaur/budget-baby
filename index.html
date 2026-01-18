@@ -7701,10 +7701,10 @@
                     if (savingsElement) {
                         if (savings >= 0) {
                             savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                            savingsElement.className = 'overview-amount savings';
+                            savingsElement.style.color = '#4caf50'; // Green for positive
                         } else {
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                            savingsElement.className = 'overview-amount negative-savings';
+                            savingsElement.style.color = '#e74c3c'; // Red for negative
                         }
                     }
                 }
