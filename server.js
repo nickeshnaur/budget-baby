@@ -1296,7 +1296,7 @@ function handleUpdateTransactionCategory(req, res) {
       }
 
       // Valid categories
-      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'Insurance - Rent', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee', 'N - Chase Sapphire Annual Fee', 'Netflix', 'Ignore', 'Unsorted'];
+      const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'Insurance - Rent', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee', 'N - Chase Sapphire Annual Fee', 'Ignore', 'Unsorted'];
       if (!validCategories.includes(category)) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid category' }));
