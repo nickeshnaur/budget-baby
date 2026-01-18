@@ -6417,11 +6417,10 @@
         async function updateIncomePageCalculations(incomeTransactions) {
             // Get selected month/year from Income page selectors
             const incomePage = document.getElementById('categoryDetailPage-income');
-            const monthSelector = incomePage ? incomePage.querySelector('.month-selector') : null;
-            const yearSelector = incomePage ? incomePage.querySelector('.year-selector') : null;
-            const selectedMonth = monthSelector ? parseInt(monthSelector.value) : new Date().getMonth() + 1;
-            const selectedYear = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
-            const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+            const monthSelector = incomePage ? incomePage.querySelector('.category-month-selector') : null;
+            const yearSelector = incomePage ? incomePage.querySelector('.category-year-selector') : null;
+            const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+            const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
 
             // Filter income transactions by transaction date
             const filteredIncomeTransactions = incomeTransactions.filter(transaction => {
@@ -6442,28 +6441,17 @@
                 depositsElement.textContent = `$${totalDeposits.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Fetch all transactions to calculate expenses
+            // Fetch all transactions to calculate expenses using same logic as home overview
             try {
                 const response = await fetch('/api/transactions');
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
-                    // Filter all transactions by selected month/year
-                    const filteredTransactions = result.transactions.filter(transaction => {
-                        if (!transaction.date) return false;
-                        const txnDate = new Date(transaction.date);
-                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
-                    });
+                    const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                    const allTransactions = [...result.transactions, ...manualTransactions];
 
-                    // Calculate total expenses (all categories except Income and Ignore)
-                    const totalExpenses = filteredTransactions.reduce((sum, transaction) => {
-                        const category = transaction.category || 'Unsorted';
-                        if (category === 'Income' || category === 'Ignore') {
-                            return sum;
-                        }
-                        const amount = parseFloat(transaction.amount) || 0;
-                        return sum + Math.abs(amount);
-                    }, 0);
+                    // Calculate total expenses using shared function
+                    const totalExpenses = await calculateMonthlyExpenses(allTransactions, selectedMonth, selectedYear);
 
                     // Update expenses display
                     const expensesElement = document.getElementById('income-expenses');
@@ -7609,6 +7597,89 @@
             }
         }
 
+        // Calculate expenses for a given month using the same logic as home overview
+        async function calculateMonthlyExpenses(allTransactions, selectedMonth, selectedYear) {
+            const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+
+            const isInPeriod = (transaction) => {
+                if (!transaction.date) return false;
+                const txnDate = new Date(transaction.date);
+                return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+            };
+
+            let totalExpenses = 0;
+
+            // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
+            const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+            const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
+            const budgetResults = await Promise.all(budgetPromises);
+
+            flexibleMonthlyCategories.forEach((category, index) => {
+                const budgeted = budgetResults[index].amount || 0;
+                const spent = allTransactions
+                    .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
+                    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                totalExpenses += Math.max(budgeted, spent);
+            });
+
+            // 2. MONTHLY BILLS: budgeted if pending, total if paid
+            const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
+            monthlyBillCategories.forEach(category => {
+                const elementSlug = category.slug.replace(/---/g, '-');
+                const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                const categoryTransactions = allTransactions.filter(t =>
+                    t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t)
+                );
+
+                if (categoryTransactions.length > 0) {
+                    const total = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                    totalExpenses += total;
+                } else {
+                    totalExpenses += budgeted;
+                }
+            });
+
+            // 3. ANNUAL BILLS: monthly budgeted + extra monthly needed
+            const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
+            annualBillCategories.forEach(category => {
+                const elementSlug = category.slug.replace(/---/g, '-');
+                const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                const monthlyBudgeted = monthlyBudgetedElement ?
+                    parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                const yearTransactions = allTransactions.filter(t => {
+                    if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
+                    const txnDate = new Date(t.date);
+                    return txnDate.getFullYear() === selectedYear;
+                });
+
+                let runningPot = 0;
+                for (let m = 1; m <= selectedMonth; m++) {
+                    const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, monthlyBudgeted);
+                    runningPot += mBudgeted;
+
+                    const monthSpent = yearTransactions
+                        .filter(t => {
+                            const txnDate = new Date(t.date);
+                            return txnDate.getMonth() + 1 === m;
+                        })
+                        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                    runningPot -= monthSpent;
+
+                    if (runningPot < 0 && m < selectedMonth) {
+                        runningPot = 0;
+                    }
+                }
+
+                const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
+            });
+
+            return totalExpenses;
+        }
+
         // Update Overview Page with real data for each month
         async function updateOverviewPage() {
             try {
@@ -7629,22 +7700,19 @@
                 const months = [];
                 let year = currentYear;
                 let month = currentMonth;
-                while (year > 2025 || (year === 2025 && month >= 1)) {
+                while (year > 2024) {
                     months.push({ month, year });
                     month--;
                     if (month < 1) {
                         month = 12;
                         year--;
                     }
-                    if (year < 2025) break;
                 }
 
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                 let html = '';
 
                 for (const { month: selectedMonth, year: selectedYear } of months) {
-                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-
                     const isInPeriod = (transaction) => {
                         if (!transaction.date) return false;
                         const txnDate = new Date(transaction.date);
@@ -7659,74 +7727,8 @@
                         return sum;
                     }, 0);
 
-                    // Calculate Expenses
-                    let totalExpenses = 0;
-
-                    // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
-                    const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
-                    for (const category of flexibleMonthlyCategories) {
-                        const budgetResult = await loadBudget(category.displayName, selectedPeriod);
-                        const budgeted = budgetResult.amount || 0;
-                        const spent = allTransactions
-                            .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
-                            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                        totalExpenses += Math.max(budgeted, spent);
-                    }
-
-                    // 2. MONTHLY BILLS: budgeted if pending, total if paid
-                    const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
-                    for (const category of monthlyBillCategories) {
-                        const elementSlug = category.slug.replace(/---/g, '-');
-                        const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                        const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
-
-                        const categoryTransactions = allTransactions.filter(t =>
-                            t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t)
-                        );
-
-                        if (categoryTransactions.length > 0) {
-                            const total = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                            totalExpenses += total;
-                        } else {
-                            totalExpenses += budgeted;
-                        }
-                    }
-
-                    // 3. ANNUAL BILLS: monthly budgeted + extra monthly needed
-                    const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
-                    for (const category of annualBillCategories) {
-                        const elementSlug = category.slug.replace(/---/g, '-');
-                        const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                        const monthlyBudgeted = monthlyBudgetedElement ?
-                            parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
-
-                        const yearTransactions = allTransactions.filter(t => {
-                            if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
-                            const txnDate = new Date(t.date);
-                            return txnDate.getFullYear() === selectedYear;
-                        });
-
-                        let runningPot = 0;
-                        for (let m = 1; m <= selectedMonth; m++) {
-                            const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, monthlyBudgeted);
-                            runningPot += mBudgeted;
-
-                            const monthSpent = yearTransactions
-                                .filter(t => {
-                                    const txnDate = new Date(t.date);
-                                    return txnDate.getMonth() + 1 === m;
-                                })
-                                .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                            runningPot -= monthSpent;
-
-                            if (runningPot < 0 && m < selectedMonth) {
-                                runningPot = 0;
-                            }
-                        }
-
-                        const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
-                        totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
-                    }
+                    // Calculate Expenses using shared function
+                    const totalExpenses = await calculateMonthlyExpenses(allTransactions, selectedMonth, selectedYear);
 
                     const savings = totalIncome - totalExpenses;
                     const savingsColor = savings >= 0 ? '#4caf50' : '#e74c3c';
