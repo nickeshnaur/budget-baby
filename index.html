@@ -7098,16 +7098,21 @@
                     totalBudgeted += getMonthlyBudgeted(elementSlug, month, selectedYear, currentMonthlyBudgeted);
                 }
 
-                // Calculate total spent this year (sum of all year's transactions)
-                let totalSpentThisYear = 0;
+                // Calculate total spent through selected month (only transactions up to selectedMonth)
+                let totalSpent = 0;
                 if (yearTransactions && yearTransactions.length > 0) {
-                    totalSpentThisYear = yearTransactions.reduce((sum, transaction) => {
-                        return sum + Math.abs(transaction.amount);
-                    }, 0);
+                    totalSpent = yearTransactions
+                        .filter(transaction => {
+                            const txnDate = new Date(transaction.date);
+                            return txnDate.getMonth() + 1 <= selectedMonth;
+                        })
+                        .reduce((sum, transaction) => {
+                            return sum + Math.abs(transaction.amount);
+                        }, 0);
                 }
 
-                // Pot = what we've saved - what we've spent
-                const pot = totalBudgeted - totalSpentThisYear;
+                // Pot = what we've saved - what we've spent (through selected month)
+                const pot = totalBudgeted - totalSpent;
 
                 // Format pot display (show negative if in the red)
                 if (pot < 0) {
