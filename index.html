@@ -6420,7 +6420,7 @@
                     } else if (categoryType === 'fixed-monthly') {
                         updateFixedMonthlyCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-annual') {
-                        updateFixedAnnualCalculations(categorySlug, allCategoryTransactions);
+                        updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions);
                     }
                 } else {
                     console.log('No transactions found or error:', result.error);
@@ -6932,7 +6932,7 @@
             return rollover;
         }
 
-        function updateFixedAnnualCalculations(categorySlug, transactions) {
+        function updateFixedAnnualDetailPage(categorySlug, transactions) {
             // Normalize slug: convert triple dashes to single dashes for element ID lookups
             const elementSlug = categorySlug.replace(/---/g, '-');
 
