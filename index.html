@@ -2463,10 +2463,6 @@
                     <div class="overview-amount income" id="home-overview-income">$0.00</div>
                 </div>
                 <div class="overview-item">
-                    <div class="overview-label">Budgeted</div>
-                    <div class="overview-amount budgeted" id="home-overview-budgeted">$0.00</div>
-                </div>
-                <div class="overview-item">
                     <div class="overview-label">Expenses</div>
                     <div class="overview-amount expenses" id="home-overview-expenses">$0.00</div>
                 </div>
@@ -7578,6 +7574,10 @@
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
+                    // Include manual transactions from localStorage
+                    const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
+                    const allTransactions = [...result.transactions, ...manualTransactions];
+
                     // Get selected month/year from dashboard selectors
                     const monthSelector = document.getElementById('dashboard-month-selector');
                     const yearSelector = document.getElementById('dashboard-year-selector');
@@ -7593,29 +7593,89 @@
                     };
 
                     // Calculate total income (Income category filtered by date)
-                    const totalIncome = result.transactions.reduce((sum, transaction) => {
+                    const totalIncome = allTransactions.reduce((sum, transaction) => {
                         if (transaction.category === 'Income' && isInSelectedPeriod(transaction)) {
                             return sum + Math.abs(parseFloat(transaction.amount) || 0);
                         }
                         return sum;
                     }, 0);
 
-                    // Calculate total expenses (all categories except Income and Ignore, filtered by date)
-                    const totalExpenses = result.transactions.reduce((sum, transaction) => {
-                        const category = transaction.category || 'Unsorted';
-                        if (category === 'Income' || category === 'Ignore') {
-                            return sum;
-                        }
-                        // Filter by transaction date for expenses
-                        if (!transaction.date) return sum;
-                        const txnDate = new Date(transaction.date);
-                        if (txnDate.getMonth() + 1 !== selectedMonth || txnDate.getFullYear() !== selectedYear) {
-                            return sum;
-                        }
-                        return sum + Math.abs(parseFloat(transaction.amount) || 0);
-                    }, 0);
+                    // === CALCULATE TOTAL EXPENSES ===
+                    let totalExpenses = 0;
 
-                    // Calculate savings
+                    // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
+                    const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+                    const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
+                    const budgetResults = await Promise.all(budgetPromises);
+
+                    flexibleMonthlyCategories.forEach((category, index) => {
+                        const budgeted = budgetResults[index].amount || 0;
+                        const spent = allTransactions
+                            .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t))
+                            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                        totalExpenses += Math.max(budgeted, spent);
+                    });
+
+                    // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid
+                    const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
+                    monthlyBillCategories.forEach(category => {
+                        const elementSlug = category.slug.replace(/---/g, '-');
+                        const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                        const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                        const categoryTransactions = allTransactions.filter(t =>
+                            t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t)
+                        );
+
+                        if (categoryTransactions.length > 0) {
+                            // Has transactions: use actual total
+                            const total = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            totalExpenses += total;
+                        } else {
+                            // No transactions: use budgeted
+                            totalExpenses += budgeted;
+                        }
+                    });
+
+                    // 3. ANNUAL BILLS (fixed-annual): monthly budgeted + extra monthly needed
+                    const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
+                    annualBillCategories.forEach(category => {
+                        const elementSlug = category.slug.replace(/---/g, '-');
+                        const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                        const monthlyBudgeted = monthlyBudgetedElement ?
+                            parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+
+                        // Get year's transactions for pot calculation
+                        const yearTransactions = allTransactions.filter(t => {
+                            if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+
+                        // Calculate pot with reset logic
+                        let runningPot = 0;
+                        for (let month = 1; month <= selectedMonth; month++) {
+                            const monthBudgeted = getMonthlyBudgeted(elementSlug, month, selectedYear, monthlyBudgeted);
+                            runningPot += monthBudgeted;
+
+                            const monthSpent = yearTransactions
+                                .filter(t => {
+                                    const txnDate = new Date(t.date);
+                                    return txnDate.getMonth() + 1 === month;
+                                })
+                                .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            runningPot -= monthSpent;
+
+                            if (runningPot < 0 && month < selectedMonth) {
+                                runningPot = 0;
+                            }
+                        }
+
+                        const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                        totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
+                    });
+
+                    // Calculate savings = income - expenses
                     const savings = totalIncome - totalExpenses;
 
                     // Update income display
@@ -7646,21 +7706,6 @@
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount expenses';
                         }
-                    }
-
-                    // Calculate total budgeted amount from all flexible monthly categories using centralized config
-                    // Fetch all budgets in parallel
-                    const budgetPromises = FLEXIBLE_MONTHLY_NAMES.map(category => loadBudget(category, selectedPeriod));
-                    const budgetResults = await Promise.all(budgetPromises);
-
-                    const totalBudgeted = budgetResults.reduce((sum, budgetData) => {
-                        return sum + (budgetData.amount || 0);
-                    }, 0);
-
-                    // Update budgeted display
-                    const budgetedElement = document.getElementById('home-overview-budgeted');
-                    if (budgetedElement) {
-                        budgetedElement.textContent = `$${totalBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                     }
                 }
             } catch (error) {
