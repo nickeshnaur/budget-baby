@@ -6933,8 +6933,11 @@
         }
 
         function updateFixedAnnualCalculations(categorySlug, transactions) {
+            // Normalize slug: convert triple dashes to single dashes for element ID lookups
+            const elementSlug = categorySlug.replace(/---/g, '-');
+
             // Get annual cost for budget calculations
-            const annualCostElement = document.getElementById(`${categorySlug}-annual-cost`);
+            const annualCostElement = document.getElementById(`${elementSlug}-annual-cost`);
             const annualCost = annualCostElement ? parseFloat(annualCostElement.getAttribute('data-value')) || 0 : 0;
 
             // Calculate total from transactions (already filtered by selected month)
@@ -6948,7 +6951,7 @@
             }
 
             // Update Total field - sum of transactions for selected month
-            const actualCostElement = document.getElementById(`${categorySlug}-total`);
+            const actualCostElement = document.getElementById(`${elementSlug}-total`);
             if (actualCostElement) {
                 if (totalThisMonth > 0) {
                     actualCostElement.textContent = `$${totalThisMonth.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
@@ -6958,14 +6961,14 @@
             }
 
             // Calculate rollover based on current month vs due month
-            const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
+            const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                const rollover = calculateRollover(categorySlug, annualCost);
+                const rollover = calculateRollover(elementSlug, annualCost);
                 rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
             // Update status based on whether there are transactions for selected month
-            const statusElement = document.getElementById(`${categorySlug}-status`);
+            const statusElement = document.getElementById(`${elementSlug}-status`);
             if (statusElement) {
                 if (transactions && transactions.length > 0) {
                     statusElement.textContent = 'Paid';
@@ -6977,10 +6980,10 @@
             }
 
             // Set up editable functionality for annual cost
-            setupEditableFixedAnnualCost(categorySlug);
+            setupEditableFixedAnnualCost(elementSlug);
 
             // Set up editable functionality for due date
-            setupEditableFixedAnnualDueDate(categorySlug);
+            setupEditableFixedAnnualDueDate(elementSlug);
         }
 
         function setupEditableFixedAnnualCost(categorySlug) {
@@ -8713,6 +8716,9 @@
 
         // Annual Bills calculations (Phone, Costco)
         function updateFixedAnnualCalculations(categorySlug, categoryName, transactions) {
+            // Normalize slug: convert triple dashes to single dashes for element ID lookups
+            const elementSlug = categorySlug.replace(/---/g, '-');
+
             const categoryTransactions = transactions.filter(t =>
                 t.category.toUpperCase() === categoryName
             );
@@ -8720,7 +8726,7 @@
             const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
             // Update Total - show -- if no transactions, otherwise sum of transactions for that month
-            const actualElement = document.getElementById(`${categorySlug}-total`);
+            const actualElement = document.getElementById(`${elementSlug}-total`);
             if (actualElement) {
                 if (totalSpent > 0) {
                     actualElement.textContent = `$${totalSpent.toFixed(2)}`;
@@ -8730,7 +8736,7 @@
             }
 
             // Update Status on detail page - Paid if transactions exist, otherwise Pending
-            const statusElement = document.getElementById(`${categorySlug}-status`);
+            const statusElement = document.getElementById(`${elementSlug}-status`);
             if (statusElement) {
                 if (totalSpent > 0) {
                     statusElement.textContent = 'Paid';
@@ -8742,12 +8748,12 @@
             }
 
             // Update rollover amount (recalculate based on current month)
-            const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
+            const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                const annualCostElement = document.getElementById(`${categorySlug}-annual-cost`);
+                const annualCostElement = document.getElementById(`${elementSlug}-annual-cost`);
                 if (annualCostElement) {
                     const annualCost = parseFloat(annualCostElement.dataset.value || '0');
-                    const rolloverAmount = calculateRollover(categorySlug, annualCost);
+                    const rolloverAmount = calculateRollover(elementSlug, annualCost);
                     rolloverElement.textContent = `$${rolloverAmount.toFixed(2)}`;
                 }
             }
