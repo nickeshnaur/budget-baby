@@ -7056,6 +7056,9 @@
             // Set up editable functionality for annual cost
             setupEditableFixedAnnualCost(elementSlug);
 
+            // Set up editable functionality for monthly budgeted
+            setupEditableFixedAnnualBudgeted(elementSlug, categorySlug, selectedMonth, selectedYear);
+
             // Set up editable functionality for due date
             setupEditableFixedAnnualDueDate(elementSlug);
         }
@@ -7114,6 +7117,63 @@
                         if (original) {
                             this.textContent = original;
                         }
+                        this.blur();
+                    }
+                });
+            }
+        }
+
+        function setupEditableFixedAnnualBudgeted(elementSlug, categorySlug, selectedMonth, selectedYear) {
+            const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+            if (budgetedElement && !budgetedElement.hasAttribute('data-initialized')) {
+                budgetedElement.setAttribute('data-initialized', 'true');
+
+                // Handle focus: select all text for easy editing
+                budgetedElement.addEventListener('focus', function() {
+                    this.setAttribute('data-original', this.textContent);
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+
+                // Handle blur: save changes to localStorage
+                budgetedElement.addEventListener('blur', function() {
+                    let value = this.textContent.replace(/[^\d.]/g, '');
+                    const numericValue = parseFloat(value) || 0;
+
+                    // Update data attribute
+                    this.setAttribute('data-value', numericValue.toString());
+
+                    // Update display format
+                    this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+                    // Get current month/year from the page selector
+                    const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+                    let month = selectedMonth;
+                    let year = selectedYear;
+                    if (categoryPage) {
+                        const monthSelector = categoryPage.querySelector('.category-month-selector');
+                        const yearSelector = categoryPage.querySelector('.category-year-selector');
+                        if (monthSelector) month = parseInt(monthSelector.getAttribute('data-value')) || month;
+                        if (yearSelector) year = parseInt(yearSelector.getAttribute('data-value')) || year;
+                    }
+
+                    // Save to localStorage
+                    saveMonthlyBudgeted(elementSlug, month, year, numericValue);
+                });
+
+                // Handle Enter key: blur the field to save
+                budgetedElement.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.blur();
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        const original = this.getAttribute('data-original');
+                        if (original) this.textContent = original;
                         this.blur();
                     }
                 });
