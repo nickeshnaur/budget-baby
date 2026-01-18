@@ -7691,22 +7691,23 @@
                 const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
                 const allTransactions = [...result.transactions, ...manualTransactions];
 
-                // Determine months range - from Jan 2025 to current month
+                // Determine months range - from Jan 2026 to current month
                 const currentDate = new Date();
                 const currentMonth = currentDate.getMonth() + 1;
                 const currentYear = currentDate.getFullYear();
 
-                // Build list of months from current going back to Jan 2025
+                // Build list of months from current going back to Jan 2026
                 const months = [];
                 let year = currentYear;
                 let month = currentMonth;
-                while (year > 2024) {
+                while (year > 2026 || (year === 2026 && month >= 1)) {
                     months.push({ month, year });
                     month--;
                     if (month < 1) {
                         month = 12;
                         year--;
                     }
+                    if (year < 2026) break;
                 }
 
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
