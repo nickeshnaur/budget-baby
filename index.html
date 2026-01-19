@@ -2074,13 +2074,12 @@
 
         .transaction-card .transaction-tag {
             background: #e9ecef;
-            color: #ffffff;
+            color: #000;
             padding: 12px;
             border-radius: 40px;
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 12px;
-            letter-spacing: 0.04em;
             display: inline-flex;
             align-items: center;
             gap: 4px;
@@ -2088,6 +2087,7 @@
 
         .transaction-card .transaction-tag .material-icons {
             font-size: 12px;
+            color: #000;
         }
 
         .transaction-card .transaction-amount {
@@ -7987,6 +7987,11 @@
             transactionCard.className = 'transaction-card';
             transactionCard.setAttribute('data-transaction-id', transaction.id);
             transactionCard.style.position = 'relative';
+            const isUnsorted = transaction.category === 'Unsorted';
+            if (isUnsorted) {
+                transactionCard.style.border = '1px solid #E0E0E0';
+            }
+            const accentColor = isUnsorted ? '#fff' : categoryColor;
 
             transactionCard.innerHTML = `
                 <button class="menu-btn" style="
@@ -7995,7 +8000,7 @@
                     right: 8px;
                     background: none;
                     border: none;
-                    color: #666;
+                    color: #919191;
                     cursor: pointer;
                     font-size: 20px;
                     padding: 4px;
@@ -8007,16 +8012,16 @@
                 " title="More options">
                     <span class="material-icons">more_vert</span>
                 </button>
-                <div class="transaction-accent" style="background: ${categoryColor};"></div>
+                <div class="transaction-accent" style="background: ${accentColor};"></div>
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
                     <div class="transaction-description">${toTitleCase(transaction.description)}</div>
                     <div class="transaction-amount">${isDebit ? '-' : '+'}$${amount}</div>
                 </div>
                 <div class="transaction-footer">
-                    <div class="transaction-tag clickable-tag" style="background: ${hexToRgba(categoryColor, 0.1)}; color: ${categoryColor}; cursor: pointer;">
+                    <div class="transaction-tag clickable-tag" style="background: ${hexToRgba(categoryColor, 0.1)}; cursor: pointer;">
                         ${categoryEmoji} ${toTitleCase(transaction.category)}
-                        <span class="material-icons">keyboard_arrow_down</span>
+                        <span class="material-icons">arrow_drop_down</span>
                     </div>
                     <div class="transaction-bank-wrapper">
                         ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
@@ -8170,6 +8175,11 @@
             // All transaction tags are clickable for re-categorization
             const categoryColor = getCategoryColor(transaction.category);
             const categoryEmoji = getCategoryEmoji(transaction.category);
+            const isUnsorted = transaction.category === 'Unsorted';
+            if (isUnsorted) {
+                txnEl.style.border = '1px solid #E0E0E0';
+            }
+            const accentColor = isUnsorted ? '#fff' : categoryColor;
 
             txnEl.innerHTML = `
                 <button class="menu-btn" style="
@@ -8178,7 +8188,7 @@
                     right: 8px;
                     background: none;
                     border: none;
-                    color: #666;
+                    color: #919191;
                     cursor: pointer;
                     font-size: 20px;
                     padding: 4px;
@@ -8190,16 +8200,16 @@
                 " title="More options">
                     <span class="material-icons">more_vert</span>
                 </button>
-                <div class="transaction-accent" style="background: ${categoryColor};"></div>
+                <div class="transaction-accent" style="background: ${accentColor};"></div>
                 <div class="transaction-date">${formattedDate}</div>
                 <div class="transaction-header">
                     <div class="transaction-description">${toTitleCase(transaction.description)}</div>
                     <div class="transaction-amount">${isDebit ? '-' : '+'}$${amount}</div>
                 </div>
                 <div class="transaction-footer">
-                    <div class="transaction-tag clickable-tag" style="background: ${hexToRgba(categoryColor, 0.1)}; color: ${categoryColor}; cursor: pointer;">
+                    <div class="transaction-tag clickable-tag" style="background: ${hexToRgba(categoryColor, 0.1)}; cursor: pointer;">
                         ${categoryEmoji} ${toTitleCase(transaction.category)}
-                        <span class="material-icons">keyboard_arrow_down</span>
+                        <span class="material-icons">arrow_drop_down</span>
                     </div>
                     <div class="transaction-bank-wrapper">
                         ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
@@ -8462,7 +8472,7 @@
                     localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
 
                     // Update the tag visually
-                    tagElement.innerHTML = `${getCategoryEmoji(category)} ${category.toUpperCase()} <span class="material-icons">keyboard_arrow_down</span>`;
+                    tagElement.innerHTML = `${getCategoryEmoji(category)} ${category.toUpperCase()} <span class="material-icons">arrow_drop_down</span>`;
                     tagElement.style.background = getCategoryColor(category);
 
                     // Check if we're on the transactions page
@@ -8518,12 +8528,16 @@
                     tagElement.className = 'transaction-tag clickable-tag';
                     tagElement.style.cursor = 'pointer';
                     tagElement.style.background = hexToRgba(newColor, 0.1);
-                    tagElement.style.color = newColor;
 
-                    // Update the accent bar color
-                    const accentBar = tagElement.closest('.transaction-card')?.querySelector('.transaction-accent');
+                    // Update the accent bar color and card border
+                    const transactionCard = tagElement.closest('.transaction-card');
+                    const accentBar = transactionCard?.querySelector('.transaction-accent');
+                    const isNowUnsorted = category === 'Unsorted';
                     if (accentBar) {
-                        accentBar.style.background = newColor;
+                        accentBar.style.background = isNowUnsorted ? '#fff' : newColor;
+                    }
+                    if (transactionCard) {
+                        transactionCard.style.border = isNowUnsorted ? '1px solid #E0E0E0' : 'none';
                     }
 
                     // If it's on the home page and was just categorized, remove it from dashboard
