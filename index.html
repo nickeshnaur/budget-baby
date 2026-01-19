@@ -2021,11 +2021,11 @@
 
         /* Transaction Card Styles */
         .transaction-card {
-            background: transparent;
-            border-radius: 12px;
+            background: #fff;
+            border-radius: 32px;
             padding: 20px;
             margin-bottom: 12px;
-            border: 1px solid #E6E6E6;
+            border: none;
             text-align: left;
             width: 100%;
             box-sizing: border-box;
@@ -2042,7 +2042,7 @@
         .transaction-card .transaction-description {
             font-family: "Roboto", sans-serif;
             font-weight: 400;
-            font-size: 16px;
+            font-size: 14px;
             color: #000000;
             line-height: 1.4;
             padding-right: 8px;
@@ -2095,6 +2095,20 @@
             font-size: 10px;
             color: #000000;
             text-align: right;
+        }
+
+        .transaction-bank-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .transaction-card-image {
+            width: 40px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 8px;
         }
 
         /* Transactions Page Styling */
@@ -3453,36 +3467,7 @@
 
         <div class="section">
             <h3 class="section-title">Transactions</h3>
-
-            <div class="transaction-card">
-                <div class="transaction-date">12/28/25</div>
-                <div class="transaction-description">Whole Foods Market</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #2196f3;">🛒 GROCERY</div>
-                    <div class="transaction-amount">-$87.32</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-date">12/25/25</div>
-                <div class="transaction-description">Trader Joe's</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #2196f3;">🛒 GROCERY</div>
-                    <div class="transaction-amount">-$45.67</div>
-                </div>
-                <div class="transaction-bank">Bank of America</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-date">12/22/25</div>
-                <div class="transaction-description">Target</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #2196f3;">🛒 GROCERY</div>
-                    <div class="transaction-amount">-$124.85</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
+            <!-- Transactions loaded dynamically -->
         </div>
 
         <button class="add-transaction-btn archive-btn">
@@ -4195,26 +4180,7 @@
 
         <div class="section">
             <h3 class="section-title">Transactions</h3>
-
-            <div class="transaction-card">
-                <div class="transaction-date">07/11/25</div>
-                <div class="transaction-description">Annual Phone Plan</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #ff9800;">📱 PHONE</div>
-                    <div class="transaction-amount">-$38.62</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-date">07/11/24</div>
-                <div class="transaction-description">Annual Phone Plan</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #ff9800;">📱 PHONE</div>
-                    <div class="transaction-amount">-$38.62</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
+            <!-- Transactions loaded dynamically -->
         </div>
 
         <button class="add-transaction-btn archive-btn">
@@ -4277,26 +4243,7 @@
 
         <div class="section">
             <h3 class="section-title">Transactions</h3>
-
-            <div class="transaction-card">
-                <div class="transaction-date">10/02/25</div>
-                <div class="transaction-description">Costco Membership</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #9c27b0;">🏬 COSTCO</div>
-                    <div class="transaction-amount">-$5.42</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-date">10/02/24</div>
-                <div class="transaction-description">Costco Membership</div>
-                <div class="transaction-meta">
-                    <div class="transaction-tag" style="background: #9c27b0;">🏬 COSTCO</div>
-                    <div class="transaction-amount">-$5.42</div>
-                </div>
-                <div class="transaction-bank">Credit Card - 9387</div>
-            </div>
+            <!-- Transactions loaded dynamically -->
         </div>
 
         <button class="add-transaction-btn archive-btn">
@@ -8038,7 +7985,10 @@
                         ${categoryEmoji} ${transaction.category.toUpperCase()}
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
-                    <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>'}</div>
+                    <div class="transaction-bank-wrapper">
+                        <div class="transaction-card-image"></div>
+                        <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>'}</div>
+                    </div>
                 </div>
             `;
 
@@ -8217,7 +8167,10 @@
                         ${categoryEmoji} ${transaction.category.toUpperCase()}
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
-                    <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
+                    <div class="transaction-bank-wrapper">
+                        <div class="transaction-card-image"></div>
+                        <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
+                    </div>
                 </div>
             `;
 
