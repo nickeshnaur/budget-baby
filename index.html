@@ -2023,7 +2023,7 @@
         .transaction-card {
             background: #fff;
             border-radius: 32px;
-            padding: 20px;
+            padding: 32px 24px 24px 24px;
             margin-bottom: 12px;
             border: none;
             text-align: left;
@@ -2053,13 +2053,13 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 8px;
+            margin-bottom: 16px;
         }
 
         .transaction-footer {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: flex-start;
         }
 
         .transaction-card .transaction-tag {
@@ -2109,6 +2109,7 @@
             height: 25px;
             background: #ccc;
             border-radius: 8px;
+            object-fit: cover;
         }
 
         /* Transactions Page Styling */
@@ -2412,7 +2413,7 @@
 
     <!-- App Header -->
     <div class="app-header">
-        <img src="BudgetBaby-Logo.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
+        <img src="_Assets/BudgetBaby-Logo.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
         <div class="header-actions">
             <!-- Refresh/Sync Icon -->
             <svg class="header-icon" onclick="syncTransactionsFromHeader()" viewBox="0 0 24 24">
@@ -5363,6 +5364,20 @@
         const FLEXIBLE_MONTHLY_NAMES = FLEXIBLE_MONTHLY_CATEGORIES.map(c => c.displayName);
         const FIXED_MONTHLY_SORTED = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly').sort((a, b) => a.dueDay - b.dueDay);
         const ALL_CATEGORY_SLUGS = CATEGORY_CONFIG.map(c => c.slug);
+
+        // Card image mapping by last 4 digits
+        const CARD_IMAGE_MAP = {
+            '1885': '_Assets/Card-BofA-Checking-1885.png',
+            '9693': '_Assets/Card-CapitalOne-Venture-9693.png',
+            '5022': '_Assets/Card-CapitalOne-VentureX-5022.png',
+            '7376': '_Assets/Card-Chase-Disney-7376.png',
+            '8318': '_Assets/Card-Chase-Disney-8318.png',
+            '2324': '_Assets/Card-Chase-Marriott-2324.png',
+            '7322': '_Assets/Card-Chase-Marriott-7322.png',
+            '0241': '_Assets/Card-Chase-Sapphire-0241.png',
+            '3859': '_Assets/Card-Chase-Southwest-3859.png',
+            '9387': '_Assets/Card-Chase-Southwest-9387.png'
+        };
         // =====================================================
 
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
@@ -7986,7 +8001,7 @@
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
                     <div class="transaction-bank-wrapper">
-                        <div class="transaction-card-image"></div>
+                        ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
                         <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>'}</div>
                     </div>
                 </div>
@@ -8168,7 +8183,7 @@
                         <span class="material-icons">keyboard_arrow_down</span>
                     </div>
                     <div class="transaction-bank-wrapper">
-                        <div class="transaction-card-image"></div>
+                        ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
                         <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account')}</div>
                     </div>
                 </div>
