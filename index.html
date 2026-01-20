@@ -7599,13 +7599,16 @@
 
                     // Update savings display
                     const savingsElement = document.getElementById('home-overview-savings');
+                    const overviewGrid = document.querySelector('.overview-grid');
                     if (savingsElement) {
                         if (savings >= 0) {
                             savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount positive-savings';
+                            if (overviewGrid) overviewGrid.style.backgroundColor = '#F3FCF4';
                         } else {
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount negative-savings';
+                            if (overviewGrid) overviewGrid.style.backgroundColor = '#FEF5F5';
                         }
                     }
                 }
@@ -8932,13 +8935,16 @@
                 expensesElement.textContent = `-$${totalExpenses.toFixed(2)}`;
             }
             if (savingsElement) {
+                const overviewGrid = document.querySelector('.overview-grid');
                 // Change color based on positive/negative
                 if (savings >= 0) {
                     savingsElement.textContent = `$${savings.toFixed(2)}`;
                     savingsElement.className = 'overview-amount positive-savings';
+                    if (overviewGrid) overviewGrid.style.backgroundColor = '#F3FCF4';
                 } else {
                     savingsElement.textContent = `-$${Math.abs(savings).toFixed(2)}`;
                     savingsElement.className = 'overview-amount negative-savings';
+                    if (overviewGrid) overviewGrid.style.backgroundColor = '#FEF5F5';
                 }
             }
         }
