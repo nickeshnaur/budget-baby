@@ -7195,12 +7195,23 @@
 
             if (!transactionsSection) return;
 
-            // Clear existing dynamic transactions
+            // Clear existing dynamic transactions and empty message
             const existingTransactions = transactionsSection.querySelectorAll('.transaction-card');
             existingTransactions.forEach(el => el.remove());
+            const existingEmptyMessage = transactionsSection.querySelector('.no-transactions-message');
+            if (existingEmptyMessage) existingEmptyMessage.remove();
 
             // Show only unsorted transactions on dashboard
             const recentTransactions = transactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '').slice(0, 10);
+
+            // Show empty message if no transactions to sort
+            if (recentTransactions.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'section-subtitle no-transactions-message';
+                emptyMessage.textContent = 'No Transactions to Sort';
+                transactionsSection.appendChild(emptyMessage);
+                return;
+            }
 
             // Show the first 10 recent transactions on dashboard
             recentTransactions.forEach(transaction => {
