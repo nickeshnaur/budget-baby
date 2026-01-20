@@ -261,10 +261,10 @@
         .overview-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
             background: #ffffff;
             border-radius: 32px;
-            padding: 24px;
+            padding: 32px 24px;
             cursor: pointer;
         }
 
@@ -275,19 +275,24 @@
         }
 
         .overview-label {
-            font-size: 1rem;
-            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #000;
         }
 
         .overview-amount {
-            font-size: 1rem;
+            font-size: 20px;
             font-weight: 600;
+            color: #000;
         }
 
-        .overview-amount.income { color: #333; }
-        .overview-amount.budgeted { color: #333; }
-        .overview-amount.negative-savings { color: #e74c3c; }
-        .overview-amount.savings { color: #4caf50; }
+        .overview-amount.income { color: #000; }
+        .overview-amount.expenses { color: #000; }
+        .overview-amount.budgeted { color: #000; }
+        .overview-amount.negative-savings { color: #EE3636; }
+        .overview-amount.positive-savings { color: #0ECB27; }
 
         /* Transactions Section */
         .section-subtitle {
@@ -2559,15 +2564,15 @@
             </div>
             <div class="overview-grid" onclick="showCategoryDetail('income', 'Income')">
                 <div class="overview-item">
-                    <div class="overview-label">Income</div>
+                    <div class="overview-label"><span>💵</span>Income</div>
                     <div class="overview-amount income" id="home-overview-income">$0.00</div>
                 </div>
                 <div class="overview-item">
-                    <div class="overview-label">Expenses</div>
+                    <div class="overview-label"><span>💸</span>Expenses</div>
                     <div class="overview-amount expenses" id="home-overview-expenses">$0.00</div>
                 </div>
                 <div class="overview-item">
-                    <div class="overview-label">Savings</div>
+                    <div class="overview-label"><span>🏦</span>Savings</div>
                     <div class="overview-amount savings" id="home-overview-savings">$0.00</div>
                 </div>
             </div>
@@ -7600,10 +7605,10 @@
                     if (savingsElement) {
                         if (savings >= 0) {
                             savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                            savingsElement.style.color = '#4caf50'; // Green for positive
+                            savingsElement.className = 'overview-amount positive-savings';
                         } else {
                             savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                            savingsElement.style.color = '#e74c3c'; // Red for negative
+                            savingsElement.className = 'overview-amount negative-savings';
                         }
                     }
                 }
@@ -8930,12 +8935,13 @@
                 expensesElement.textContent = `-$${totalExpenses.toFixed(2)}`;
             }
             if (savingsElement) {
-                savingsElement.textContent = `$${savings.toFixed(2)}`;
                 // Change color based on positive/negative
                 if (savings >= 0) {
-                    savingsElement.style.color = '#09bc00'; // Green for positive
+                    savingsElement.textContent = `$${savings.toFixed(2)}`;
+                    savingsElement.className = 'overview-amount positive-savings';
                 } else {
-                    savingsElement.style.color = '#ff0000'; // Red for negative
+                    savingsElement.textContent = `-$${Math.abs(savings).toFixed(2)}`;
+                    savingsElement.className = 'overview-amount negative-savings';
                 }
             }
         }
