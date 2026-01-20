@@ -2559,6 +2559,7 @@
                 <h2 class="section-title">Transactions</h2>
                 <button class="see-all" onclick="showTransactions()">SEE ALL</button>
             </div>
+            <div class="section-subtitle no-transactions-message">No Transactions to Sort</div>
         </div>
 
         <!-- Categories Section -->
@@ -7175,9 +7176,7 @@
         function updateTransactionsDisplay(transactions) {
             // Update both dashboard and transactions page
             updateDashboardTransactions(transactions);
-            if (transactions.length > 0) {
-                updateTransactionsPageDisplay(transactions);
-            }
+            updateTransactionsPageDisplay(transactions);
         }
 
         function updateDashboardTransactions(transactions) {
@@ -7244,13 +7243,22 @@
             const assignedSection = transactionsContainer.querySelector('.assigned');
             if (!unassignedSection || !assignedSection) return;
 
+            // Find the unassigned subtitle
+            const unassignedSubtitle = unassignedSection.previousElementSibling;
+
             // Clear existing transaction cards
             const existingCards = transactionsContainer.querySelectorAll('.transaction-card');
             existingCards.forEach(el => el.remove());
 
             // Separate transactions into unassigned and assigned
-            const unassignedTransactions = transactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '');
-            const assignedTransactions = transactions.filter(t => t.category && t.category !== 'Unsorted' && t.category !== '');
+            const allTransactions = transactions || [];
+            const unassignedTransactions = allTransactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '');
+            const assignedTransactions = allTransactions.filter(t => t.category && t.category !== 'Unsorted' && t.category !== '');
+
+            // Update subtitle based on whether there are unassigned transactions
+            if (unassignedSubtitle && unassignedSubtitle.classList.contains('section-subtitle')) {
+                unassignedSubtitle.textContent = unassignedTransactions.length === 0 ? 'No Transactions to Sort' : 'Unassigned';
+            }
 
             // Add unassigned transactions
             unassignedTransactions.forEach((transaction) => {
