@@ -3053,7 +3053,7 @@
                             <span class="category-name">Rent</span>
                         </div>
                         <div class="bill-right-group">
-                            <span class="bill-status paid">Paid</span>
+                            <span class="bill-status paid">Paid ✓</span>
                             <span class="category-amount">$2,900.00</span>
                         </div>
                     </div>
@@ -9310,7 +9310,7 @@
                                 if (categoryTransactions.length > 0) {
                                     // Has transactions: show "Paid"
                                     if (budgetInfoDiv) {
-                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid</span>`;
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
                                     }
                                 } else {
                                     // No transactions: show due date
@@ -9346,7 +9346,7 @@
                                         categoryAmountElement.className = 'category-amount';
                                     }
                                     if (budgetInfoDiv) {
-                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid</span>`;
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
                                     }
                                 } else {
                                     // No transactions: show budgeted and due date
