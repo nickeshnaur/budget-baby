@@ -262,13 +262,16 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 24px;
+            cursor: pointer;
         }
 
         .overview-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
         }
 
         .overview-label {
@@ -2554,7 +2557,7 @@
                 <h2 class="section-title">Overview</h2>
                 <button class="see-all" onclick="showOverview()">SEE ALL</button>
             </div>
-            <div class="overview-grid">
+            <div class="overview-grid" onclick="showCategoryDetail('income', 'Income')">
                 <div class="overview-item">
                     <div class="overview-label">Income</div>
                     <div class="overview-amount income" id="home-overview-income">$0.00</div>
