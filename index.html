@@ -1054,6 +1054,52 @@
             border-radius: 0 4px 4px 0;
         }
 
+        /* Bill Card Styles (Monthly Bills & Annual Bills) */
+        .bill-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 32px 24px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .bill-card .category-header {
+            margin-bottom: 0;
+        }
+
+        .bill-card .category-accent {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .bill-right-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bill-status {
+            font-family: "Roboto", sans-serif;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .bill-status.paid {
+            background: #4caf50;
+            color: #ffffff;
+        }
+
+        .bill-status.due {
+            background: #e0e0e0;
+            color: #666666;
+        }
+
         .transaction-date {
             font-family: "Roboto", sans-serif;
             font-weight: 700;
@@ -2983,17 +3029,15 @@
         <div class="section">
             <div class="section-subtitle">Monthly Bills</div>
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Auto Loan')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🚗</span>
                             <span class="category-name">Auto Loan</span>
                         </div>
-                        <span class="category-amount">$347.82</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 30</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 30</span>
+                            <span class="category-amount">$347.82</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #f44336;"></div>
@@ -3001,17 +3045,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Rent')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🏠</span>
                             <span class="category-name">Rent</span>
                         </div>
-                        <span class="category-amount">$2,900.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">PAID ✓</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status paid">PAID ✓</span>
+                            <span class="category-amount">$2,900.00</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #4caf50;"></div>
@@ -3019,17 +3061,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Electric')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">⚡</span>
                             <span class="category-name">Electric</span>
                         </div>
-                        <span class="category-amount">$150.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 8</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 8</span>
+                            <span class="category-amount">$150.00</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #ffeb3b;"></div>
@@ -3037,17 +3077,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Insurance Auto')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🚙</span>
                             <span class="category-name">Insurance Auto</span>
                         </div>
-                        <span class="category-amount">$250.83</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 27</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 27</span>
+                            <span class="category-amount">$250.83</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #795548;"></div>
@@ -3055,17 +3093,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'NW Mutual')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🏦</span>
                             <span class="category-name">NW Mutual</span>
                         </div>
-                        <span class="category-amount">$2,666.66</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 9</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 9</span>
+                            <span class="category-amount">$2,666.66</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #607d8b;"></div>
@@ -3073,17 +3109,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Internet')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🌐</span>
                             <span class="category-name">Internet</span>
                         </div>
-                        <span class="category-amount">$50.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 25</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 25</span>
+                            <span class="category-amount">$50.00</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #8bc34a;"></div>
@@ -3091,17 +3125,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Spotify')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🎵</span>
                             <span class="category-name">Spotify</span>
                         </div>
-                        <span class="category-amount">$16.99</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 3</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 3</span>
+                            <span class="category-amount">$16.99</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #1db954;"></div>
@@ -3109,17 +3141,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'SP Fitness')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">💪</span>
                             <span class="category-name">SP Fitness</span>
                         </div>
-                        <span class="category-amount">$178.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 1</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 1</span>
+                            <span class="category-amount">$178.00</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #ff5722;"></div>
@@ -3127,17 +3157,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Alamo Drafthouse')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🎬</span>
                             <span class="category-name">Alamo Drafthouse</span>
                         </div>
-                        <span class="category-amount">$58.98</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: 22</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: 22</span>
+                            <span class="category-amount">$58.98</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #3f51b5;"></div>
@@ -3148,17 +3176,15 @@
         <div class="section">
             <div class="section-subtitle">Annual Bills</div>
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Phone')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">📱</span>
                             <span class="category-name">Phone</span>
                         </div>
-                        <span class="category-amount">$38.62</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Jul 11</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Jul 11</span>
+                            <span class="category-amount">$38.62</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #ff9800;"></div>
@@ -3166,17 +3192,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Costco')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🏬</span>
                             <span class="category-name">Costco</span>
                         </div>
-                        <span class="category-amount">$5.42</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Oct 2</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Oct 2</span>
+                            <span class="category-amount">$5.42</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #9c27b0;"></div>
@@ -3184,17 +3208,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Insurance - Rent')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🏠</span>
                             <span class="category-name">Insurance - Rent</span>
                         </div>
-                        <span class="category-amount">$10.58</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Feb 24</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Feb 24</span>
+                            <span class="category-amount">$10.58</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #2196f3;"></div>
@@ -3202,17 +3224,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Letterboxd')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🎬</span>
                             <span class="category-name">Letterboxd</span>
                         </div>
-                        <span class="category-amount">$1.58</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Jan 1</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Jan 1</span>
+                            <span class="category-amount">$1.58</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #ff5722;"></div>
@@ -3220,17 +3240,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Grammarly')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">✏️</span>
                             <span class="category-name">Grammarly</span>
                         </div>
-                        <span class="category-amount">$12.00</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Dec 9</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Dec 9</span>
+                            <span class="category-amount">$12.00</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #4caf50;"></div>
@@ -3238,17 +3256,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Domain')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🌐</span>
                             <span class="category-name">Domain</span>
                         </div>
-                        <span class="category-amount">$1.67</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Mar 9</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Mar 9</span>
+                            <span class="category-amount">$1.67</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #795548;"></div>
@@ -3256,17 +3272,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Google One')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">☁️</span>
                             <span class="category-name">Google One</span>
                         </div>
-                        <span class="category-amount">$1.67</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Jun 10</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Jun 10</span>
+                            <span class="category-amount">$1.67</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #607d8b;"></div>
@@ -3274,17 +3288,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'C - Capital One Annual Fee')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">💳</span>
                             <span class="category-name">C - Capital One Annual Fee</span>
                         </div>
-                        <span class="category-amount">$7.92</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Dec 21</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Dec 21</span>
+                            <span class="category-amount">$7.92</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #e91e63;"></div>
@@ -3292,17 +3304,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'C - SW Annual Fee')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">✈️</span>
                             <span class="category-name">C - SW Annual Fee</span>
                         </div>
-                        <span class="category-amount">$12.42</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Mar 1</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Mar 1</span>
+                            <span class="category-amount">$12.42</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #3f51b5;"></div>
@@ -3310,17 +3320,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'N - Capital One Annual Fee')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">💎</span>
                             <span class="category-name">N - Capital One Annual Fee</span>
                         </div>
-                        <span class="category-amount">$32.92</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Jan 18</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Jan 18</span>
+                            <span class="category-amount">$32.92</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #009688;"></div>
@@ -3328,17 +3336,15 @@
             </div>
 
             <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'N - SW Annual Fee')" style="cursor: pointer;">
-                <div class="category-card">
+                <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
                             <span class="category-emoji">🛫</span>
                             <span class="category-name">N - SW Annual Fee</span>
                         </div>
-                        <span class="category-amount">$19.08</span>
-                    </div>
-                    <div class="category-progress">
-                        <div class="budget-info">
-                            <span class="budget-text">DUE: Jul 1</span>
+                        <div class="bill-right-group">
+                            <span class="bill-status due">DUE: Jul 1</span>
+                            <span class="category-amount">$19.08</span>
                         </div>
                     </div>
                     <div class="category-accent" style="background: #ff9800;"></div>
