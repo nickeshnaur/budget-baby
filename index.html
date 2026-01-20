@@ -974,18 +974,22 @@
 
         .category-card {
             background: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 32px;
+            padding: 32px 24px 24px 24px;
             position: relative;
             overflow: hidden;
             width: 100%;
             box-sizing: border-box;
         }
 
+        .category-card .budget-info {
+            display: none;
+        }
+
         .category-header {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
             width: 100%;
             justify-content: space-between;
         }
@@ -1022,7 +1026,7 @@
         }
 
         .progress-bar {
-            background: #e6e6e6;
+            background: #F1F1F1;
             border-radius: 2px;
             height: 2px;
             width: 100%;
@@ -1033,6 +1037,7 @@
         .progress-fill {
             height: 100%;
             border-radius: 2px;
+            background: #D3D3D3;
         }
 
         .category-progress {
