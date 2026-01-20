@@ -819,9 +819,12 @@
         }
 
         .category-budget-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
             background: white;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 32px;
+            padding: 32px 24px;
             margin-bottom: 24px;
         }
 
@@ -829,27 +832,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .budget-item:last-child {
-            border-bottom: none;
         }
 
         .budget-label {
-            font-size: 1rem;
-            color: #333;
+            font-size: 14px;
+            color: #000;
         }
 
         .budget-value {
-            font-size: 1rem;
+            font-size: 20px;
             font-weight: 600;
-            color: #333;
+            color: #000;
         }
 
-        .budget-value.positive { color: #4caf50; }
-        .budget-value.negative { color: #e74c3c; }
+        .budget-value.positive { color: #0ECB27; }
+        .budget-value.negative { color: #EE3636; }
 
         .budget-value.editable {
             cursor: text;
