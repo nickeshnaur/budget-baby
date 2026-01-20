@@ -7204,12 +7204,20 @@
             const existingEmptyMessage = transactionsSection.querySelector('.no-transactions-message');
             if (existingEmptyMessage) existingEmptyMessage.remove();
 
-            // Show only unsorted transactions on dashboard
+            // Show only unsorted transactions on dashboard, filtered by selected date
             const allTransactions = transactions || [];
-            const recentTransactions = allTransactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '').slice(0, 10);
+            const unsortedTransactions = allTransactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '');
 
-            // Show empty message if no transactions to sort
-            if (recentTransactions.length === 0) {
+            // Filter by selected date period
+            const visibleTransactions = unsortedTransactions.filter(t => {
+                if (!t.date) return false;
+                const date = new Date(t.date);
+                const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
+                return isTransactionInSelectedPeriod(formattedDate);
+            }).slice(0, 10);
+
+            // Show empty message if no transactions to sort in selected period
+            if (visibleTransactions.length === 0) {
                 const emptyMessage = document.createElement('div');
                 emptyMessage.className = 'section-subtitle no-transactions-message';
                 emptyMessage.textContent = 'No Transactions to Sort';
@@ -7217,20 +7225,10 @@
                 return;
             }
 
-            // Show the first 10 recent transactions on dashboard
-            recentTransactions.forEach(transaction => {
+            // Show the visible transactions on dashboard
+            visibleTransactions.forEach(transaction => {
                 const txnEl = createDashboardTransactionElement(transaction);
                 transactionsSection.appendChild(txnEl);
-
-                // Apply filtering to newly added transactions
-                const dateElement = txnEl.querySelector('.transaction-date');
-                if (dateElement) {
-                    const dateString = dateElement.textContent.trim();
-                    const shouldShow = isTransactionInSelectedPeriod(dateString);
-                    if (!shouldShow) {
-                        txnEl.style.display = 'none';
-                    }
-                }
             });
         }
 
@@ -7255,25 +7253,23 @@
             const unassignedTransactions = allTransactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '');
             const assignedTransactions = allTransactions.filter(t => t.category && t.category !== 'Unsorted' && t.category !== '');
 
-            // Update subtitle based on whether there are unassigned transactions
+            // Filter unassigned by selected date period
+            const visibleUnassigned = unassignedTransactions.filter(t => {
+                if (!t.date) return false;
+                const date = new Date(t.date);
+                const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
+                return isTransactionInSelectedPeriod(formattedDate);
+            });
+
+            // Update subtitle based on whether there are visible unassigned transactions
             if (unassignedSubtitle && unassignedSubtitle.classList.contains('section-subtitle')) {
-                unassignedSubtitle.textContent = unassignedTransactions.length === 0 ? 'No Transactions to Sort' : 'Unassigned';
+                unassignedSubtitle.textContent = visibleUnassigned.length === 0 ? 'No Transactions to Sort' : 'Unassigned';
             }
 
-            // Add unassigned transactions
-            unassignedTransactions.forEach((transaction) => {
+            // Add visible unassigned transactions
+            visibleUnassigned.forEach((transaction) => {
                 const transactionEl = createDashboardTransactionElement(transaction);
                 unassignedSection.appendChild(transactionEl);
-
-                // Apply filtering to newly added transactions
-                const dateElement = transactionEl.querySelector('.transaction-date');
-                if (dateElement) {
-                    const dateString = dateElement.textContent.trim();
-                    const shouldShow = isTransactionInSelectedPeriod(dateString);
-                    if (!shouldShow) {
-                        transactionEl.style.display = 'none';
-                    }
-                }
             });
 
             // Filter assigned transactions by selected month/year and add them
