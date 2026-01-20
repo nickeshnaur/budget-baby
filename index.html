@@ -726,7 +726,8 @@
             border-radius: 8px;
         }
 
-        .home-category-item:has(.bill-card) {
+        .home-category-item:has(.bill-card),
+        .home-category-item:has(.category-card) {
             background: transparent;
             border-radius: 32px;
         }
@@ -1019,7 +1020,7 @@
         }
 
         .category-amount.negative {
-            color: #ff0000;
+            color: #EE3636;
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 20px;
@@ -1038,6 +1039,10 @@
             height: 100%;
             border-radius: 2px;
             background: #D3D3D3;
+        }
+
+        .progress-fill.negative {
+            background: #EE3636;
         }
 
         .category-progress {
@@ -9397,19 +9402,22 @@
                                 `;
 
                                 // Update progress bar
+                                const isOverBudget = totalSpent > budgetedValue;
+                                const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
+
                                 if (!progressBarContainer && budgetedValue > 0) {
                                     const progressContainer = document.createElement('div');
                                     progressContainer.className = 'progress-bar-container';
                                     progressContainer.style.width = '100%';
                                     progressContainer.style.height = '2px';
-                                    progressContainer.style.backgroundColor = '#e6e6e6';
+                                    progressContainer.style.backgroundColor = '#F1F1F1';
                                     progressContainer.style.borderRadius = '1px';
                                     progressContainer.style.marginBottom = '8px';
 
                                     const progressBar = document.createElement('div');
                                     progressBar.className = 'progress-bar';
                                     progressBar.style.height = '100%';
-                                    progressBar.style.backgroundColor = '#737373';
+                                    progressBar.style.backgroundColor = progressColor;
                                     progressBar.style.borderRadius = '1px';
                                     progressBar.style.transition = 'width 0.3s ease';
 
@@ -9427,6 +9435,7 @@
                                     if (progressBar) {
                                         const percentage = Math.min((totalSpent / budgetedValue) * 100, 100);
                                         progressBar.style.width = `${percentage}%`;
+                                        progressBar.style.backgroundColor = progressColor;
                                     }
                                 }
                             }
