@@ -1090,19 +1090,15 @@
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 10px;
-            padding: 6px 12px;
-            border-radius: 20px;
             white-space: nowrap;
         }
 
         .bill-status.paid {
-            background: #0ECB27;
-            color: #ffffff;
+            color: #0ECB27;
         }
 
         .bill-status.due {
-            background: #C0C0C0;
-            color: #ffffff;
+            color: #C0C0C0;
         }
 
         .transaction-date {
@@ -3057,7 +3053,7 @@
                             <span class="category-name">Rent</span>
                         </div>
                         <div class="bill-right-group">
-                            <span class="bill-status paid">Paid ✓</span>
+                            <span class="bill-status paid">Paid</span>
                             <span class="category-amount">$2,900.00</span>
                         </div>
                     </div>
@@ -9312,9 +9308,9 @@
                                 }
 
                                 if (categoryTransactions.length > 0) {
-                                    // Has transactions: show "Paid ✓"
+                                    // Has transactions: show "Paid"
                                     if (budgetInfoDiv) {
-                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid</span>`;
                                     }
                                 } else {
                                     // No transactions: show due date
@@ -9344,13 +9340,13 @@
                                 }
 
                                 if (categoryTransactions.length > 0) {
-                                    // Has transactions: show total and "Paid ✓"
+                                    // Has transactions: show total and "Paid"
                                     if (categoryAmountElement) {
                                         categoryAmountElement.textContent = `$${totalSpent.toFixed(2)}`;
                                         categoryAmountElement.className = 'category-amount';
                                     }
                                     if (budgetInfoDiv) {
-                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid</span>`;
                                     }
                                 } else {
                                     // No transactions: show budgeted and due date
