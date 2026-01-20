@@ -6218,13 +6218,15 @@
                 const response = await fetch('/api/transactions');
                 const result = await response.json();
 
-                if (response.ok && result.transactions) {
-                    updateTransactionsDisplay(result.transactions);
+                if (response.ok) {
+                    updateTransactionsDisplay(result.transactions || []);
                 } else {
-                    console.log('No transactions found or error:', result.error);
+                    console.log('Error loading transactions:', result.error);
+                    updateTransactionsDisplay([]);
                 }
             } catch (error) {
                 console.error('Failed to load transactions:', error);
+                updateTransactionsDisplay([]);
             }
 
             // Always load manual transactions after API call
@@ -7171,11 +7173,11 @@
         }
 
         function updateTransactionsDisplay(transactions) {
-            if (transactions.length === 0) return;
-
             // Update both dashboard and transactions page
             updateDashboardTransactions(transactions);
-            updateTransactionsPageDisplay(transactions);
+            if (transactions.length > 0) {
+                updateTransactionsPageDisplay(transactions);
+            }
         }
 
         function updateDashboardTransactions(transactions) {
@@ -7204,7 +7206,8 @@
             if (existingEmptyMessage) existingEmptyMessage.remove();
 
             // Show only unsorted transactions on dashboard
-            const recentTransactions = transactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '').slice(0, 10);
+            const allTransactions = transactions || [];
+            const recentTransactions = allTransactions.filter(t => !t.category || t.category === 'Unsorted' || t.category === '').slice(0, 10);
 
             // Show empty message if no transactions to sort
             if (recentTransactions.length === 0) {
