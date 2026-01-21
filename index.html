@@ -909,6 +909,11 @@
         .budget-value.positive { color: #0ECB27; }
         .budget-value.negative { color: #EE3636; }
 
+        /* Status value styling for monthly/annual bills */
+        [id$="-status"].budget-value {
+            font-size: 14px;
+        }
+
         .budget-value.editable {
             cursor: text;
             border: 1px solid transparent;
@@ -4142,7 +4147,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="auto-loan-status">Pending</div>
+                <div class="budget-value" id="auto-loan-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4193,7 +4198,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="rent-status">Pending</div>
+                <div class="budget-value" id="rent-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4256,7 +4261,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="phone-status">Pending</div>
+                <div class="budget-value" id="phone-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4320,7 +4325,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="costco-status">Pending</div>
+                <div class="budget-value" id="costco-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4384,7 +4389,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="insurance-rent-status">Pending</div>
+                <div class="budget-value" id="insurance-rent-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4447,7 +4452,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="letterboxd-status">Pending</div>
+                <div class="budget-value" id="letterboxd-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4510,7 +4515,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="grammarly-status">Pending</div>
+                <div class="budget-value" id="grammarly-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4573,7 +4578,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="domain-status">Pending</div>
+                <div class="budget-value" id="domain-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4636,7 +4641,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="google-one-status">Pending</div>
+                <div class="budget-value" id="google-one-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4699,7 +4704,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="c-capital-one-annual-fee-status">Pending</div>
+                <div class="budget-value" id="c-capital-one-annual-fee-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4762,7 +4767,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="c-sw-annual-fee-status">Pending</div>
+                <div class="budget-value" id="c-sw-annual-fee-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4825,7 +4830,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="n-capital-one-annual-fee-status">Pending</div>
+                <div class="budget-value" id="n-capital-one-annual-fee-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4888,7 +4893,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="n-sw-annual-fee-status">Pending</div>
+                <div class="budget-value" id="n-sw-annual-fee-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5007,7 +5012,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="electric-status">Pending</div>
+                <div class="budget-value" id="electric-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5058,7 +5063,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="insurance-auto-status">Pending</div>
+                <div class="budget-value" id="insurance-auto-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5109,7 +5114,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="nw-mutual-status">Pending</div>
+                <div class="budget-value" id="nw-mutual-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5160,7 +5165,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="internet-status">Pending</div>
+                <div class="budget-value" id="internet-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5211,7 +5216,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="spotify-status">Pending</div>
+                <div class="budget-value" id="spotify-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5262,7 +5267,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="sp-fitness-status">Pending</div>
+                <div class="budget-value" id="sp-fitness-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5313,7 +5318,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="alamo-drafthouse-status">Pending</div>
+                <div class="budget-value" id="alamo-drafthouse-status">-</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -6559,7 +6564,8 @@
                 const remaining = (budgetedValue + rolloverValue) - spentValue;
 
                 // Update display
-                remainingElement.textContent = `$${remaining.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                const sign = remaining < 0 ? '-' : '';
+                remainingElement.textContent = `${sign}$${Math.abs(remaining).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 
                 // Apply appropriate CSS class
                 remainingElement.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
@@ -6700,7 +6706,7 @@
             // Update status display
             const statusElement = document.getElementById(`${categorySlug}-status`);
             if (statusElement) {
-                statusElement.textContent = isPaid ? 'Paid' : 'Pending';
+                statusElement.textContent = isPaid ? '✅' : '-';
                 statusElement.className = isPaid ? 'budget-value positive' : 'budget-value';
             }
 
@@ -7016,10 +7022,10 @@
             const statusElement = document.getElementById(`${elementSlug}-status`);
             if (statusElement) {
                 if (transactions && transactions.length > 0) {
-                    statusElement.textContent = 'Paid';
+                    statusElement.textContent = '✅';
                     statusElement.style.color = '#09bc00';
                 } else {
-                    statusElement.textContent = 'Pending';
+                    statusElement.textContent = '-';
                     statusElement.style.color = '';
                 }
             }
@@ -9043,6 +9049,9 @@
             // Update main category display amount on categories page
             updateMainCategoryDisplay(categorySlug, categoryName, totalSpent);
 
+            // Update bill-status on category cards (in categories page bill-cards)
+            updateBillCardStatus(categorySlug, totalSpent > 0);
+
             // Update paid status on categories list page
             const paidElement = document.querySelector(`#category-${categorySlug} .category-due`);
             if (paidElement) {
@@ -9090,6 +9099,44 @@
             return dueDays[categorySlug] || '1';
         }
 
+        // Update bill-status on category cards (bill-cards on categories page)
+        function updateBillCardStatus(categorySlug, isPaid) {
+            // Find the category config to get the display name
+            const categoryConfig = CATEGORY_CONFIG.find(c => c.slug === categorySlug);
+            if (!categoryConfig) return;
+
+            // Find all home-category-items and look for the one with matching onclick
+            const categoryItems = document.querySelectorAll('.home-category-item');
+            categoryItems.forEach(item => {
+                const onclickAttr = item.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(`'${categoryConfig.displayName}'`)) {
+                    const billStatus = item.querySelector('.bill-status');
+                    if (billStatus) {
+                        // Store original due text on first run
+                        if (!billStatus.hasAttribute('data-original-due')) {
+                            billStatus.setAttribute('data-original-due', billStatus.textContent);
+                        }
+
+                        if (isPaid) {
+                            billStatus.textContent = 'Paid ✓';
+                            billStatus.className = 'bill-status paid';
+                        } else {
+                            // Restore original due text
+                            const originalDue = billStatus.getAttribute('data-original-due');
+                            if (originalDue) {
+                                billStatus.textContent = originalDue;
+                            } else if (categoryConfig.dueDay) {
+                                // Fallback for monthly bills
+                                const currentMonth = new Date().getMonth() + 1;
+                                billStatus.textContent = `Due ${currentMonth}/${categoryConfig.dueDay}`;
+                            }
+                            billStatus.className = 'bill-status due';
+                        }
+                    }
+                }
+            });
+        }
+
         // Annual Bills calculations (Phone, Costco)
         function updateFixedAnnualCalculations(categorySlug, categoryName, transactions) {
             // Normalize slug: convert triple dashes to single dashes for element ID lookups
@@ -9115,13 +9162,16 @@
             const statusElement = document.getElementById(`${elementSlug}-status`);
             if (statusElement) {
                 if (totalSpent > 0) {
-                    statusElement.textContent = 'Paid';
+                    statusElement.textContent = '✅';
                     statusElement.style.color = '#09bc00';
                 } else {
-                    statusElement.textContent = 'Pending';
+                    statusElement.textContent = '-';
                     statusElement.style.color = '';
                 }
             }
+
+            // Update bill-status on category cards (in categories page bill-cards)
+            updateBillCardStatus(categorySlug, totalSpent > 0);
 
             // Update rollover amount: sum of all previous months' budgeted amounts
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
@@ -9194,7 +9244,8 @@
             if (budgetedElement && remainingElement) {
                 const budgeted = parseFloat(budgetedElement.dataset.value || '0');
                 const remaining = budgeted - totalSpent;
-                remainingElement.textContent = `$${remaining.toFixed(2)}`;
+                const sign = remaining < 0 ? '-' : '';
+                remainingElement.textContent = `${sign}$${Math.abs(remaining).toFixed(2)}`;
 
                 // Update color based on remaining amount
                 if (remaining < 0) {
