@@ -698,6 +698,9 @@
         }
 
         .overview-month-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
             color: #000;
         }
@@ -7639,7 +7642,7 @@
                     if (year < 2026) break;
                 }
 
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                 let html = '';
 
                 for (const { month: selectedMonth, year: selectedYear } of months) {
@@ -7687,7 +7690,7 @@
                 // Add dummy December 2025 card
                 html += `
                     <div class="overview-month">
-                        <h3 class="overview-month-title">December 2025</h3>
+                        <h3 class="overview-month-title">Dec 2025</h3>
                         <div class="overview-month-grid">
                             <div class="overview-month-item">
                                 <div class="overview-month-label"><span>💵</span>Income</div>
