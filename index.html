@@ -6710,6 +6710,9 @@
                 statusElement.className = isPaid ? 'budget-value positive' : 'budget-value';
             }
 
+            // Update bill-status on category cards (in categories page bill-cards)
+            updateBillCardStatus(categorySlug, isPaid);
+
             // Set up editable functionality for budgeted amount
             setupEditableFixedMonthlyBudgeted(categorySlug);
 
@@ -7020,8 +7023,9 @@
 
             // Update status based on whether there are transactions for selected month
             const statusElement = document.getElementById(`${elementSlug}-status`);
+            const isPaid = transactions && transactions.length > 0;
             if (statusElement) {
-                if (transactions && transactions.length > 0) {
+                if (isPaid) {
                     statusElement.textContent = '✅';
                     statusElement.style.color = '#09bc00';
                 } else {
@@ -7029,6 +7033,9 @@
                     statusElement.style.color = '';
                 }
             }
+
+            // Update bill-status on category cards (in categories page bill-cards)
+            updateBillCardStatus(categorySlug, isPaid);
 
             // Set up editable functionality for annual cost
             setupEditableFixedAnnualCost(elementSlug);
@@ -9428,10 +9435,16 @@
                                     budgetInfoDiv.style.justifyContent = 'flex-end';
                                 }
 
+                                // Update bill-status element for bill cards
+                                const billStatusElement = card.querySelector('.bill-status');
                                 if (categoryTransactions.length > 0) {
                                     // Has transactions: show "Paid"
                                     if (budgetInfoDiv) {
                                         budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
+                                    }
+                                    if (billStatusElement) {
+                                        billStatusElement.textContent = 'Paid ✓';
+                                        billStatusElement.className = 'bill-status paid';
                                     }
                                 } else {
                                     // No transactions: show due date
@@ -9439,6 +9452,15 @@
                                     const dueDate = dueDateElement ? dueDateElement.textContent.trim() : '';
                                     if (budgetInfoDiv && dueDate) {
                                         budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
+                                    }
+                                    if (billStatusElement) {
+                                        // Store original due text on first run
+                                        if (!billStatusElement.hasAttribute('data-original-due')) {
+                                            billStatusElement.setAttribute('data-original-due', billStatusElement.textContent);
+                                        }
+                                        const originalDue = billStatusElement.getAttribute('data-original-due');
+                                        billStatusElement.textContent = originalDue || (dueDate ? `Due ${dueDate}` : 'Due');
+                                        billStatusElement.className = 'bill-status due';
                                     }
                                 }
                             }
@@ -9460,6 +9482,8 @@
                                     budgetInfoDiv.style.justifyContent = 'flex-end';
                                 }
 
+                                // Update bill-status element for bill cards
+                                const billStatusElement = card.querySelector('.bill-status');
                                 if (categoryTransactions.length > 0) {
                                     // Has transactions: show total and "Paid"
                                     if (categoryAmountElement) {
@@ -9469,6 +9493,10 @@
                                     if (budgetInfoDiv) {
                                         budgetInfoDiv.innerHTML = `<span class="budget-text positive">Paid ✓</span>`;
                                     }
+                                    if (billStatusElement) {
+                                        billStatusElement.textContent = 'Paid ✓';
+                                        billStatusElement.className = 'bill-status paid';
+                                    }
                                 } else {
                                     // No transactions: show budgeted and due date
                                     if (categoryAmountElement) {
@@ -9477,6 +9505,15 @@
                                     }
                                     if (budgetInfoDiv) {
                                         budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
+                                    }
+                                    if (billStatusElement) {
+                                        // Store original due text on first run
+                                        if (!billStatusElement.hasAttribute('data-original-due')) {
+                                            billStatusElement.setAttribute('data-original-due', billStatusElement.textContent);
+                                        }
+                                        const originalDue = billStatusElement.getAttribute('data-original-due');
+                                        billStatusElement.textContent = originalDue || `Due ${dueDate}`;
+                                        billStatusElement.className = 'bill-status due';
                                     }
                                 }
                             } else {
