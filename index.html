@@ -666,25 +666,29 @@
         }
 
         /* Overview Page Styles */
+        #overviewPage .page-header {
+            margin-top: 20px;
+        }
+
         .overview-month {
-            background: white;
-            border-radius: 12px;
-            padding: 20px 16px;
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 32px 24px;
             margin-bottom: 20px;
         }
 
         .overview-month-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
+            font-size: 18px;
             font-weight: 700;
-            color: #333;
+            color: #000;
             margin: 0 0 16px 0;
         }
 
         .overview-month-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .overview-month-item {
@@ -694,22 +698,22 @@
         }
 
         .overview-month-label {
-            font-size: 1rem;
-            color: #333;
+            font-size: 14px;
+            color: #000;
         }
 
         .overview-month-amount {
-            font-size: 1rem;
+            font-size: 20px;
             font-weight: 600;
-            color: #333;
+            color: #000;
         }
 
-        .overview-month-amount.savings {
-            color: #4caf50;
+        .overview-month-amount.positive-savings {
+            color: #0ECB27;
         }
 
-        .overview-month-amount.negative {
-            color: #e74c3c;
+        .overview-month-amount.negative-savings {
+            color: #EE3636;
         }
 
         /* Home Page Transaction Items */
@@ -7657,7 +7661,7 @@
                     const totalExpenses = await calculateMonthlyExpenses(allTransactions, selectedMonth, selectedYear);
 
                     const savings = totalIncome - totalExpenses;
-                    const savingsColor = savings >= 0 ? '#4caf50' : '#e74c3c';
+                    const savingsClass = savings >= 0 ? 'positive-savings' : 'negative-savings';
 
                     html += `
                         <div class="overview-month">
@@ -7669,16 +7673,37 @@
                                 </div>
                                 <div class="overview-month-item">
                                     <div class="overview-month-label">Expenses</div>
-                                    <div class="overview-month-amount negative">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                    <div class="overview-month-amount">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                                 <div class="overview-month-item">
                                     <div class="overview-month-label">Savings</div>
-                                    <div class="overview-month-amount" style="color: ${savingsColor}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                    <div class="overview-month-amount ${savingsClass}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                             </div>
                         </div>
                     `;
                 }
+
+                // Add dummy December 2025 card
+                html += `
+                    <div class="overview-month">
+                        <h3 class="overview-month-title">December 2025</h3>
+                        <div class="overview-month-grid">
+                            <div class="overview-month-item">
+                                <div class="overview-month-label">Income</div>
+                                <div class="overview-month-amount">$8,450.00</div>
+                            </div>
+                            <div class="overview-month-item">
+                                <div class="overview-month-label">Expenses</div>
+                                <div class="overview-month-amount">-$6,230.50</div>
+                            </div>
+                            <div class="overview-month-item">
+                                <div class="overview-month-label">Savings</div>
+                                <div class="overview-month-amount positive-savings">$2,219.50</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
 
                 document.getElementById('overview-months-container').innerHTML = html;
             } catch (error) {
