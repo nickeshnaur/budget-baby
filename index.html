@@ -670,6 +670,11 @@
             margin-top: 20px;
         }
 
+        #transactionsPage .page-header {
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+
         .overview-month {
             background: #ffffff;
             border-radius: 32px;
@@ -2258,10 +2263,10 @@
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 14px;
-            background: #4A90E2;
-            color: #ffffff;
-            border: none;
-            border-radius: 12px;
+            background: #FFF;
+            color: #4A90E2;
+            border: 1px solid #4A90E2;
+            border-radius: 40px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: none;
@@ -2269,11 +2274,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             margin: 0;
         }
 
         .add-transaction-btn:hover {
-            background: #357ABD;
+            background: #f0f7ff;
             transform: translateY(-2px);
         }
 
@@ -2713,13 +2719,13 @@
             <h2 class="page-title">Transactions</h2>
         </div>
 
-        <div class="transactions-section" style="margin-bottom: 40px;">
+        <div class="transactions-section" style="margin-bottom: 60px;">
             <div class="section-subtitle">Unassigned</div>
             <div class="unassigned">
                 <!-- Unassigned transactions will be loaded here dynamically -->
             </div>
             <button class="add-transaction-btn" onclick="showAddTransactionForm()">
-                <i class="fa-solid fa-circle-plus" style="font-size: 18px;"></i>
+                <i class="fa-solid fa-plus"></i>
                 Add Transaction
             </button>
         </div>
@@ -2727,7 +2733,7 @@
         <div class="transactions-section">
             <div class="date-selectors">
                 <div class="custom-dropdown" id="transactions-month-selector" data-value="1">
-                    <span class="dropdown-display">January</span>
+                    <span class="dropdown-display">Jan</span>
                     <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
                 </div>
                 <div class="custom-dropdown" id="transactions-year-selector" data-value="2026">
@@ -2750,7 +2756,7 @@
         <div class="transactions-section">
             <div class="date-selectors">
                 <div class="custom-dropdown" id="categories-month-selector" data-value="1">
-                    <span class="dropdown-display">January</span>
+                    <span class="dropdown-display">Jan</span>
                     <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
                 </div>
                 <div class="custom-dropdown" id="categories-year-selector" data-value="2026">
@@ -7330,7 +7336,7 @@
                 yearSelector.setAttribute('data-value', currentYear);
 
                 // Set display text
-                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
@@ -7374,7 +7380,7 @@
             const selectedYear = dashboardYearSelector ?
                 parseInt(dashboardYearSelector.getAttribute('data-value')) || now.getFullYear() :
                 now.getFullYear();
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
             monthSelectors.forEach(monthSelector => {
                 monthSelector.setAttribute('data-value', selectedMonth);
@@ -7765,18 +7771,18 @@
             // Create options based on type
             if (type === 'month') {
                 const months = [
-                    {value: '1', label: 'January'},
-                    {value: '2', label: 'February'},
-                    {value: '3', label: 'March'},
-                    {value: '4', label: 'April'},
+                    {value: '1', label: 'Jan'},
+                    {value: '2', label: 'Feb'},
+                    {value: '3', label: 'Mar'},
+                    {value: '4', label: 'Apr'},
                     {value: '5', label: 'May'},
-                    {value: '6', label: 'June'},
-                    {value: '7', label: 'July'},
-                    {value: '8', label: 'August'},
-                    {value: '9', label: 'September'},
-                    {value: '10', label: 'October'},
-                    {value: '11', label: 'November'},
-                    {value: '12', label: 'December'}
+                    {value: '6', label: 'Jun'},
+                    {value: '7', label: 'Jul'},
+                    {value: '8', label: 'Aug'},
+                    {value: '9', label: 'Sep'},
+                    {value: '10', label: 'Oct'},
+                    {value: '11', label: 'Nov'},
+                    {value: '12', label: 'Dec'}
                 ];
                 months.forEach(month => {
                     const option = createDropdownOption(month.label, month.value, element, 'month');
