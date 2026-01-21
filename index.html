@@ -819,27 +819,56 @@
         .home-category-amount.negative { color: #e74c3c; }
 
         /* Category Detail Page Styles */
+        .category-detail-wrapper {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .category-detail-accent {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .category-detail-menu {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            color: #000;
+            font-size: 18px;
+        }
+
         .category-detail-header {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-start;
             gap: 4px;
+            padding-left: 16px;
         }
 
         .category-detail-title {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
+            font-family: 'Roboto', sans-serif;
+            font-size: 20px;
             font-weight: 700;
-            color: #333;
+            color: #000;
         }
 
         .category-detail-type {
-            font-size: 0.9rem;
-            color: #666;
-            font-style: normal;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            font-style: italic;
+            color: #000;
         }
 
         .category-budget-summary {
@@ -3405,11 +3434,15 @@
 
     <!-- Out & About Category Detail Page -->
     <div id="categoryDetailPage-out-about" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎉 Out & About
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff6b6b;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎉 Out & About
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3456,11 +3489,15 @@
 
     <!-- Grocery Category Detail Page -->
     <div id="categoryDetailPage-grocery" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🛒 Grocery
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #2196f3;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🛒 Grocery
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3507,11 +3544,15 @@
 
     <!-- Gas Category Detail Page -->
     <div id="categoryDetailPage-gas" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ⛽ Gas
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff9800;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ⛽ Gas
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3557,11 +3598,15 @@
 
     <!-- Auto Category Detail Page -->
     <div id="categoryDetailPage-auto" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🔧 Auto
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #795548;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🔧 Auto
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3607,11 +3652,15 @@
 
     <!-- Clothing Category Detail Page -->
     <div id="categoryDetailPage-clothing" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                👕 Clothing
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #e91e63;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    👕 Clothing
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3657,11 +3706,15 @@
 
     <!-- Gifts Category Detail Page -->
     <div id="categoryDetailPage-gifts" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎁 Gifts
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #9c27b0;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎁 Gifts
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3707,11 +3760,15 @@
 
     <!-- Health & Care Category Detail Page -->
     <div id="categoryDetailPage-health-care" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🌿 Health & Care
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4caf50;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🌿 Health & Care
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3757,11 +3814,15 @@
 
     <!-- Home Category Detail Page -->
     <div id="categoryDetailPage-home" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🏠 Home
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #607d8b;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🏠 Home
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3807,11 +3868,15 @@
 
     <!-- Travel Category Detail Page -->
     <div id="categoryDetailPage-travel" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ✈️ Travel
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #00bcd4;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ✈️ Travel
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3857,11 +3922,15 @@
 
     <!-- Treats Category Detail Page -->
     <div id="categoryDetailPage-treats" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🍭 Treats
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff5722;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🍭 Treats
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3907,11 +3976,15 @@
 
     <!-- Personal Nick Category Detail Page -->
     <div id="categoryDetailPage-personal-nick" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                👨 Personal Nick
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #3f51b5;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    👨 Personal Nick
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -3957,11 +4030,15 @@
 
     <!-- Personal Chelsea Category Detail Page -->
     <div id="categoryDetailPage-personal-chelsea" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                👩 Personal Chelsea
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #e91e63;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    👩 Personal Chelsea
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -4007,11 +4084,15 @@
 
     <!-- School Category Detail Page -->
     <div id="categoryDetailPage-school" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎓 School
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4caf50;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎓 School
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
@@ -4057,11 +4138,15 @@
 
     <!-- Auto Loan Category Detail Page -->
     <div id="categoryDetailPage-auto-loan" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🚗 Auto Loan
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #f44336;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🚗 Auto Loan
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -4107,11 +4192,15 @@
 
     <!-- Rent Category Detail Page -->
     <div id="categoryDetailPage-rent" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🏠 Rent
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #9c27b0;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🏠 Rent
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -4157,11 +4246,15 @@
 
     <!-- Phone Category Detail Page -->
     <div id="categoryDetailPage-phone" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                📱 Phone
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #795548;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    📱 Phone
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4220,11 +4313,15 @@
 
     <!-- Costco Category Detail Page -->
     <div id="categoryDetailPage-costco" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🏬 Costco
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #607d8b;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🏬 Costco
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4283,11 +4380,15 @@
 
     <!-- Insurance - Rent Category Detail Page -->
     <div id="categoryDetailPage-insurance---rent" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🏠 Insurance - Rent
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #9c27b0;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🏠 Insurance - Rent
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4345,11 +4446,15 @@
 
     <!-- Letterboxd Category Detail Page -->
     <div id="categoryDetailPage-letterboxd" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎬 Letterboxd
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff5722;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎬 Letterboxd
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4407,11 +4512,15 @@
 
     <!-- Grammarly Category Detail Page -->
     <div id="categoryDetailPage-grammarly" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ✏️ Grammarly
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4caf50;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ✏️ Grammarly
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4469,11 +4578,15 @@
 
     <!-- Domain Category Detail Page -->
     <div id="categoryDetailPage-domain" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🌐 Domain
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #2196f3;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🌐 Domain
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4531,11 +4644,15 @@
 
     <!-- Google One Category Detail Page -->
     <div id="categoryDetailPage-google-one" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ☁️ Google One
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4285f4;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ☁️ Google One
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4593,11 +4710,15 @@
 
     <!-- C - Capital One Annual Fee Category Detail Page -->
     <div id="categoryDetailPage-c---capital-one-annual-fee" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                💳 C - Capital One Annual Fee
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #d32f2f;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    💳 C - Capital One Annual Fee
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4655,11 +4776,15 @@
 
     <!-- C - SW Annual Fee Category Detail Page -->
     <div id="categoryDetailPage-c---sw-annual-fee" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ✈️ C - SW Annual Fee
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #1565c0;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ✈️ C - SW Annual Fee
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4717,11 +4842,15 @@
 
     <!-- N - Capital One Annual Fee Category Detail Page -->
     <div id="categoryDetailPage-n---capital-one-annual-fee" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                💎 N - Capital One Annual Fee
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #7b1fa2;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    💎 N - Capital One Annual Fee
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4779,11 +4908,15 @@
 
     <!-- N - SW Annual Fee Category Detail Page -->
     <div id="categoryDetailPage-n---sw-annual-fee" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🛫 N - SW Annual Fee
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #00838f;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🛫 N - SW Annual Fee
+                </div>
+                <div class="category-detail-type">Annual Bills</div>
             </div>
-            <div class="category-detail-type">Annual Bills</div>
         </div>
 
         <div class="month-selector-section" style="margin-bottom: 16px;">
@@ -4841,11 +4974,15 @@
 
     <!-- Income Category Detail Page -->
     <div id="categoryDetailPage-income" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                💵 Income
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4caf50;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    💵 Income
+                </div>
+                <div class="category-detail-type">Income</div>
             </div>
-            <div class="category-detail-type">Income</div>
         </div>
 
         <div class="month-selector-section">
@@ -4887,11 +5024,15 @@
 
     <!-- Ignore Category Detail Page -->
     <div id="categoryDetailPage-ignore" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🚫 Ignored Transactions
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #9e9e9e;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🚫 Ignored Transactions
+                </div>
+                <div class="category-detail-type">Hidden from Budget</div>
             </div>
-            <div class="category-detail-type">Hidden from Budget</div>
         </div>
 
         <div class="section">
@@ -4904,11 +5045,15 @@
 
     <!-- Electric Category Detail Page -->
     <div id="categoryDetailPage-electric" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                ⚡ Electric
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ffeb3b;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    ⚡ Electric
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -4954,11 +5099,15 @@
 
     <!-- Insurance Auto Category Detail Page -->
     <div id="categoryDetailPage-insurance-auto" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🚙 Insurance Auto
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff5722;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🚙 Insurance Auto
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5004,11 +5153,15 @@
 
     <!-- NW Mutual Category Detail Page -->
     <div id="categoryDetailPage-nw-mutual" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🏦 NW Mutual
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #2196f3;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🏦 NW Mutual
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5054,11 +5207,15 @@
 
     <!-- Internet Category Detail Page -->
     <div id="categoryDetailPage-internet" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🌐 Internet
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #00bcd4;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🌐 Internet
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5104,11 +5261,15 @@
 
     <!-- Spotify Category Detail Page -->
     <div id="categoryDetailPage-spotify" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎵 Spotify
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #4caf50;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎵 Spotify
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5154,11 +5315,15 @@
 
     <!-- SP Fitness Category Detail Page -->
     <div id="categoryDetailPage-sp-fitness" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                💪 SP Fitness
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #ff9800;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    💪 SP Fitness
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5204,11 +5369,15 @@
 
     <!-- Alamo Drafthouse Category Detail Page -->
     <div id="categoryDetailPage-alamo-drafthouse" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🎬 Alamo Drafthouse
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #e91e63;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🎬 Alamo Drafthouse
+                </div>
+                <div class="category-detail-type">Monthly Bills</div>
             </div>
-            <div class="category-detail-type">Monthly Bills</div>
         </div>
 
         <div class="month-selector-section">
@@ -5254,11 +5423,15 @@
 
     <!-- Giving Category Detail Page -->
     <div id="categoryDetailPage-giving" class="container" style="display: none;">
-        <div class="category-detail-header">
-            <div class="category-detail-title">
-                🤝 Giving
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" style="background: #9c27b0;"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title">
+                    🤝 Giving
+                </div>
+                <div class="category-detail-type">Flexible Monthly</div>
             </div>
-            <div class="category-detail-type">Flexible Monthly</div>
         </div>
 
         <div class="month-selector-section">
