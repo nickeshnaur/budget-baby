@@ -1565,12 +1565,18 @@ function handleCreateManualTransaction(req, res) {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
             [transactionId, 'manual', description, amount, date, 'posted', category || 'Unsorted', bank || 'Manual Entry', new Date()]
           );
+          console.log(`✅ Manual transaction saved to database: ${transactionId}`);
         } catch (dbError) {
           console.error('Failed to save manual transaction to database:', dbError);
+          // Remove from memory if database save failed
+          transactions.delete(transactionId);
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: 'Failed to save transaction to database' }));
+          return;
         }
       }
 
-      // Save to JSON file for persistence
+      // Save to JSON file for persistence (backup)
       saveTransactions(transactions);
 
       console.log(`✅ Created manual transaction: ${transactionId}`);

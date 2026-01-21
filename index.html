@@ -4147,7 +4147,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="auto-loan-status">-</div>
+                <div class="budget-value" id="auto-loan-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4198,7 +4198,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="rent-status">-</div>
+                <div class="budget-value" id="rent-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5012,7 +5012,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="electric-status">-</div>
+                <div class="budget-value" id="electric-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5063,7 +5063,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="insurance-auto-status">-</div>
+                <div class="budget-value" id="insurance-auto-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5114,7 +5114,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="nw-mutual-status">-</div>
+                <div class="budget-value" id="nw-mutual-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5165,7 +5165,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="internet-status">-</div>
+                <div class="budget-value" id="internet-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5216,7 +5216,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="spotify-status">-</div>
+                <div class="budget-value" id="spotify-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5267,7 +5267,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="sp-fitness-status">-</div>
+                <div class="budget-value" id="sp-fitness-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5318,7 +5318,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="alamo-drafthouse-status">-</div>
+                <div class="budget-value" id="alamo-drafthouse-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -6706,7 +6706,7 @@
             // Update status display
             const statusElement = document.getElementById(`${categorySlug}-status`);
             if (statusElement) {
-                statusElement.textContent = isPaid ? '✅' : '-';
+                statusElement.textContent = isPaid ? '✅' : '✖️';
                 statusElement.className = isPaid ? 'budget-value positive' : 'budget-value';
             }
 
