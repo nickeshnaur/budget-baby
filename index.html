@@ -6436,9 +6436,20 @@
 
             if (!transactionsSection) return;
 
-            // Remove all existing dummy transaction cards
+            // Remove all existing transaction cards and empty message
             const existingTransactions = transactionsSection.querySelectorAll('.transaction-card');
             existingTransactions.forEach(el => el.remove());
+            const existingEmptyMessage = transactionsSection.querySelector('.no-transactions-message');
+            if (existingEmptyMessage) existingEmptyMessage.remove();
+
+            // Show empty message if no transactions
+            if (!transactions || transactions.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'section-subtitle no-transactions-message';
+                emptyMessage.textContent = 'No Transactions to Sort';
+                transactionsSection.appendChild(emptyMessage);
+                return;
+            }
 
             // Add real transactions using the same component function
             // Transactions are already filtered by month/year before being passed here
