@@ -5790,6 +5790,24 @@
                         categoryPage.style.display = 'block';
                         // Initialize category detail selectors and load transactions
                         initializeCategoryDetailSelectors(categorySlug);
+
+                        // Apply pending filter if set from overview page
+                        if (window.pendingCategoryFilter && window.pendingCategoryFilter.slug === categorySlug) {
+                            const { month, year } = window.pendingCategoryFilter;
+                            const monthSelector = categoryPage.querySelector('.category-month-selector');
+                            const yearSelector = categoryPage.querySelector('.category-year-selector');
+                            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                            if (monthSelector) {
+                                monthSelector.setAttribute('data-value', month);
+                                monthSelector.querySelector('.dropdown-display').textContent = monthNames[month - 1];
+                            }
+                            if (yearSelector) {
+                                yearSelector.setAttribute('data-value', year);
+                                yearSelector.querySelector('.dropdown-display').textContent = year;
+                            }
+                            window.pendingCategoryFilter = null;
+                        }
+
                         loadCategoryTransactions(categorySlug);
                     } else {
                         document.getElementById('dashboard').style.display = 'block';
@@ -5837,12 +5855,18 @@
             router.navigate('overview');
         }
 
-        function showCategoryDetail(type, category) {
+        function showCategoryDetail(type, category, month, year) {
             // Navigate to specific category detail page
             const categorySlug = category.toLowerCase()
                 .replace(/\s*&\s*/g, '-')
                 .replace(/\s+/g, '-')
                 .replace(/[^a-z0-9-]/g, '');
+
+            // If month/year provided, store them to be applied after navigation
+            if (month && year) {
+                window.pendingCategoryFilter = { month, year, slug: categorySlug };
+            }
+
             router.navigate('category-' + categorySlug);
         }
 
@@ -7667,7 +7691,7 @@
                     const savingsClass = savings >= 0 ? 'positive-savings' : 'negative-savings';
 
                     html += `
-                        <div class="overview-month">
+                        <div class="overview-month" onclick="showCategoryDetail('income', 'Income', ${selectedMonth}, ${selectedYear})" style="cursor: pointer;">
                             <h3 class="overview-month-title">${monthNames[selectedMonth - 1]} ${selectedYear}</h3>
                             <div class="overview-month-grid">
                                 <div class="overview-month-item">
@@ -7689,7 +7713,7 @@
 
                 // Add dummy December 2025 card
                 html += `
-                    <div class="overview-month">
+                    <div class="overview-month" onclick="showCategoryDetail('income', 'Income', 12, 2025)" style="cursor: pointer;">
                         <h3 class="overview-month-title">Dec 2025</h3>
                         <div class="overview-month-grid">
                             <div class="overview-month-item">
