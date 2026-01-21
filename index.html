@@ -678,8 +678,8 @@
         }
 
         .overview-month-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 18px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 20px;
             font-weight: 700;
             color: #000;
             margin: 0 0 16px 0;
@@ -7668,15 +7668,15 @@
                             <h3 class="overview-month-title">${monthNames[selectedMonth - 1]} ${selectedYear}</h3>
                             <div class="overview-month-grid">
                                 <div class="overview-month-item">
-                                    <div class="overview-month-label">Income</div>
+                                    <div class="overview-month-label"><span>💵</span>Income</div>
                                     <div class="overview-month-amount">$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                                 <div class="overview-month-item">
-                                    <div class="overview-month-label">Expenses</div>
+                                    <div class="overview-month-label"><span>💸</span>Expenses</div>
                                     <div class="overview-month-amount">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                                 <div class="overview-month-item">
-                                    <div class="overview-month-label">Savings</div>
+                                    <div class="overview-month-label"><span>🏦</span>Savings</div>
                                     <div class="overview-month-amount ${savingsClass}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                             </div>
@@ -7690,15 +7690,15 @@
                         <h3 class="overview-month-title">December 2025</h3>
                         <div class="overview-month-grid">
                             <div class="overview-month-item">
-                                <div class="overview-month-label">Income</div>
+                                <div class="overview-month-label"><span>💵</span>Income</div>
                                 <div class="overview-month-amount">$8,450.00</div>
                             </div>
                             <div class="overview-month-item">
-                                <div class="overview-month-label">Expenses</div>
+                                <div class="overview-month-label"><span>💸</span>Expenses</div>
                                 <div class="overview-month-amount">-$6,230.50</div>
                             </div>
                             <div class="overview-month-item">
-                                <div class="overview-month-label">Savings</div>
+                                <div class="overview-month-label"><span>🏦</span>Savings</div>
                                 <div class="overview-month-amount positive-savings">$2,219.50</div>
                             </div>
                         </div>
