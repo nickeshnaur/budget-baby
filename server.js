@@ -114,6 +114,13 @@ async function initializeDatabase() {
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS bank TEXT;
     `).catch(() => {});
 
+    // Create placeholder account for manual transactions (to satisfy foreign key)
+    await pool.query(`
+      INSERT INTO accounts (id, institution_name, status, connected_at)
+      VALUES ('manual', 'Manual Entry', 'active', NOW())
+      ON CONFLICT (id) DO NOTHING;
+    `).catch(() => {});
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
