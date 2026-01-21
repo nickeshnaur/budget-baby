@@ -5638,30 +5638,19 @@
             // Preserve the original date if not already set
             const originalDate = transaction.originalDate || transaction.date;
 
-            if (isManual) {
-                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                const index = manualTransactions.findIndex(t => t.id === transactionId);
-                if (index !== -1) {
-                    if (!manualTransactions[index].originalDate) {
-                        manualTransactions[index].originalDate = originalDate;
-                    }
-                    manualTransactions[index].date = newDate;
-                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+            // All transactions (including manual) now use the server API
+            try {
+                const response = await fetch('/api/transactions/update-date', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ transactionId, date: newDate, originalDate })
+                });
+                if (!response.ok) {
+                    console.error('Failed to update transaction date');
                 }
-            } else {
-                try {
-                    const response = await fetch('/api/transactions/update-date', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ transactionId, date: newDate, originalDate })
-                    });
-                    if (!response.ok) {
-                        console.error('Failed to update transaction date');
-                    }
-                } catch (error) {
-                    console.error('Error updating transaction date:', error);
-                }
+            } catch (error) {
+                console.error('Error updating transaction date:', error);
             }
         }
 
@@ -5670,27 +5659,19 @@
             const currentAmount = parseFloat(transaction.amount) || 0;
             const newAmount = -currentAmount;
 
-            if (isManual) {
-                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                const index = manualTransactions.findIndex(t => t.id === transactionId);
-                if (index !== -1) {
-                    manualTransactions[index].amount = newAmount;
-                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+            // All transactions (including manual) now use the server API
+            try {
+                const response = await fetch('/api/transactions/update-amount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ transactionId, amount: newAmount })
+                });
+                if (!response.ok) {
+                    console.error('Failed to update transaction amount');
                 }
-            } else {
-                try {
-                    const response = await fetch('/api/transactions/update-amount', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ transactionId, amount: newAmount })
-                    });
-                    if (!response.ok) {
-                        console.error('Failed to update transaction amount');
-                    }
-                } catch (error) {
-                    console.error('Error updating transaction amount:', error);
-                }
+            } catch (error) {
+                console.error('Error updating transaction amount:', error);
             }
 
             // Refresh the page to show updated data
@@ -6234,47 +6215,10 @@
             loadManualTransactions();
         }
 
-        // Function to load manual transactions from localStorage
+        // Function to load manual transactions - now a no-op since manual transactions come from server
         function loadManualTransactions() {
-            const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-
-            // Get selected month/year from transactions page selector
-            const monthSelector = document.getElementById('transactions-month-selector');
-            const yearSelector = document.getElementById('transactions-year-selector');
-            const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
-            const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
-
-            // Filter by selected month/year
-            const filteredTransactions = manualTransactions.filter(transaction => {
-                if (!transaction.date) return false;
-                const txnDate = new Date(transaction.date);
-                return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
-            });
-
-            // Sort transactions by date (most recent first)
-            filteredTransactions.sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return dateB - dateA; // Most recent first
-            });
-
-            filteredTransactions.forEach(transaction => {
-                // Check if transaction should go in assigned or unassigned section
-                if (transaction.category && transaction.category !== 'Unsorted') {
-                    // Add to assigned section if categorized
-                    const assignedSection = document.querySelector('.assigned');
-                    if (assignedSection) {
-                        // Check if it doesn't already exist
-                        const existingTransaction = assignedSection.querySelector(`[data-transaction-id="${transaction.id}"]`);
-                        if (!existingTransaction) {
-                            addManualTransactionToAssignedSection(transaction, assignedSection);
-                        }
-                    }
-                } else {
-                    // Add to unassigned section if uncategorized
-                    addManualTransactionToDisplay(transaction);
-                }
-            });
+            // Manual transactions are now stored on the server and returned via /api/transactions
+            // This function is kept for backwards compatibility but does nothing
         }
 
         async function loadCategoryTransactions(categorySlug) {
@@ -6304,22 +6248,12 @@
 
                 if (response.ok && result.transactions) {
                     // Filter transactions for this specific category AND selected month/year
-                    const categoryTransactions = result.transactions.filter(transaction => {
+                    // Server now returns all transactions including manual ones
+                    const allCategoryTransactions = result.transactions.filter(transaction => {
                         if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
                         const txnDate = new Date(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     });
-
-                    // Also get manual transactions from localStorage for this category
-                    const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                    const manualCategoryTransactions = manualTransactions.filter(transaction => {
-                        if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
-                        const txnDate = new Date(transaction.date);
-                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
-                    });
-
-                    // Combine both bank and manual transactions
-                    const allCategoryTransactions = [...categoryTransactions, ...manualCategoryTransactions];
 
                     // Sort by date (most recent first)
                     allCategoryTransactions.sort((a, b) => {
@@ -6343,17 +6277,11 @@
                         updateFixedMonthlyCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-annual') {
                         // For annual bills, also get all transactions for the entire year (for pot calculation)
-                        const yearTransactions = result.transactions.filter(transaction => {
+                        const allYearTransactions = result.transactions.filter(transaction => {
                             if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
                             const txnDate = new Date(transaction.date);
                             return txnDate.getFullYear() === selectedYear;
                         });
-                        const manualYearTransactions = manualTransactions.filter(transaction => {
-                            if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
-                            const txnDate = new Date(transaction.date);
-                            return txnDate.getFullYear() === selectedYear;
-                        });
-                        const allYearTransactions = [...yearTransactions, ...manualYearTransactions];
                         updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions, allYearTransactions);
                     }
                 } else {
@@ -6427,8 +6355,8 @@
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
-                    const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                    const allTransactions = [...result.transactions, ...manualTransactions];
+                    // Server now returns all transactions including manual ones
+                    const allTransactions = result.transactions;
 
                     // Calculate total expenses using shared function
                     const totalExpenses = await calculateMonthlyExpenses(allTransactions, selectedMonth, selectedYear);
@@ -7453,9 +7381,8 @@
                 const result = await response.json();
 
                 if (response.ok && result.transactions) {
-                    // Include manual transactions from localStorage
-                    const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                    const allTransactions = [...result.transactions, ...manualTransactions];
+                    // Server now returns all transactions including manual ones
+                    const allTransactions = result.transactions;
 
                     // Get selected month/year from dashboard selectors
                     const monthSelector = document.getElementById('dashboard-month-selector');
@@ -7686,8 +7613,8 @@
 
                 if (!response.ok || !result.transactions) return;
 
-                const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                const allTransactions = [...result.transactions, ...manualTransactions];
+                // Server now returns all transactions including manual ones
+                const allTransactions = result.transactions;
 
                 // Determine months range - from Jan 2026 to current month
                 const currentDate = new Date();
@@ -7896,44 +7823,65 @@
             document.getElementById('addTransactionForm').reset();
         }
 
-        // Delete transaction function
-        function deleteTransaction(transactionId) {
+        // Delete transaction function - now uses server API for all transactions
+        async function deleteTransaction(transactionId) {
             if (confirm('Are you sure you want to delete this transaction?')) {
-                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                manualTransactions = manualTransactions.filter(t => t.id !== transactionId);
-                localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+                try {
+                    const response = await fetch('/api/transactions/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ transactionId })
+                    });
 
-                // Remove the transaction element from the DOM
-                const transactionEl = document.querySelector(`[data-transaction-id="${transactionId}"]`);
-                if (transactionEl) {
-                    transactionEl.remove();
+                    if (response.ok) {
+                        // Remove the transaction element from the DOM
+                        const transactionEl = document.querySelector(`[data-transaction-id="${transactionId}"]`);
+                        if (transactionEl) {
+                            transactionEl.remove();
+                        }
+
+                        // Reload transactions to refresh the view
+                        loadTransactionsFromAPI();
+                    } else {
+                        console.error('Failed to delete transaction');
+                        alert('Failed to delete transaction');
+                    }
+                } catch (error) {
+                    console.error('Error deleting transaction:', error);
+                    alert('Failed to delete transaction');
                 }
-
-                // Reload transactions to refresh the view
-                loadTransactionsFromAPI();
             }
         }
 
-        // Function to create test transaction for proof of concept
-        function createTestTransaction() {
+        // Function to create test transaction for proof of concept - now uses server API
+        async function createTestTransaction() {
             const testTransaction = {
                 description: "test latte",
                 amount: -6.50,
                 date: "2026-01-06",
                 category: "Unsorted",
-                bank: "Manual Entry",
-                id: 'manual_test_' + Date.now()
+                bank: "Manual Entry"
             };
 
-            let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-            manualTransactions.push(testTransaction);
-            localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+            try {
+                const response = await fetch('/api/transactions/manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(testTransaction)
+                });
 
-            console.log('Test transaction created:', testTransaction);
-
-            // Add to current transactions display manually for immediate demonstration
-            addManualTransactionToDisplay(testTransaction);
-            return testTransaction.id;
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Test transaction created:', result.transaction);
+                    addManualTransactionToDisplay(result.transaction);
+                    return result.transaction.id;
+                }
+            } catch (error) {
+                console.error('Error creating test transaction:', error);
+            }
+            return null;
         }
 
         // Function to add manual transaction to current display
@@ -8122,31 +8070,44 @@
                     const bank = document.getElementById('transactionBank').value || 'Manual Entry';
                     const isPositive = document.getElementById('positiveTransaction').checked;
 
-                    // Create transaction object
-                    const newTransaction = {
+                    // Create transaction data for server
+                    const transactionData = {
                         description: description,
-                        amount: isPositive ? Math.abs(amount) : -Math.abs(amount), // Positive if checked, negative otherwise
+                        amount: isPositive ? Math.abs(amount) : -Math.abs(amount),
                         date: date,
                         category: category,
-                        bank: bank,
-                        id: 'manual_' + Date.now() // Generate unique ID
+                        bank: bank
                     };
 
-                    // Add to manual transactions in localStorage
-                    let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                    manualTransactions.push(newTransaction);
-                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
+                    try {
+                        // Save to server
+                        const response = await fetch('/api/transactions/manual', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify(transactionData)
+                        });
 
-                    console.log('New transaction:', newTransaction);
+                        const result = await response.json();
 
-                    // Close modal and reset form
-                    closeAddTransactionModal();
+                        if (result.success) {
+                            console.log('New transaction:', result.transaction);
 
-                    // Display the transaction immediately
-                    addManualTransactionToDisplay(newTransaction);
+                            // Close modal and reset form
+                            closeAddTransactionModal();
 
-                    // Show success message
-                    alert('Transaction added successfully!');
+                            // Display the transaction immediately
+                            addManualTransactionToDisplay(result.transaction);
+
+                            // Show success message
+                            alert('Transaction added successfully!');
+                        } else {
+                            alert('Failed to add transaction: ' + (result.error || 'Unknown error'));
+                        }
+                    } catch (error) {
+                        console.error('Error adding transaction:', error);
+                        alert('Failed to add transaction. Please try again.');
+                    }
                 });
             }
         });
@@ -8477,57 +8438,7 @@
         }
 
         async function updateTransactionCategory(transactionId, category, tagElement) {
-            // Check if it's a manual transaction
-            if (transactionId.startsWith('manual_')) {
-                // Handle manual transaction category update
-                let manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                const transactionIndex = manualTransactions.findIndex(t => t.id === transactionId);
-
-                if (transactionIndex !== -1) {
-                    // Update the category in localStorage
-                    manualTransactions[transactionIndex].category = category;
-                    localStorage.setItem('manualTransactions', JSON.stringify(manualTransactions));
-
-                    // Update the tag visually
-                    tagElement.innerHTML = `${getCategoryEmoji(category)} ${category.toUpperCase()} <i class="fa-solid fa-caret-down"></i>`;
-                    tagElement.style.background = getCategoryColor(category);
-
-                    // Check if we're on the transactions page
-                    const transactionCard = tagElement.closest('.transaction-card');
-                    const isOnTransactionsPage = document.querySelector('.unassigned');
-
-                    if (isOnTransactionsPage && transactionCard) {
-                        if (category === 'Unsorted') {
-                            // Move to unassigned section if not already there
-                            const unassignedSection = document.querySelector('.unassigned');
-                            if (!unassignedSection.contains(transactionCard)) {
-                                transactionCard.remove();
-                                unassignedSection.appendChild(transactionCard);
-                            }
-                        } else {
-                            // Move from unassigned to assigned section
-                            const assignedSection = document.querySelector('.assigned');
-                            if (assignedSection && transactionCard.closest('.unassigned')) {
-                                transactionCard.remove();
-                                // Insert in date order in assigned section
-                                const transaction = manualTransactions[transactionIndex];
-                                addManualTransactionToAssignedSection(transaction, assignedSection);
-                            }
-                        }
-                    }
-
-                    // If it's on the home page and was just categorized, remove it from dashboard
-                    const isOnDashboard = tagElement.closest('#dashboard');
-                    if (isOnDashboard && category !== 'Unsorted') {
-                        if (transactionCard) {
-                            transactionCard.remove();
-                        }
-                    }
-                }
-                return;
-            }
-
-            // Handle API transactions (existing functionality)
+            // All transactions (including manual) now use the server API
             try {
                 const response = await fetch('/api/transactions/update-category', {
                     method: 'POST',
@@ -9203,9 +9114,7 @@
                     return;
                 }
 
-                // Also include manual transactions from localStorage
-                const manualTransactions = JSON.parse(localStorage.getItem('manualTransactions') || '[]');
-                result.transactions = [...result.transactions, ...manualTransactions];
+                // Server now returns all transactions including manual ones
 
                 // Use centralized CATEGORY_CONFIG - generates array of [slug, displayName, transactionName]
                 const categories = CATEGORY_CONFIG

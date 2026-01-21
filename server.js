@@ -109,6 +109,11 @@ async function initializeDatabase() {
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS original_date TEXT;
     `).catch(() => {});
 
+    // Add bank column for manual transactions
+    await pool.query(`
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS bank TEXT;
+    `).catch(() => {});
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
@@ -180,6 +185,7 @@ async function loadFromDatabase() {
         status: row.status,
         category: row.category,
         assignedMonth: row.assigned_month,
+        bank: row.bank,
         createdAt: row.created_at
       });
     });
@@ -495,6 +501,8 @@ function handleApiRequest(req, res, pathname) {
     handleUpdateTransactionAmount(req, res);
   } else if (pathname === '/api/transactions/delete' && req.method === 'POST') {
     handleDeleteTransaction(req, res);
+  } else if (pathname === '/api/transactions/manual' && req.method === 'POST') {
+    handleCreateManualTransaction(req, res);
   } else if (pathname === '/api/accounts' && req.method === 'GET') {
     handleGetAccounts(req, res);
   } else if (pathname === '/api/account/delete' && req.method === 'POST') {
@@ -1507,6 +1515,73 @@ function handleDeleteTransaction(req, res) {
       console.error('Delete transaction error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to delete transaction' }));
+    }
+  });
+}
+
+// Create a manual transaction
+function handleCreateManualTransaction(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { description, amount, date, category, bank } = JSON.parse(body);
+
+      if (!description || amount === undefined || !date) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Description, amount, and date are required' }));
+        return;
+      }
+
+      const transactionId = 'manual_' + Date.now();
+      const transaction = {
+        id: transactionId,
+        accountId: 'manual',
+        description: description,
+        amount: parseFloat(amount),
+        date: date,
+        status: 'posted',
+        category: category || 'Unsorted',
+        bank: bank || 'Manual Entry',
+        createdAt: new Date().toISOString()
+      };
+
+      // Save to in-memory Map
+      transactions.set(transactionId, transaction);
+
+      // Save to PostgreSQL database
+      if (pool) {
+        try {
+          await pool.query(
+            `INSERT INTO transactions (id, account_id, description, amount, date, status, category, bank, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [transactionId, 'manual', description, amount, date, 'posted', category || 'Unsorted', bank || 'Manual Entry', new Date()]
+          );
+        } catch (dbError) {
+          console.error('Failed to save manual transaction to database:', dbError);
+        }
+      }
+
+      // Save to JSON file for persistence
+      saveTransactions(transactions);
+
+      console.log(`✅ Created manual transaction: ${transactionId}`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, transaction }));
+    } catch (error) {
+      console.error('Create manual transaction error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to create transaction' }));
     }
   });
 }
