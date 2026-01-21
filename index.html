@@ -888,6 +888,9 @@
         }
 
         .budget-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-size: 14px;
             color: #000;
         }
@@ -3460,19 +3463,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="out-about-remaining">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="out-about-budgeted" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="out-about-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value negative" id="out-about-spent">$0.00</div>
             </div>
         </div>
@@ -3515,19 +3518,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value negative" id="grocery-remaining">-$12.10</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="grocery-budgeted" data-value="400">$400.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="grocery-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value negative" id="grocery-spent">$0.00</div>
             </div>
         </div>
@@ -3570,19 +3573,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="gas-remaining">$200.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="gas-budgeted" data-value="200">$200.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="gas-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="gas-spent">$0.00</div>
             </div>
         </div>
@@ -3624,19 +3627,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="auto-remaining">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="auto-budgeted" data-value="100">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="auto-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="auto-spent">$0.00</div>
             </div>
         </div>
@@ -3678,19 +3681,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="clothing-remaining">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="clothing-budgeted" data-value="100">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="clothing-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="clothing-spent">$0.00</div>
             </div>
         </div>
@@ -3732,19 +3735,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="gifts-remaining">$150.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="gifts-budgeted" data-value="150">$150.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="gifts-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="gifts-spent">$0.00</div>
             </div>
         </div>
@@ -3786,19 +3789,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="health-care-remaining">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="health-care-budgeted" data-value="100">$100.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="health-care-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="health-care-spent">$0.00</div>
             </div>
         </div>
@@ -3840,19 +3843,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="home-remaining">$150.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="home-budgeted" data-value="150">$150.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="home-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="home-spent">$0.00</div>
             </div>
         </div>
@@ -3894,19 +3897,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="travel-remaining">$300.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="travel-budgeted" data-value="300">$300.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="travel-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="travel-spent">$0.00</div>
             </div>
         </div>
@@ -3948,19 +3951,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="treats-remaining">$300.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="treats-budgeted" data-value="300">$300.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="treats-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="treats-spent">$0.00</div>
             </div>
         </div>
@@ -4002,19 +4005,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="personal-nick-remaining">$20.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="personal-nick-budgeted" data-value="20">$20.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="personal-nick-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="personal-nick-spent">$0.00</div>
             </div>
         </div>
@@ -4056,19 +4059,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="personal-chelsea-remaining">$20.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="personal-chelsea-budgeted" data-value="20">$20.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="personal-chelsea-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="personal-chelsea-spent">$0.00</div>
             </div>
         </div>
@@ -4110,19 +4113,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value" id="school-remaining">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="school-budgeted" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="school-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="school-spent">$0.00</div>
             </div>
         </div>
@@ -4164,19 +4167,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="auto-loan-due-date">30th</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="auto-loan-budgeted" data-value="347.82">$347.82</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="auto-loan-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="auto-loan-total">--</div>
             </div>
         </div>
@@ -4218,19 +4221,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="rent-due-date">1st</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="rent-budgeted" data-value="2900">$2,900.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="rent-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="rent-total">--</div>
             </div>
         </div>
@@ -4272,31 +4275,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="phone-annual-cost" data-value="463.44">$463.44</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="phone-budgeted" data-value="38.62">$38.62</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="phone-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="phone-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="phone-due-date" data-value="Jul 11">Jul 11</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="phone-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="phone-total">--</div>
             </div>
         </div>
@@ -4339,31 +4342,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="costco-annual-cost" data-value="65.04">$65.04</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="costco-budgeted" data-value="5.42">$5.42</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="costco-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="costco-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="costco-due-date" data-value="Oct 2">Oct 2</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="costco-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="costco-total">--</div>
             </div>
         </div>
@@ -4406,31 +4409,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-rent-annual-cost" data-value="127">$127</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-rent-budgeted" data-value="10.58">$10.58</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="insurance-rent-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="insurance-rent-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-rent-due-date" data-value="Feb 24">Feb 24</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="insurance-rent-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="insurance-rent-total">--</div>
             </div>
         </div>
@@ -4472,31 +4475,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="letterboxd-annual-cost" data-value="19">$19</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="letterboxd-budgeted" data-value="1.58">$1.58</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="letterboxd-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="letterboxd-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="letterboxd-due-date" data-value="Jan 1">Jan 1</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="letterboxd-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="letterboxd-total">--</div>
             </div>
         </div>
@@ -4538,31 +4541,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="grammarly-annual-cost" data-value="144">$144</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="grammarly-budgeted" data-value="12.00">$12.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="grammarly-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="grammarly-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="grammarly-due-date" data-value="Dec 9">Dec 9</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="grammarly-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="grammarly-total">--</div>
             </div>
         </div>
@@ -4604,31 +4607,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="domain-annual-cost" data-value="20">$20</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="domain-budgeted" data-value="1.67">$1.67</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="domain-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="domain-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="domain-due-date" data-value="Mar 9">Mar 9</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="domain-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="domain-total">--</div>
             </div>
         </div>
@@ -4670,31 +4673,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="google-one-annual-cost" data-value="19.99">$19.99</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="google-one-budgeted" data-value="1.67">$1.67</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="google-one-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="google-one-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="google-one-due-date" data-value="Jun 10">Jun 10</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="google-one-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="google-one-total">--</div>
             </div>
         </div>
@@ -4736,31 +4739,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="c-capital-one-annual-fee-annual-cost" data-value="95">$95</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="c-capital-one-annual-fee-budgeted" data-value="7.92">$7.92</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="c-capital-one-annual-fee-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="c-capital-one-annual-fee-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="c-capital-one-annual-fee-due-date" data-value="Dec 21">Dec 21</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="c-capital-one-annual-fee-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="c-capital-one-annual-fee-total">--</div>
             </div>
         </div>
@@ -4802,31 +4805,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="c-sw-annual-fee-annual-cost" data-value="149">$149</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="c-sw-annual-fee-budgeted" data-value="12.42">$12.42</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="c-sw-annual-fee-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="c-sw-annual-fee-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="c-sw-annual-fee-due-date" data-value="Mar 1">Mar 1</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="c-sw-annual-fee-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="c-sw-annual-fee-total">--</div>
             </div>
         </div>
@@ -4868,31 +4871,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="n-capital-one-annual-fee-annual-cost" data-value="395">$395</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="n-capital-one-annual-fee-budgeted" data-value="32.92">$32.92</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="n-capital-one-annual-fee-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="n-capital-one-annual-fee-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="n-capital-one-annual-fee-due-date" data-value="Jan 18">Jan 18</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="n-capital-one-annual-fee-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="n-capital-one-annual-fee-total">--</div>
             </div>
         </div>
@@ -4934,31 +4937,31 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Annual Projected Cost</div>
+                <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
                 <div class="budget-value editable" contenteditable="true" id="n-sw-annual-fee-annual-cost" data-value="229">$229</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Monthly Budgeted</div>
+                <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="n-sw-annual-fee-budgeted" data-value="19.08">$19.08</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Extra Monthly Needed</div>
+                <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
                 <div class="budget-value" id="n-sw-annual-fee-extra-needed">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="n-sw-annual-fee-rollover">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="n-sw-annual-fee-due-date" data-value="Jul 1">Jul 1</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="n-sw-annual-fee-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="n-sw-annual-fee-total">--</div>
             </div>
         </div>
@@ -5000,15 +5003,15 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Deposits</div>
+                <div class="budget-label"><span>💵</span>Deposits</div>
                 <div class="budget-value positive" id="income-deposits">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Expenses</div>
+                <div class="budget-label"><span>💸</span>Expenses</div>
                 <div class="budget-value negative" id="income-expenses">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Savings</div>
+                <div class="budget-label"><span>🏦</span>Savings</div>
                 <div class="budget-value" id="income-savings">$0.00</div>
             </div>
         </div>
@@ -5071,19 +5074,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="electric-due-date">8th</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="electric-budgeted" data-value="150">$150.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="electric-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="electric-total">--</div>
             </div>
         </div>
@@ -5125,19 +5128,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-auto-due-date">27th</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="insurance-auto-budgeted" data-value="250.83">$250.83</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="insurance-auto-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="insurance-auto-total">--</div>
             </div>
         </div>
@@ -5179,19 +5182,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="nw-mutual-due-date">9th</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="nw-mutual-budgeted" data-value="2666.66">$2,666.66</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="nw-mutual-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="nw-mutual-total">--</div>
             </div>
         </div>
@@ -5233,19 +5236,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="internet-due-date">25th</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="internet-budgeted" data-value="50">$50.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="internet-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="internet-total">--</div>
             </div>
         </div>
@@ -5287,19 +5290,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="spotify-due-date">3rd</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="spotify-budgeted" data-value="16.99">$16.99</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="spotify-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="spotify-total">--</div>
             </div>
         </div>
@@ -5341,19 +5344,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="sp-fitness-due-date">1st</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="sp-fitness-budgeted" data-value="178">$178.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="sp-fitness-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="sp-fitness-total">--</div>
             </div>
         </div>
@@ -5395,19 +5398,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Due Date</div>
+                <div class="budget-label"><span>📅</span>Due Date</div>
                 <div class="budget-value editable" contenteditable="true" id="alamo-drafthouse-due-date">22nd</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="alamo-drafthouse-budgeted" data-value="58.98">$58.98</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Status</div>
+                <div class="budget-label"><span>✓</span>Status</div>
                 <div class="budget-value" id="alamo-drafthouse-status">Pending</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Total</div>
+                <div class="budget-label"><span>📋</span>Total</div>
                 <div class="budget-value" id="alamo-drafthouse-total">--</div>
             </div>
         </div>
@@ -5449,19 +5452,19 @@
 
         <div class="category-budget-summary">
             <div class="budget-item">
-                <div class="budget-label">Remaining</div>
+                <div class="budget-label"><span>✅</span>Remaining</div>
                 <div class="budget-value positive" id="giving-remaining">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Budgeted</div>
+                <div class="budget-label"><span>📊</span>Budgeted</div>
                 <div class="budget-value editable" contenteditable="true" id="giving-budgeted" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Pot</div>
+                <div class="budget-label"><span>🏦</span>Pot</div>
                 <div class="budget-value" id="giving-rollover" data-value="0">$0.00</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label">Spent</div>
+                <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value negative" id="giving-spent">$0.00</div>
             </div>
         </div>
