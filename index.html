@@ -2590,14 +2590,26 @@
 
         /* Connected Account Styles */
         .connected-account {
+            position: relative;
+            padding: 24px;
+            padding-bottom: 48px;
+            background: white;
+            border-radius: 32px;
+            border: none;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .account-bank-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 16px;
+        }
+
+        .account-content-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e6e6e6;
-            margin-bottom: 16px;
+            align-items: flex-start;
         }
 
         .account-info {
@@ -2606,17 +2618,73 @@
 
         .account-name {
             font-family: "Roboto", sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            color: #333;
+            font-weight: 700;
+            font-size: 16px;
+            color: #000;
             margin-bottom: 4px;
+        }
+
+        .account-type {
+            font-family: "Roboto", sans-serif;
+            font-weight: 400;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .account-card-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .account-card-image {
+            width: 40px;
+            height: 25px;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .account-status {
             font-family: "Roboto", sans-serif;
             font-weight: 400;
-            font-size: 0.875rem;
-            color: #4caf50;
+            font-size: 10px;
+            color: #000;
+            text-align: right;
+        }
+
+        .account-owner-tag {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            background: #E4EFF5;
+            color: #000;
+            font-family: "Roboto", sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            padding: 8px 16px;
+            border-top-right-radius: 22px;
+        }
+
+        .account-menu-btn {
+            position: absolute;
+            top: 12px;
+            right: 24px;
+            background: none;
+            border: none;
+            color: #919191;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 50%;
+        }
+
+        .account-menu-btn:hover {
+            background: #f0f0f0;
         }
 
     </style>
@@ -5567,28 +5635,13 @@
             <h2 class="page-title">Profile</h2>
         </div>
 
-        <div class="section">
-            <h3 class="section-title">Bank Accounts</h3>
-
-            <div id="connected-accounts">
-                <div class="section-subtitle">No accounts connected</div>
-            </div>
-
-            <button class="add-transaction-btn" onclick="connectBankAccount()">
-                + Connect Bank Account
-            </button>
-
+        <div id="connected-accounts">
+            <div class="section-subtitle">No accounts connected</div>
         </div>
 
-        <div class="section">
-            <h3 class="section-title">Settings</h3>
-
-            <div class="setting-item">
-                <div class="setting-label">Account Password</div>
-                <button class="setting-button">Change Password</button>
-            </div>
-
-        </div>
+        <button class="add-transaction-btn" onclick="connectBankAccount()">
+            + Connect Bank Account
+        </button>
     </div>
 
     <!-- Teller Connect Script -->
@@ -5665,6 +5718,23 @@
             '3859': '_Assets/Card-Chase-Southwest-3859.png',
             '9387': '_Assets/Card-Chase-Southwest-9387.png'
         };
+
+        // Bank logo mapping by institution name
+        const BANK_LOGO_MAP = {
+            'Bank of America': '_Assets/Bank-BankofAmerica-Logo.png',
+            'Capital One': '_Assets/Bank-CapitalOne-Logo.png',
+            'Chase': '_Assets/Bank-Chase-Logo.png'
+        };
+
+        function getBankLogo(institutionName) {
+            if (!institutionName) return null;
+            for (const [key, value] of Object.entries(BANK_LOGO_MAP)) {
+                if (institutionName.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            return null;
+        }
         // =====================================================
 
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
@@ -6402,25 +6472,8 @@
                 const result = await response.json();
 
                 if (result.success && result.accounts) {
-                    // Display all connected accounts
-                    const accountsContainer = document.getElementById('connected-accounts');
-                    accountsContainer.innerHTML = '';
-
-                    result.accounts.forEach(account => {
-                        const accountDiv = document.createElement('div');
-                        accountDiv.className = 'connected-account';
-                        accountDiv.setAttribute('data-account-id', account.id);
-                        accountDiv.innerHTML = `
-                            <div class="account-info">
-                                <div class="account-name">${account.institution?.name || 'Unknown Bank'}</div>
-                                <div class="account-type">${account.name} - ${account.subtype}</div>
-                                <div class="account-status">Connected</div>
-                            </div>
-                            <button class="setting-button" onclick="disconnectAccount()">Disconnect</button>
-                        `;
-                        accountsContainer.appendChild(accountDiv);
-                    });
-
+                    // Reload connected accounts to use the new card format
+                    await loadConnectedAccounts();
                     const institutionNames = result.accounts.map(a => a.institution?.name).join(', ');
                     alert(`${institutionNames} account(s) connected successfully!`);
                 } else {
@@ -6433,37 +6486,13 @@
         }
 
         function updateConnectedAccounts(enrollment) {
-            const accountsContainer = document.getElementById('connected-accounts');
-            const institutionName = enrollment.institution ? enrollment.institution.name : 'Bank Account';
-
-            // Replace "No accounts connected" with the actual account
-            accountsContainer.innerHTML = `
-                <div class="connected-account" data-account-id="${enrollment.accessToken}">
-                    <div class="account-info">
-                        <div class="account-name">${institutionName}</div>
-                        <div class="account-status">Connected</div>
-                    </div>
-                    <button class="setting-button" onclick="disconnectAccount()">Disconnect</button>
-                </div>
-            `;
+            // Reload accounts to use the new card format
+            loadConnectedAccounts();
         }
 
         function updateConnectedAccountsWithDetails(accountId, accountDetails) {
-            const accountsContainer = document.getElementById('connected-accounts');
-            const institutionName = accountDetails.institution?.name || 'Bank Account';
-            const accountName = accountDetails.name || 'Checking Account';
-
-            // Replace "No accounts connected" with the actual account
-            accountsContainer.innerHTML = `
-                <div class="connected-account" data-account-id="${accountId}">
-                    <div class="account-info">
-                        <div class="account-name">${institutionName}</div>
-                        <div class="account-type">${accountName}</div>
-                        <div class="account-status">Connected</div>
-                    </div>
-                    <button class="setting-button" onclick="disconnectAccount()">Disconnect</button>
-                </div>
-            `;
+            // Reload accounts to use the new card format
+            loadConnectedAccounts();
         }
 
         async function loadConnectedAccounts() {
@@ -6477,21 +6506,28 @@
 
                     result.accounts.forEach(account => {
                         const isDisconnected = account.status === 'disconnected';
+                        const bankLogo = getBankLogo(account.institutionName);
+                        const cardImage = account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : null;
+
                         const accountDiv = document.createElement('div');
                         accountDiv.className = 'connected-account';
                         accountDiv.setAttribute('data-account-id', account.id);
                         accountDiv.innerHTML = `
-                            <div class="account-info">
-                                <div class="account-name">${account.institutionName}</div>
-                                <div class="account-type">${account.accountName || account.subtype || 'Account'} ${account.lastFour ? '****' + account.lastFour : ''}</div>
-                                <div class="account-status" style="color: ${isDisconnected ? '#ff6b6b' : '#4ecdc4'}">
-                                    ${isDisconnected ? 'Needs Reconnection' : 'Connected'}
+                            <button class="account-menu-btn" onclick="showAccountMenu('${account.id}', this, ${isDisconnected})" title="More options">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            ${bankLogo ? `<img class="account-bank-logo" src="${bankLogo}" alt="${account.institutionName}">` : `<div class="account-name" style="margin-bottom: 16px;">${account.institutionName}</div>`}
+                            <div class="account-content-row">
+                                <div class="account-info">
+                                    <div class="account-name">${account.accountName || account.subtype || 'Account'}</div>
+                                    <div class="account-type">${account.lastFour ? '****' + account.lastFour : ''}</div>
+                                </div>
+                                <div class="account-card-wrapper">
+                                    ${cardImage ? `<img class="account-card-image" src="${cardImage}" alt="Card">` : '<div class="account-card-image" style="background: #ccc;"></div>'}
+                                    <div class="account-status">${isDisconnected ? 'Disconnected' : 'Connected'}</div>
                                 </div>
                             </div>
-                            ${isDisconnected
-                                ? `<button class="setting-button" style="background: #ff6b6b" onclick="removeAccount('${account.id}')">Remove</button>`
-                                : `<button class="setting-button" onclick="removeAccount('${account.id}')">Remove</button>`
-                            }
+                            <div class="account-owner-tag">Chelsea</div>
                         `;
                         accountsContainer.appendChild(accountDiv);
                     });
@@ -6499,6 +6535,54 @@
             } catch (error) {
                 console.error('Error loading connected accounts:', error);
             }
+        }
+
+        function showAccountMenu(accountId, menuButton, isDisconnected) {
+            const existingMenu = document.querySelector('.account-menu-dropdown');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            const menu = document.createElement('div');
+            menu.className = 'account-menu-dropdown';
+            menu.style.cssText = `
+                position: absolute;
+                top: 40px;
+                right: 24px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                min-width: 140px;
+                overflow: hidden;
+            `;
+
+            menu.innerHTML = `
+                <button style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: none;
+                    background: none;
+                    text-align: left;
+                    cursor: pointer;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 14px;
+                    color: #ff6b6b;
+                " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'" onclick="removeAccount('${accountId}')">
+                    Remove Account
+                </button>
+            `;
+
+            menuButton.closest('.connected-account').appendChild(menu);
+
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target) && e.target !== menuButton) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 0);
         }
 
         async function removeAccount(accountId) {
