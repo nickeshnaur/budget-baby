@@ -3221,6 +3221,8 @@
                     <div class="category-accent" style="background: #9c27b0;"></div>
                 </div>
             </div>
+            <!-- Custom Flexible Monthly Categories -->
+            <div id="custom-flexible-categories"></div>
         </div>
 
         <div class="section">
@@ -3368,6 +3370,8 @@
                     <div class="category-accent" style="background: #e91e63;"></div>
                 </div>
             </div>
+            <!-- Custom Monthly Bill Categories -->
+            <div id="custom-monthly-categories"></div>
         </div>
 
         <div class="section">
@@ -3547,6 +3551,8 @@
                     <div class="category-accent" style="background: #00838f;"></div>
                 </div>
             </div>
+            <!-- Custom Annual Bill Categories -->
+            <div id="custom-annual-categories"></div>
 
         </div>
 
@@ -5522,6 +5528,41 @@
 
     </div>
 
+    <!-- Dynamic Custom Category Detail Page (populated via JavaScript) -->
+    <div id="customCategoryDetailPage" class="container" style="display: none;">
+        <div class="category-detail-wrapper">
+            <div class="category-detail-accent" id="custom-category-accent"></div>
+            <button class="category-detail-menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <div class="category-detail-header">
+                <div class="category-detail-title" id="custom-category-title"></div>
+                <div class="category-detail-type" id="custom-category-type"></div>
+            </div>
+        </div>
+
+        <div class="month-selector-section">
+            <div class="date-selectors">
+                <div class="custom-dropdown category-month-selector" id="custom-category-month-selector" data-value="1">
+                    <span class="dropdown-display">Jan</span>
+                    <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
+                </div>
+                <div class="custom-dropdown category-year-selector" id="custom-category-year-selector" data-value="2026">
+                    <span class="dropdown-display">2026</span>
+                    <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-budget-summary" id="custom-category-budget-summary">
+            <!-- Budget summary will be populated dynamically based on category type -->
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">Transactions</h3>
+            <div id="custom-category-transactions"></div>
+        </div>
+
+    </div>
+
     <!-- Profile Page -->
     <div id="profilePage" class="container" style="display: none;">
         <div class="page-header">
@@ -6012,6 +6053,7 @@
                 document.getElementById('categoriesPage').style.display = 'none';
                 document.getElementById('overviewPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('customCategoryDetailPage').style.display = 'none';
 
                 // Hide all category detail pages
                 const categoryPages = document.querySelectorAll('[id^="categoryDetailPage"]');
@@ -6030,6 +6072,7 @@
                     document.getElementById('categoriesPage').style.display = 'block';
                     initializeCategorySelectors();
                     updateHomepageCategoryCards();
+                    renderCustomCategoryCards();
                 } else if (hash === 'overview') {
                     document.getElementById('overviewPage').style.display = 'block';
                     updateOverviewPage();
@@ -6062,6 +6105,19 @@
                         }
 
                         loadCategoryTransactions(categorySlug);
+                    } else {
+                        document.getElementById('dashboard').style.display = 'block';
+                        initializeDashboardSelectors();
+                        loadTransactionsFromAPI();
+                    }
+                } else if (hash.startsWith('custom-category-')) {
+                    const categoryId = parseInt(hash.replace('custom-category-', ''));
+                    const category = customCategories.find(c => c.id === categoryId);
+                    if (category) {
+                        currentCustomCategory = category;
+                        document.getElementById('customCategoryDetailPage').style.display = 'block';
+                        initializeCustomCategorySelectors();
+                        loadCustomCategoryTransactions();
                     } else {
                         document.getElementById('dashboard').style.display = 'block';
                         initializeDashboardSelectors();
@@ -6393,6 +6449,11 @@
             // Initial route handling on page load
             router.handleRoute();
 
+            // Fetch custom categories if authenticated
+            if (isAuthenticated) {
+                fetchCustomCategories();
+            }
+
             // Login form handling
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -6416,6 +6477,7 @@
                         localStorage.setItem('authenticated', 'true');
                         document.getElementById('passwordInput').value = '';
                         errorMessage.style.display = 'none';
+                        fetchCustomCategories();
                         router.handleRoute();
                     } else {
                         errorMessage.textContent = result.error || 'Login failed';
@@ -8449,6 +8511,282 @@
         });
 
         // ==================== END CATEGORY MODAL FUNCTIONS ====================
+
+        // ==================== CUSTOM CATEGORY MANAGEMENT ====================
+
+        // Store for custom categories
+        let customCategories = [];
+        let currentCustomCategory = null;
+
+        // Fetch custom categories from API
+        async function fetchCustomCategories() {
+            try {
+                const response = await fetch('/api/categories', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    customCategories = result.categories || [];
+                    renderCustomCategoryCards();
+                    updateTransactionCategoryDropdowns();
+                }
+            } catch (error) {
+                console.error('Error fetching custom categories:', error);
+            }
+        }
+
+        // Render custom category cards on the categories page
+        function renderCustomCategoryCards() {
+            const flexibleContainer = document.getElementById('custom-flexible-categories');
+            const monthlyContainer = document.getElementById('custom-monthly-categories');
+            const annualContainer = document.getElementById('custom-annual-categories');
+
+            // Clear existing
+            if (flexibleContainer) flexibleContainer.innerHTML = '';
+            if (monthlyContainer) monthlyContainer.innerHTML = '';
+            if (annualContainer) annualContainer.innerHTML = '';
+
+            customCategories.forEach(category => {
+                const card = createCustomCategoryCard(category);
+                if (category.type === 'flexible' && flexibleContainer) {
+                    flexibleContainer.appendChild(card);
+                } else if (category.type === 'monthly' && monthlyContainer) {
+                    monthlyContainer.appendChild(card);
+                } else if (category.type === 'annual' && annualContainer) {
+                    annualContainer.appendChild(card);
+                }
+            });
+        }
+
+        // Create a category card element
+        function createCustomCategoryCard(category) {
+            const div = document.createElement('div');
+            div.className = 'home-category-item';
+            div.style.cursor = 'pointer';
+            div.onclick = () => showCustomCategoryDetail(category);
+
+            const typeLabel = category.type === 'flexible' ? 'Flexible Monthly' :
+                              category.type === 'monthly' ? 'Monthly Bill' : 'Annual Bill';
+
+            if (category.type === 'flexible') {
+                div.innerHTML = `
+                    <div class="category-card">
+                        <div class="category-header">
+                            <div class="category-left-group">
+                                <span class="category-emoji">${category.emoji}</span>
+                                <span class="category-name">${category.title}</span>
+                            </div>
+                            <span class="category-amount positive" id="custom-${category.id}-remaining">$0.00</span>
+                        </div>
+                        <div class="category-progress">
+                            <div class="budget-info">
+                                <span class="budget-text" id="custom-${category.id}-budgeted-text">BUDGETED: $0</span>
+                                <span class="spent-text" id="custom-${category.id}-spent-text">SPENT: $0.00</span>
+                            </div>
+                        </div>
+                        <div class="category-accent" style="background: ${category.color};"></div>
+                    </div>
+                `;
+            } else {
+                // Monthly or Annual bill card
+                const dueText = category.type === 'monthly'
+                    ? `Due ${category.due_day}${getDaySuffix(category.due_day)}`
+                    : `Due ${category.due_month}/${category.due_day}`;
+                div.innerHTML = `
+                    <div class="bill-card">
+                        <div class="category-header">
+                            <div class="category-left-group">
+                                <span class="category-emoji">${category.emoji}</span>
+                                <span class="category-name">${category.title}</span>
+                            </div>
+                            <div class="bill-right-group">
+                                <span class="bill-status" id="custom-${category.id}-status">${dueText}</span>
+                                <span class="category-amount" id="custom-${category.id}-amount">${category.annual_cost ? '$' + parseFloat(category.annual_cost).toFixed(2) : '--'}</span>
+                            </div>
+                        </div>
+                        <div class="category-accent" style="background: ${category.color};"></div>
+                    </div>
+                `;
+            }
+
+            return div;
+        }
+
+        // Helper function for day suffix
+        function getDaySuffix(day) {
+            if (day >= 11 && day <= 13) return 'th';
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+
+        // Show custom category detail page
+        function showCustomCategoryDetail(category) {
+            currentCustomCategory = category;
+
+            // Populate the dynamic category detail page
+            const page = document.getElementById('customCategoryDetailPage');
+            const accent = document.getElementById('custom-category-accent');
+            const title = document.getElementById('custom-category-title');
+            const type = document.getElementById('custom-category-type');
+            const budgetSummary = document.getElementById('custom-category-budget-summary');
+
+            accent.style.background = category.color;
+            title.textContent = `${category.emoji} ${category.title}`;
+
+            const typeLabel = category.type === 'flexible' ? 'Flexible Monthly' :
+                              category.type === 'monthly' ? 'Monthly Bill' : 'Annual Bill';
+            type.textContent = typeLabel;
+
+            // Build budget summary based on category type
+            if (category.type === 'flexible') {
+                budgetSummary.innerHTML = `
+                    <div class="budget-item">
+                        <div class="budget-label"><span>✅</span>Remaining</div>
+                        <div class="budget-value positive" id="custom-detail-remaining">$0.00</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📊</span>Budgeted</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="0">$0.00</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>🏦</span>Pot</div>
+                        <div class="budget-value" id="custom-detail-rollover" data-value="0">$0.00</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>💸</span>Spent</div>
+                        <div class="budget-value" id="custom-detail-spent">$0.00</div>
+                    </div>
+                `;
+            } else if (category.type === 'monthly') {
+                budgetSummary.innerHTML = `
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📅</span>Due Date</div>
+                        <div class="budget-value">${category.due_day}${getDaySuffix(category.due_day)}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📊</span>Budgeted</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="0">$0.00</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>✓</span>Status</div>
+                        <div class="budget-value" id="custom-detail-status">✖️</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📋</span>Total</div>
+                        <div class="budget-value" id="custom-detail-total">--</div>
+                    </div>
+                `;
+            } else {
+                // Annual
+                budgetSummary.innerHTML = `
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📅</span>Due Date</div>
+                        <div class="budget-value">${category.due_month}/${category.due_day}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📊</span>Annual Cost</div>
+                        <div class="budget-value">${category.annual_cost ? '$' + parseFloat(category.annual_cost).toFixed(2) : '$0.00'}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>💰</span>Monthly</div>
+                        <div class="budget-value">${category.annual_cost ? '$' + (parseFloat(category.annual_cost) / 12).toFixed(2) : '$0.00'}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>🏦</span>Pot</div>
+                        <div class="budget-value" id="custom-detail-pot">$0.00</div>
+                    </div>
+                `;
+            }
+
+            // Navigate to custom category page
+            window.location.hash = 'custom-category-' + category.id;
+        }
+
+        // Add custom categories to transaction category dropdowns
+        function updateTransactionCategoryDropdowns() {
+            const transactionCategorySelect = document.getElementById('transactionCategory');
+            if (!transactionCategorySelect) return;
+
+            // Remove existing custom category options (marked with data-custom)
+            transactionCategorySelect.querySelectorAll('option[data-custom]').forEach(opt => opt.remove());
+
+            // Add custom categories
+            customCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.title;
+                option.textContent = category.title;
+                option.setAttribute('data-custom', 'true');
+                transactionCategorySelect.appendChild(option);
+            });
+        }
+
+        // Load custom category transactions
+        async function loadCustomCategoryTransactions() {
+            if (!currentCustomCategory) return;
+
+            const transactionsContainer = document.getElementById('custom-category-transactions');
+            if (!transactionsContainer) return;
+
+            // Get selected month/year
+            const monthSelector = document.getElementById('custom-category-month-selector');
+            const yearSelector = document.getElementById('custom-category-year-selector');
+            const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+            const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
+
+            try {
+                const response = await fetch('/api/transactions', { credentials: 'include' });
+                const result = await response.json();
+
+                if (result.transactions) {
+                    // Filter transactions for this category and month/year
+                    const filtered = result.transactions.filter(t => {
+                        if (t.category !== currentCustomCategory.title) return false;
+                        const txnDate = new Date(t.date);
+                        return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
+                    });
+
+                    // Render transactions
+                    if (filtered.length === 0) {
+                        transactionsContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No transactions for this category</p>';
+                    } else {
+                        transactionsContainer.innerHTML = '';
+                        filtered.forEach(transaction => {
+                            const isManual = transaction.id && transaction.id.startsWith('manual_');
+                            const card = createTransactionElement(transaction, isManual);
+                            transactionsContainer.appendChild(card);
+                        });
+                    }
+
+                    // Calculate and update budget summary for flexible categories
+                    if (currentCustomCategory.type === 'flexible') {
+                        const spent = filtered.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                        const spentEl = document.getElementById('custom-detail-spent');
+                        if (spentEl) spentEl.textContent = '$' + spent.toFixed(2);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading custom category transactions:', error);
+            }
+        }
+
+        // Initialize custom category detail selectors
+        function initializeCustomCategorySelectors() {
+            const monthSelector = document.getElementById('custom-category-month-selector');
+            const yearSelector = document.getElementById('custom-category-year-selector');
+
+            if (monthSelector) {
+                monthSelector.onclick = () => showDateDropdown(monthSelector, 'months');
+            }
+            if (yearSelector) {
+                yearSelector.onclick = () => showDateDropdown(yearSelector, 'years');
+            }
+        }
+
+        // ==================== END CUSTOM CATEGORY MANAGEMENT ====================
 
         // Delete transaction function - now uses server API for all transactions
         async function deleteTransaction(transactionId) {
