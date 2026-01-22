@@ -156,6 +156,32 @@ async function initializeDatabase() {
       );
     `);
 
+    // Table for storing edits to hardcoded categories
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS category_overrides (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        title TEXT,
+        emoji TEXT,
+        color TEXT,
+        type TEXT,
+        due_day INTEGER,
+        due_month INTEGER,
+        annual_cost DECIMAL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Table for tracking deleted categories (both custom and hardcoded)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS deleted_categories (
+        id SERIAL PRIMARY KEY,
+        slug TEXT,
+        custom_category_id INTEGER,
+        deleted_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     console.log('✅ Database tables initialized');
 
     // Keep existing transactions - don't delete anything
@@ -542,6 +568,12 @@ function handleApiRequest(req, res, pathname) {
     handleCreateCategory(req, res);
   } else if (pathname === '/api/categories' && req.method === 'GET') {
     handleGetCategories(req, res);
+  } else if (pathname === '/api/categories/update' && req.method === 'POST') {
+    handleUpdateCategory(req, res);
+  } else if (pathname === '/api/categories/delete' && req.method === 'POST') {
+    handleDeleteCategory(req, res);
+  } else if (pathname === '/api/categories/overrides' && req.method === 'GET') {
+    handleGetCategoryOverrides(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -1883,6 +1915,152 @@ function handleGetCategories(req, res) {
       console.error('Get categories error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to get categories' }));
+    }
+  })();
+}
+
+// Update category (both custom and hardcoded via overrides)
+function handleUpdateCategory(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { id, slug, isCustom, type, title, emoji, color, dueDay, dueMonth, annualCost } = JSON.parse(body);
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      if (isCustom && id) {
+        // Update custom category in custom_categories table
+        await pool.query(`
+          UPDATE custom_categories
+          SET type = $1, title = $2, emoji = $3, color = $4, due_day = $5, due_month = $6, annual_cost = $7
+          WHERE id = $8
+        `, [type, title, emoji, color, dueDay || null, dueMonth || null, annualCost || null, id]);
+
+        console.log(`📝 Updated custom category: ${title}`);
+      } else if (slug) {
+        // Update hardcoded category via overrides table
+        await pool.query(`
+          INSERT INTO category_overrides (slug, title, emoji, color, type, due_day, due_month, annual_cost, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+          ON CONFLICT (slug) DO UPDATE SET
+            title = $2, emoji = $3, color = $4, type = $5, due_day = $6, due_month = $7, annual_cost = $8, updated_at = NOW()
+        `, [slug, title, emoji, color, type, dueDay || null, dueMonth || null, annualCost || null]);
+
+        console.log(`📝 Updated category override for: ${slug}`);
+      } else {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Category ID or slug required' }));
+        return;
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true }));
+
+    } catch (error) {
+      console.error('Update category error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to update category' }));
+    }
+  });
+}
+
+// Delete category
+function handleDeleteCategory(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { id, slug, isCustom } = JSON.parse(body);
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      if (isCustom && id) {
+        // Delete custom category from custom_categories table
+        await pool.query('DELETE FROM custom_categories WHERE id = $1', [id]);
+        console.log(`🗑️ Deleted custom category ID: ${id}`);
+      } else if (slug) {
+        // Mark hardcoded category as deleted
+        await pool.query(`
+          INSERT INTO deleted_categories (slug, deleted_at)
+          VALUES ($1, NOW())
+          ON CONFLICT DO NOTHING
+        `, [slug]);
+        console.log(`🗑️ Marked category as deleted: ${slug}`);
+      } else {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Category ID or slug required' }));
+        return;
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true }));
+
+    } catch (error) {
+      console.error('Delete category error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to delete category' }));
+    }
+  });
+}
+
+// Get category overrides and deletions
+function handleGetCategoryOverrides(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  (async () => {
+    try {
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      const overrides = await pool.query('SELECT * FROM category_overrides');
+      const deleted = await pool.query('SELECT slug FROM deleted_categories');
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        overrides: overrides.rows,
+        deleted: deleted.rows.map(r => r.slug)
+      }));
+
+    } catch (error) {
+      console.error('Get category overrides error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to get category overrides' }));
     }
   })();
 }

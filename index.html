@@ -6433,9 +6433,13 @@
             // Populate transaction category dropdown
             populateTransactionCategoryDropdown();
 
-            // Fetch custom categories if authenticated
+            // Initialize category detail menu buttons
+            initializeCategoryDetailMenus();
+
+            // Fetch custom categories and overrides if authenticated
             if (isAuthenticated) {
                 fetchCustomCategories();
+                fetchCategoryOverrides();
             }
 
             // Login form handling
@@ -6462,6 +6466,7 @@
                         document.getElementById('passwordInput').value = '';
                         errorMessage.style.display = 'none';
                         fetchCustomCategories();
+                        fetchCategoryOverrides();
                         router.handleRoute();
                     } else {
                         errorMessage.textContent = result.error || 'Login failed';
@@ -8347,6 +8352,92 @@
             updateCategoryFormFields();
         }
 
+        // Show edit category form
+        function showEditCategoryForm(categoryInfo) {
+            editingCategory = categoryInfo;
+
+            const modal = document.getElementById('addCategoryModal');
+            modal.style.display = 'flex';
+
+            // Update modal title for edit mode
+            modal.querySelector('.modal-header h2').textContent = 'Edit Category';
+            modal.querySelector('.btn-submit').textContent = 'Save';
+
+            // Update Cancel button to Delete with red styling
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            cancelBtn.textContent = 'Delete';
+            cancelBtn.style.color = '#000';
+            cancelBtn.style.borderColor = '#EE3636';
+            cancelBtn.style.backgroundColor = 'rgba(238, 54, 54, 0.1)';
+            cancelBtn.onclick = handleDeleteCategory;
+
+            // Set category type first
+            document.getElementById('categoryType').value = categoryInfo.type;
+            updateCategoryFormFields();
+
+            // Pre-populate form fields
+            document.getElementById('categoryTitle').value = categoryInfo.title || '';
+            document.getElementById('categoryEmoji').value = categoryInfo.emoji || '';
+            document.getElementById('categoryColor').value = categoryInfo.color || '#4DABF7';
+            document.getElementById('colorHexDisplay').textContent = (categoryInfo.color || '#4DABF7').toUpperCase();
+
+            // Set type-specific fields
+            if (categoryInfo.type === 'monthly' && categoryInfo.dueDay) {
+                setTimeout(() => {
+                    const dueDayEl = document.getElementById('categoryDueDay');
+                    if (dueDayEl) dueDayEl.value = categoryInfo.dueDay;
+                }, 50);
+            } else if (categoryInfo.type === 'annual') {
+                setTimeout(() => {
+                    const annualCostEl = document.getElementById('categoryAnnualCost');
+                    const dueMonthEl = document.getElementById('categoryDueMonth');
+                    const dueDayEl = document.getElementById('categoryDueDay');
+                    if (annualCostEl && categoryInfo.annualCost) annualCostEl.value = categoryInfo.annualCost;
+                    if (dueMonthEl && categoryInfo.dueMonth) dueMonthEl.value = categoryInfo.dueMonth;
+                    if (dueDayEl && categoryInfo.dueDay) dueDayEl.value = categoryInfo.dueDay;
+                }, 50);
+            }
+        }
+
+        // Handle delete category from modal
+        function handleDeleteCategory() {
+            if (!editingCategory) return;
+
+            const categoryName = editingCategory.title;
+            if (confirm(`Are you sure you want to delete "${categoryName}"? This action cannot be undone.`)) {
+                deleteCategory(editingCategory);
+            }
+        }
+
+        // Delete category
+        async function deleteCategory(categoryInfo) {
+            try {
+                const response = await fetch('/api/categories/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        id: categoryInfo.id,
+                        slug: categoryInfo.slug,
+                        isCustom: categoryInfo.isCustom
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeAddCategoryModal();
+                    alert('Category deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('Failed to delete category: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                alert('Failed to delete category. Please try again.');
+            }
+        }
+
         // Close add category modal
         function closeAddCategoryModal() {
             const modal = document.getElementById('addCategoryModal');
@@ -8467,26 +8558,42 @@
                     }
 
                     try {
-                        const response = await fetch('/api/categories', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                            body: JSON.stringify(categoryData)
-                        });
+                        let response;
+                        if (editingCategory) {
+                            // Update existing category
+                            categoryData.id = editingCategory.id;
+                            categoryData.slug = editingCategory.slug;
+                            categoryData.isCustom = editingCategory.isCustom;
+
+                            response = await fetch('/api/categories/update', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify(categoryData)
+                            });
+                        } else {
+                            // Create new category
+                            response = await fetch('/api/categories', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify(categoryData)
+                            });
+                        }
 
                         const result = await response.json();
 
                         if (result.success) {
                             closeAddCategoryModal();
-                            alert('Category added successfully!');
-                            // Reload page to show new category
+                            alert(editingCategory ? 'Category updated successfully!' : 'Category added successfully!');
+                            // Reload page to show changes
                             location.reload();
                         } else {
-                            alert('Failed to add category: ' + (result.error || 'Unknown error'));
+                            alert('Failed to save category: ' + (result.error || 'Unknown error'));
                         }
                     } catch (error) {
-                        console.error('Error adding category:', error);
-                        alert('Failed to add category. Please try again.');
+                        console.error('Error saving category:', error);
+                        alert('Failed to save category. Please try again.');
                     }
                 });
             }
@@ -8500,6 +8607,121 @@
             }
         });
 
+        // Initialize category detail menu buttons
+        function initializeCategoryDetailMenus() {
+            // Get all category detail pages
+            const categoryPages = document.querySelectorAll('[id^="categoryDetailPage-"]');
+
+            categoryPages.forEach(page => {
+                const menuBtn = page.querySelector('.category-detail-menu');
+                if (menuBtn) {
+                    menuBtn.addEventListener('click', () => {
+                        // Extract category info from the page
+                        const pageId = page.id;
+                        const slug = pageId.replace('categoryDetailPage-', '');
+
+                        // Find category in CATEGORY_CONFIG
+                        const categoryConfig = CATEGORY_CONFIG.find(c => c.slug === slug);
+
+                        if (categoryConfig) {
+                            // Get additional info from the page
+                            const accentEl = page.querySelector('.category-detail-accent');
+                            const titleEl = page.querySelector('.category-detail-title');
+                            const typeEl = page.querySelector('.category-detail-type');
+
+                            // Extract emoji from title (first character or emoji)
+                            const titleText = titleEl ? titleEl.textContent.trim() : '';
+                            const emojiMatch = titleText.match(/^(\p{Emoji})/u);
+                            const emoji = emojiMatch ? emojiMatch[1] : '';
+                            const title = titleText.replace(emoji, '').trim();
+
+                            // Get color from accent
+                            const color = accentEl ? accentEl.style.background || accentEl.style.backgroundColor : '#4DABF7';
+
+                            // Determine type for the form
+                            let formType = 'flexible';
+                            if (categoryConfig.type === 'fixed-monthly') formType = 'monthly';
+                            else if (categoryConfig.type === 'fixed-annual') formType = 'annual';
+
+                            // Get due day if applicable
+                            let dueDay = categoryConfig.dueDay || null;
+                            let dueMonth = null;
+                            let annualCost = null;
+
+                            // For annual bills, try to get due date from the page
+                            if (formType === 'annual') {
+                                const dueDateEl = page.querySelector('[id$="-due-date"]');
+                                if (dueDateEl) {
+                                    const dueDateText = dueDateEl.textContent.trim();
+                                    // Parse "Jul 11" format
+                                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    const parts = dueDateText.split(' ');
+                                    if (parts.length === 2) {
+                                        dueMonth = monthNames.indexOf(parts[0]) + 1;
+                                        dueDay = parseInt(parts[1]);
+                                    }
+                                }
+                                const annualCostEl = page.querySelector('[id$="-annual-cost"]');
+                                if (annualCostEl) {
+                                    annualCost = parseFloat(annualCostEl.textContent.replace(/[^0-9.-]/g, '')) || 0;
+                                }
+                            }
+
+                            // For monthly bills, try to get due day from page
+                            if (formType === 'monthly') {
+                                const dueDateEl = page.querySelector('[id$="-due-date"]');
+                                if (dueDateEl) {
+                                    const dueDayText = dueDateEl.textContent.trim();
+                                    // Parse "30th" format
+                                    dueDay = parseInt(dueDayText.replace(/\D/g, '')) || dueDay;
+                                }
+                            }
+
+                            const categoryInfo = {
+                                id: null, // Hardcoded categories don't have DB id
+                                slug: slug,
+                                title: title,
+                                emoji: emoji,
+                                color: color,
+                                type: formType,
+                                dueDay: dueDay,
+                                dueMonth: dueMonth,
+                                annualCost: annualCost,
+                                isCustom: false
+                            };
+
+                            showEditCategoryForm(categoryInfo);
+                        }
+                    });
+                }
+            });
+
+            // Also handle custom category detail page
+            const customCategoryPage = document.getElementById('customCategoryDetailPage');
+            if (customCategoryPage) {
+                const menuBtn = customCategoryPage.querySelector('.category-detail-menu');
+                if (menuBtn) {
+                    menuBtn.addEventListener('click', () => {
+                        if (currentCustomCategory) {
+                            const categoryInfo = {
+                                id: currentCustomCategory.id,
+                                slug: null,
+                                title: currentCustomCategory.title,
+                                emoji: currentCustomCategory.emoji,
+                                color: currentCustomCategory.color,
+                                type: currentCustomCategory.type,
+                                dueDay: currentCustomCategory.due_day,
+                                dueMonth: currentCustomCategory.due_month,
+                                annualCost: currentCustomCategory.annual_cost,
+                                isCustom: true
+                            };
+                            showEditCategoryForm(categoryInfo);
+                        }
+                    });
+                }
+            }
+        }
+
         // ==================== END CATEGORY MODAL FUNCTIONS ====================
 
         // ==================== CUSTOM CATEGORY MANAGEMENT ====================
@@ -8507,6 +8729,79 @@
         // Store for custom categories
         let customCategories = [];
         let currentCustomCategory = null;
+
+        // Store for category overrides and deletions
+        let categoryOverrides = {};
+        let deletedCategories = [];
+
+        // Fetch category overrides from API
+        async function fetchCategoryOverrides() {
+            try {
+                const response = await fetch('/api/categories/overrides', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    // Convert overrides array to object keyed by slug
+                    categoryOverrides = {};
+                    (result.overrides || []).forEach(override => {
+                        categoryOverrides[override.slug] = override;
+                    });
+                    deletedCategories = result.deleted || [];
+
+                    // Apply overrides to displayed categories
+                    applyCategoryOverrides();
+                }
+            } catch (error) {
+                console.error('Error fetching category overrides:', error);
+            }
+        }
+
+        // Apply category overrides to the UI
+        function applyCategoryOverrides() {
+            // Hide deleted categories
+            deletedCategories.forEach(slug => {
+                // Hide from category home page
+                const homeItem = document.querySelector(`.home-category-item[onclick*="'${slug}'"]`);
+                if (homeItem) homeItem.style.display = 'none';
+
+                // Hide category detail page (though it won't be navigable)
+                const detailPage = document.getElementById(`categoryDetailPage-${slug}`);
+                if (detailPage) detailPage.setAttribute('data-deleted', 'true');
+            });
+
+            // Apply overrides to category cards and detail pages
+            Object.entries(categoryOverrides).forEach(([slug, override]) => {
+                // Update category card on home page
+                const homeCards = document.querySelectorAll('.home-category-item');
+                homeCards.forEach(card => {
+                    const onclick = card.getAttribute('onclick');
+                    if (onclick && onclick.includes(`'${slug}'`)) {
+                        const emojiEl = card.querySelector('.category-emoji');
+                        const nameEl = card.querySelector('.category-name');
+                        const accentEl = card.querySelector('.category-accent');
+
+                        if (override.emoji && emojiEl) emojiEl.textContent = override.emoji;
+                        if (override.title && nameEl) nameEl.textContent = override.title;
+                        if (override.color && accentEl) accentEl.style.background = override.color;
+                    }
+                });
+
+                // Update category detail page
+                const detailPage = document.getElementById(`categoryDetailPage-${slug}`);
+                if (detailPage) {
+                    const titleEl = detailPage.querySelector('.category-detail-title');
+                    const accentEl = detailPage.querySelector('.category-detail-accent');
+
+                    if (override.emoji && override.title && titleEl) {
+                        titleEl.textContent = `${override.emoji} ${override.title}`;
+                    }
+                    if (override.color && accentEl) {
+                        accentEl.style.background = override.color;
+                    }
+                }
+            });
+        }
 
         // Fetch custom categories from API
         async function fetchCustomCategories() {
