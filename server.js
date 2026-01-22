@@ -589,6 +589,8 @@ function handleApiRequest(req, res, pathname) {
     handleDeleteCategory(req, res);
   } else if (pathname === '/api/categories/overrides' && req.method === 'GET') {
     handleGetCategoryOverrides(req, res);
+  } else if (pathname === '/api/upload' && req.method === 'POST') {
+    handleFileUpload(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -1327,6 +1329,106 @@ async function handleUpdateAccountDetails(req, res) {
       console.error('Update account error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to update account' }));
+    }
+  });
+}
+
+// Handle file uploads for account images
+function handleFileUpload(req, res) {
+  const chunks = [];
+  let totalSize = 0;
+  const maxSize = 5 * 1024 * 1024; // 5MB limit
+
+  req.on('data', chunk => {
+    totalSize += chunk.length;
+    if (totalSize > maxSize) {
+      res.writeHead(413);
+      res.end(JSON.stringify({ error: 'File too large (max 5MB)' }));
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
+
+  req.on('end', () => {
+    try {
+      const buffer = Buffer.concat(chunks);
+      const boundary = req.headers['content-type'].split('boundary=')[1];
+
+      if (!boundary) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid multipart form data' }));
+        return;
+      }
+
+      // Parse multipart form data
+      const parts = buffer.toString('binary').split('--' + boundary);
+      let filename = '';
+      let fileData = null;
+      let fieldName = '';
+
+      for (const part of parts) {
+        if (part.includes('Content-Disposition')) {
+          const filenameMatch = part.match(/filename="([^"]+)"/);
+          const nameMatch = part.match(/name="([^"]+)"/);
+
+          if (nameMatch) {
+            fieldName = nameMatch[1];
+          }
+
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1];
+            // Extract file content after the double newline
+            const contentStart = part.indexOf('\r\n\r\n') + 4;
+            const contentEnd = part.lastIndexOf('\r\n');
+            if (contentStart > 3 && contentEnd > contentStart) {
+              fileData = Buffer.from(part.substring(contentStart, contentEnd), 'binary');
+            }
+          }
+        }
+      }
+
+      if (!filename || !fileData) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'No file uploaded' }));
+        return;
+      }
+
+      // Generate unique filename
+      const ext = path.extname(filename).toLowerCase();
+      const allowedExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+      if (!allowedExts.includes(ext)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid file type. Allowed: PNG, JPG, GIF, WEBP' }));
+        return;
+      }
+
+      const timestamp = Date.now();
+      const safeName = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const newFilename = `${timestamp}-${safeName}`;
+      const filePath = path.join(__dirname, '_Assets', newFilename);
+
+      // Ensure _Assets directory exists
+      const assetsDir = path.join(__dirname, '_Assets');
+      if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+      }
+
+      // Save file
+      fs.writeFileSync(filePath, fileData);
+      console.log(`📁 Uploaded file: ${newFilename}`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        path: `_Assets/${newFilename}`,
+        filename: newFilename
+      }));
+    } catch (error) {
+      console.error('File upload error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to upload file' }));
     }
   });
 }

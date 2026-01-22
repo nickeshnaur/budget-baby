@@ -2591,7 +2591,7 @@
         /* Connected Account Styles */
         .connected-account {
             position: relative;
-            padding: 32px 24px 48px 24px;
+            padding: 32px 24px 32px 24px;
             background: white;
             border-radius: 32px;
             border: none;
@@ -2815,6 +2815,55 @@
 
         .account-edit-save:hover {
             background: #333;
+        }
+
+        /* File Upload Zone */
+        .file-upload-zone {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 80px;
+            background: #fafafa;
+        }
+
+        .file-upload-zone:hover {
+            border-color: #999;
+            background: #f5f5f5;
+        }
+
+        .file-upload-zone.drag-over {
+            border-color: #000;
+            background: #f0f0f0;
+        }
+
+        .file-upload-zone i {
+            font-size: 24px;
+            color: #999;
+        }
+
+        .file-upload-zone span {
+            font-family: "Roboto", sans-serif;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .file-upload-zone .upload-preview {
+            max-width: 100%;
+            max-height: 60px;
+            object-fit: contain;
+        }
+
+        .file-upload-zone.uploading {
+            opacity: 0.6;
+            pointer-events: none;
         }
 
     </style>
@@ -6753,16 +6802,24 @@
                     </div>
                     <div class="account-edit-content">
                         <div class="account-edit-field">
-                            <label>Bank Logo URL</label>
-                            <input type="text" id="edit-account-logo" value="${currentLogo}" placeholder="Enter image URL or path">
+                            <label>Bank Logo</label>
+                            <div class="file-upload-zone" id="logo-upload-zone" onclick="document.getElementById('logo-file-input').click()">
+                                ${currentLogo ? `<img src="${currentLogo}" class="upload-preview">` : '<i class="fa-solid fa-cloud-arrow-up"></i><span>Drop image or click to upload</span>'}
+                            </div>
+                            <input type="file" id="logo-file-input" accept="image/*" style="display: none;" onchange="handleFileSelect(this, 'logo')">
+                            <input type="hidden" id="edit-account-logo" value="${currentLogo}">
                         </div>
                         <div class="account-edit-field">
                             <label>Account Name</label>
                             <input type="text" id="edit-account-name" value="${currentName}" placeholder="e.g., Sapphire Preferred ****0241">
                         </div>
                         <div class="account-edit-field">
-                            <label>Card Image URL</label>
-                            <input type="text" id="edit-account-card-image" value="${currentCardImage}" placeholder="Enter image URL or path">
+                            <label>Card Image</label>
+                            <div class="file-upload-zone" id="card-upload-zone" onclick="document.getElementById('card-file-input').click()">
+                                ${currentCardImage ? `<img src="${currentCardImage}" class="upload-preview">` : '<i class="fa-solid fa-cloud-arrow-up"></i><span>Drop image or click to upload</span>'}
+                            </div>
+                            <input type="file" id="card-file-input" accept="image/*" style="display: none;" onchange="handleFileSelect(this, 'card')">
+                            <input type="hidden" id="edit-account-card-image" value="${currentCardImage}">
                         </div>
                         <div class="account-edit-field">
                             <label>Account Owner</label>
@@ -6782,12 +6839,83 @@
 
             document.body.appendChild(overlay);
 
+            // Setup drag and drop for upload zones
+            setupDropZone('logo-upload-zone', 'logo');
+            setupDropZone('card-upload-zone', 'card');
+
             // Close on overlay background click
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     closeAccountEditOverlay();
                 }
             });
+        }
+
+        function setupDropZone(zoneId, type) {
+            const zone = document.getElementById(zoneId);
+            if (!zone) return;
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadFile(files[0], type);
+                }
+            });
+        }
+
+        function handleFileSelect(input, type) {
+            if (input.files && input.files[0]) {
+                uploadFile(input.files[0], type);
+            }
+        }
+
+        async function uploadFile(file, type) {
+            const zoneId = type === 'logo' ? 'logo-upload-zone' : 'card-upload-zone';
+            const hiddenInputId = type === 'logo' ? 'edit-account-logo' : 'edit-account-card-image';
+            const zone = document.getElementById(zoneId);
+
+            // Show uploading state
+            zone.classList.add('uploading');
+            zone.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading...</span>';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update the zone with preview
+                    zone.innerHTML = `<img src="${result.path}" class="upload-preview">`;
+                    // Update the hidden input with the path
+                    document.getElementById(hiddenInputId).value = result.path;
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to upload image: ' + error.message);
+                // Reset zone
+                zone.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Drop image or click to upload</span>';
+            } finally {
+                zone.classList.remove('uploading');
+            }
         }
 
         function closeAccountEditOverlay() {
