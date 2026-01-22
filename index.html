@@ -5093,8 +5093,20 @@
             </div>
         </div>
 
+        <div class="month-selector-section">
+            <div class="date-selectors">
+                <div class="custom-dropdown category-month-selector" id="ignore-month-selector" data-value="1">
+                    <span class="dropdown-display">Jan</span>
+                    <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
+                </div>
+                <div class="custom-dropdown category-year-selector" id="ignore-year-selector" data-value="2026">
+                    <span class="dropdown-display">2026</span>
+                    <i class="fa-solid fa-caret-down" style="font-size: 12px;"></i>
+                </div>
+            </div>
+        </div>
+
         <div class="section">
-            <h3 class="section-title">Ignored Transactions</h3>
             <div id="ignore-transactions-list">
                 <!-- Ignored transactions will be loaded here -->
             </div>
@@ -6725,14 +6737,22 @@
             if (!categoryPage) return;
 
             // Find the transactions section within this category page
-            const transactionsSections = categoryPage.querySelectorAll('.section');
             let transactionsSection = null;
 
-            for (const section of transactionsSections) {
-                const title = section.querySelector('.section-title');
-                if (title && (title.textContent === 'Transactions' || title.textContent === 'Deposits' || title.textContent === 'Ignored Transactions')) {
-                    transactionsSection = section;
-                    break;
+            // Special handling for ignore page (no section-title)
+            if (categorySlug === 'ignore') {
+                const ignoreList = document.getElementById('ignore-transactions-list');
+                if (ignoreList) {
+                    transactionsSection = ignoreList.parentElement;
+                }
+            } else {
+                const transactionsSections = categoryPage.querySelectorAll('.section');
+                for (const section of transactionsSections) {
+                    const title = section.querySelector('.section-title');
+                    if (title && (title.textContent === 'Transactions' || title.textContent === 'Deposits')) {
+                        transactionsSection = section;
+                        break;
+                    }
                 }
             }
 
