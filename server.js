@@ -142,6 +142,20 @@ async function initializeDatabase() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS custom_categories (
+        id SERIAL PRIMARY KEY,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        color TEXT NOT NULL,
+        due_day INTEGER,
+        due_month INTEGER,
+        annual_cost DECIMAL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     console.log('✅ Database tables initialized');
 
     // Keep existing transactions - don't delete anything
@@ -524,6 +538,10 @@ function handleApiRequest(req, res, pathname) {
     handleGetBudget(req, res);
   } else if (pathname === '/api/budgets/save' && req.method === 'POST') {
     handleSaveBudget(req, res);
+  } else if (pathname === '/api/categories' && req.method === 'POST') {
+    handleCreateCategory(req, res);
+  } else if (pathname === '/api/categories' && req.method === 'GET') {
+    handleGetCategories(req, res);
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
@@ -1789,6 +1807,84 @@ function handleSaveBudget(req, res) {
       res.end(JSON.stringify({ error: 'Failed to save budget' }));
     }
   });
+}
+
+// Create a new category
+function handleCreateCategory(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { type, title, emoji, color, dueDay, dueMonth, annualCost } = JSON.parse(body);
+
+      if (!type || !title || !emoji || !color) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Type, title, emoji, and color are required' }));
+        return;
+      }
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      const result = await pool.query(`
+        INSERT INTO custom_categories (type, title, emoji, color, due_day, due_month, annual_cost)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `, [type, title, emoji, color, dueDay || null, dueMonth || null, annualCost || null]);
+
+      console.log(`📁 Created category: ${title} (${type})`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, category: result.rows[0] }));
+
+    } catch (error) {
+      console.error('Create category error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to create category' }));
+    }
+  });
+}
+
+// Get all custom categories
+function handleGetCategories(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  (async () => {
+    try {
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      const result = await pool.query('SELECT * FROM custom_categories ORDER BY created_at DESC');
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, categories: result.rows }));
+
+    } catch (error) {
+      console.error('Get categories error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to get categories' }));
+    }
+  })();
 }
 
 server.listen(PORT, '0.0.0.0', () => {

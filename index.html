@@ -2496,6 +2496,101 @@
             background: #333333;
         }
 
+        /* Emoji Picker Styles */
+        .emoji-picker-container {
+            position: relative;
+        }
+
+        .emoji-picker-container input {
+            cursor: pointer;
+        }
+
+        .emoji-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #F2F4F5;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .emoji-option {
+            font-size: 20px;
+            padding: 6px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .emoji-option:hover {
+            background: #f5f5f5;
+        }
+
+        /* Color Picker Styles */
+        .color-picker-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .color-picker-container input {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .color-preview {
+            position: absolute;
+            right: 20px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #E6E6E6;
+        }
+
+        .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.selected {
+            border-color: #000;
+        }
+
+        /* Due Date Selectors */
+        .due-date-selectors {
+            display: flex;
+            gap: 12px;
+        }
+
+        .due-date-selectors select {
+            flex: 1;
+        }
 
         .profile-label {
             font-family: "Roboto", sans-serif;
@@ -2796,6 +2891,66 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeAddTransactionModal()">Cancel</button>
+                        <button type="submit" class="btn-submit">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Category</h2>
+                <span class="close-modal" onclick="closeAddCategoryModal()"><i class="fa-solid fa-xmark"></i></span>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm">
+                    <div class="form-group">
+                        <label for="categoryType">Category Type</label>
+                        <div class="input-with-icon">
+                            <select id="categoryType" onchange="updateCategoryFormFields()">
+                                <option value="flexible">Flexible Monthly</option>
+                                <option value="monthly">Monthly Bill</option>
+                                <option value="annual">Annual Bill</option>
+                            </select>
+                            <i class="fa-solid fa-caret-down input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryTitle">Title</label>
+                        <input type="text" id="categoryTitle" placeholder="e.g., Groceries" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryEmoji">Emoji</label>
+                        <div class="emoji-picker-container">
+                            <input type="text" id="categoryEmoji" placeholder="Click to select" readonly>
+                            <div id="emojiPickerDropdown" class="emoji-picker-dropdown" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryColor">Category Color</label>
+                        <div class="color-picker-container">
+                            <input type="text" id="categoryColor" placeholder="Select a color" readonly>
+                            <div class="color-preview" id="colorPreview"></div>
+                        </div>
+                        <div id="colorPickerSwatches" class="color-swatches">
+                        </div>
+                    </div>
+                    <div class="form-group" id="annualCostGroup" style="display: none;">
+                        <label for="categoryAnnualCost">Annual Projected Cost</label>
+                        <input type="number" id="categoryAnnualCost" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group" id="dueDateGroup" style="display: none;">
+                        <label for="categoryDueDate" id="dueDateLabel">Due Date</label>
+                        <div id="dueDateFieldContainer">
+                            <!-- Will be populated dynamically based on category type -->
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeAddCategoryModal()">Cancel</button>
                         <button type="submit" class="btn-submit">Add</button>
                     </div>
                 </form>
@@ -3473,7 +3628,7 @@
             </div>
         </div>
 
-        <button class="add-transaction-btn" style="margin-bottom: 40px;">
+        <button class="add-transaction-btn" style="margin-bottom: 40px;" onclick="showAddCategoryForm()">
             + Add Category
         </button>
     </div>
@@ -8164,6 +8319,262 @@
             bankField.readOnly = false;
             bankField.style.backgroundColor = '';
         }
+
+        // ==================== CATEGORY MODAL FUNCTIONS ====================
+
+        // Category state
+        let editingCategory = null;
+
+        // Common emojis for categories
+        const categoryEmojis = [
+            '🛒', '🍔', '☕', '🎬', '✈️', '🎁', '🏠', '💊', '⛽', '🚗',
+            '👕', '💇', '📱', '💡', '🌐', '🎵', '🏋️', '📚', '🐕', '💰',
+            '🎮', '🍕', '🍺', '💅', '🧹', '🔧', '📦', '🎂', '💳', '🏦',
+            '✨', '🌟', '❤️', '🔥', '⭐', '🎉', '🎊', '💎', '🌈', '🍀'
+        ];
+
+        // Color swatches for categories
+        const categoryColors = [
+            '#FF6B6B', '#FF8E72', '#FFA94D', '#FFD43B', '#A9E34B', '#69DB7C',
+            '#38D9A9', '#3BC9DB', '#4DABF7', '#5C7CFA', '#7950F2', '#BE4BDB',
+            '#F06595', '#E64980', '#1E1E1E', '#495057', '#868E96', '#ADB5BD'
+        ];
+
+        // Show add category form
+        function showAddCategoryForm() {
+            editingCategory = null;
+
+            const modal = document.getElementById('addCategoryModal');
+            modal.style.display = 'flex';
+
+            // Reset form
+            document.getElementById('addCategoryForm').reset();
+            document.getElementById('categoryType').value = 'flexible';
+
+            // Update modal title
+            modal.querySelector('.modal-header h2').textContent = 'Add Category';
+            modal.querySelector('.btn-submit').textContent = 'Add';
+
+            // Reset Cancel button
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.color = '#000';
+            cancelBtn.style.borderColor = '#F2F4F5';
+            cancelBtn.style.backgroundColor = '#ffffff';
+            cancelBtn.onclick = closeAddCategoryModal;
+
+            // Initialize pickers
+            initializeEmojiPicker();
+            initializeColorPicker();
+            updateCategoryFormFields();
+        }
+
+        // Close add category modal
+        function closeAddCategoryModal() {
+            const modal = document.getElementById('addCategoryModal');
+            modal.style.display = 'none';
+            document.getElementById('addCategoryForm').reset();
+
+            // Reset state
+            editingCategory = null;
+
+            // Reset color preview
+            document.getElementById('colorPreview').style.backgroundColor = '';
+            document.getElementById('categoryColor').value = '';
+
+            // Remove selected state from swatches
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+
+            // Hide emoji picker
+            document.getElementById('emojiPickerDropdown').style.display = 'none';
+        }
+
+        // Update form fields based on category type
+        function updateCategoryFormFields() {
+            const categoryType = document.getElementById('categoryType').value;
+            const annualCostGroup = document.getElementById('annualCostGroup');
+            const dueDateGroup = document.getElementById('dueDateGroup');
+            const dueDateLabel = document.getElementById('dueDateLabel');
+            const dueDateContainer = document.getElementById('dueDateFieldContainer');
+
+            // Hide all optional fields first
+            annualCostGroup.style.display = 'none';
+            dueDateGroup.style.display = 'none';
+
+            if (categoryType === 'flexible') {
+                // No additional fields for flexible monthly
+            } else if (categoryType === 'monthly') {
+                // Show due date (day only)
+                dueDateGroup.style.display = 'block';
+                dueDateLabel.textContent = 'Due Date (Day of Month)';
+                dueDateContainer.innerHTML = `
+                    <div class="input-with-icon">
+                        <select id="categoryDueDay">
+                            ${Array.from({length: 31}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                        </select>
+                        <i class="fa-solid fa-caret-down input-icon"></i>
+                    </div>
+                `;
+            } else if (categoryType === 'annual') {
+                // Show annual cost and due date (month + day)
+                annualCostGroup.style.display = 'block';
+                dueDateGroup.style.display = 'block';
+                dueDateLabel.textContent = 'Due Date';
+                dueDateContainer.innerHTML = `
+                    <div class="due-date-selectors">
+                        <div class="input-with-icon" style="flex: 1;">
+                            <select id="categoryDueMonth">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <i class="fa-solid fa-caret-down input-icon"></i>
+                        </div>
+                        <div class="input-with-icon" style="flex: 1;">
+                            <select id="categoryDueDay">
+                                ${Array.from({length: 31}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                            </select>
+                            <i class="fa-solid fa-caret-down input-icon"></i>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize emoji picker
+        function initializeEmojiPicker() {
+            const dropdown = document.getElementById('emojiPickerDropdown');
+            const input = document.getElementById('categoryEmoji');
+
+            // Populate emoji options
+            dropdown.innerHTML = categoryEmojis.map(emoji =>
+                `<div class="emoji-option" data-emoji="${emoji}">${emoji}</div>`
+            ).join('');
+
+            // Toggle dropdown on input click
+            input.onclick = () => {
+                dropdown.style.display = dropdown.style.display === 'none' ? 'grid' : 'none';
+            };
+
+            // Handle emoji selection
+            dropdown.querySelectorAll('.emoji-option').forEach(option => {
+                option.onclick = () => {
+                    input.value = option.dataset.emoji;
+                    dropdown.style.display = 'none';
+                };
+            });
+        }
+
+        // Initialize color picker
+        function initializeColorPicker() {
+            const swatchesContainer = document.getElementById('colorPickerSwatches');
+            const input = document.getElementById('categoryColor');
+            const preview = document.getElementById('colorPreview');
+
+            // Populate color swatches
+            swatchesContainer.innerHTML = categoryColors.map(color =>
+                `<div class="color-swatch" data-color="${color}" style="background-color: ${color};"></div>`
+            ).join('');
+
+            // Handle swatch selection
+            swatchesContainer.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.onclick = () => {
+                    // Remove selected from all
+                    swatchesContainer.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    // Add selected to clicked
+                    swatch.classList.add('selected');
+                    // Update input and preview
+                    const color = swatch.dataset.color;
+                    input.value = color;
+                    preview.style.backgroundColor = color;
+                };
+            });
+        }
+
+        // Handle category form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryForm = document.getElementById('addCategoryForm');
+            if (categoryForm) {
+                categoryForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const categoryType = document.getElementById('categoryType').value;
+                    const title = document.getElementById('categoryTitle').value;
+                    const emoji = document.getElementById('categoryEmoji').value;
+                    const color = document.getElementById('categoryColor').value;
+
+                    if (!title || !emoji || !color) {
+                        alert('Please fill in all required fields');
+                        return;
+                    }
+
+                    const categoryData = {
+                        type: categoryType,
+                        title: title,
+                        emoji: emoji,
+                        color: color
+                    };
+
+                    // Add type-specific fields
+                    if (categoryType === 'monthly') {
+                        categoryData.dueDay = parseInt(document.getElementById('categoryDueDay').value);
+                    } else if (categoryType === 'annual') {
+                        categoryData.annualCost = parseFloat(document.getElementById('categoryAnnualCost').value) || 0;
+                        categoryData.dueMonth = parseInt(document.getElementById('categoryDueMonth').value);
+                        categoryData.dueDay = parseInt(document.getElementById('categoryDueDay').value);
+                    }
+
+                    try {
+                        const response = await fetch('/api/categories', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify(categoryData)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            closeAddCategoryModal();
+                            alert('Category added successfully!');
+                            // Reload page to show new category
+                            location.reload();
+                        } else {
+                            alert('Failed to add category: ' + (result.error || 'Unknown error'));
+                        }
+                    } catch (error) {
+                        console.error('Error adding category:', error);
+                        alert('Failed to add category. Please try again.');
+                    }
+                });
+            }
+        });
+
+        // Close category modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('addCategoryModal');
+            if (event.target === modal) {
+                closeAddCategoryModal();
+            }
+
+            // Close emoji picker if clicking outside
+            const emojiDropdown = document.getElementById('emojiPickerDropdown');
+            const emojiInput = document.getElementById('categoryEmoji');
+            if (emojiDropdown && !emojiDropdown.contains(event.target) && event.target !== emojiInput) {
+                emojiDropdown.style.display = 'none';
+            }
+        });
+
+        // ==================== END CATEGORY MODAL FUNCTIONS ====================
 
         // Delete transaction function - now uses server API for all transactions
         async function deleteTransaction(transactionId) {
