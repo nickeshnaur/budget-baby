@@ -8755,6 +8755,9 @@
 
                     // Apply overrides to displayed categories
                     applyCategoryOverrides();
+
+                    // Re-populate dropdowns now that we have overrides
+                    populateTransactionCategoryDropdown();
                 }
             } catch (error) {
                 console.error('Error fetching category overrides:', error);
@@ -8765,31 +8768,46 @@
         function applyCategoryOverrides() {
             // Hide deleted categories
             deletedCategories.forEach(slug => {
-                // Hide from category home page
-                const homeItem = document.querySelector(`.home-category-item[onclick*="'${slug}'"]`);
-                if (homeItem) homeItem.style.display = 'none';
+                // Get the display name for this slug to match onclick
+                const displayName = SLUG_TO_DISPLAY[slug];
 
-                // Hide category detail page (though it won't be navigable)
+                // Hide from category home page - match by display name in onclick
+                if (displayName) {
+                    const homeItems = document.querySelectorAll('.home-category-item');
+                    homeItems.forEach(item => {
+                        const onclick = item.getAttribute('onclick');
+                        if (onclick && onclick.includes(`'${displayName}'`)) {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+
+                // Hide category detail page
                 const detailPage = document.getElementById(`categoryDetailPage-${slug}`);
                 if (detailPage) detailPage.setAttribute('data-deleted', 'true');
             });
 
             // Apply overrides to category cards and detail pages
             Object.entries(categoryOverrides).forEach(([slug, override]) => {
-                // Update category card on home page
-                const homeCards = document.querySelectorAll('.home-category-item');
-                homeCards.forEach(card => {
-                    const onclick = card.getAttribute('onclick');
-                    if (onclick && onclick.includes(`'${slug}'`)) {
-                        const emojiEl = card.querySelector('.category-emoji');
-                        const nameEl = card.querySelector('.category-name');
-                        const accentEl = card.querySelector('.category-accent');
+                // Get the original display name for this slug
+                const originalDisplayName = SLUG_TO_DISPLAY[slug];
 
-                        if (override.emoji && emojiEl) emojiEl.textContent = override.emoji;
-                        if (override.title && nameEl) nameEl.textContent = override.title;
-                        if (override.color && accentEl) accentEl.style.background = override.color;
-                    }
-                });
+                // Update category card on home page - match by display name in onclick
+                if (originalDisplayName) {
+                    const homeCards = document.querySelectorAll('.home-category-item');
+                    homeCards.forEach(card => {
+                        const onclick = card.getAttribute('onclick');
+                        if (onclick && onclick.includes(`'${originalDisplayName}'`)) {
+                            const emojiEl = card.querySelector('.category-emoji');
+                            const nameEl = card.querySelector('.category-name');
+                            const accentEl = card.querySelector('.category-accent');
+
+                            if (override.emoji && emojiEl) emojiEl.textContent = override.emoji;
+                            if (override.title && nameEl) nameEl.textContent = override.title;
+                            if (override.color && accentEl) accentEl.style.background = override.color;
+                        }
+                    });
+                }
 
                 // Update category detail page
                 const detailPage = document.getElementById(`categoryDetailPage-${slug}`);
@@ -9045,6 +9063,39 @@
                 };
             }
             return { name, emoji };
+        }
+
+        // Helper to get category display info from category name (for transactions)
+        function getCategoryDisplayFromName(categoryName) {
+            // Look up the slug from the category name
+            const slug = DISPLAY_TO_SLUG[categoryName];
+            const originalEmoji = getCategoryEmoji(categoryName);
+
+            // Check for override
+            if (slug && categoryOverrides[slug]) {
+                const override = categoryOverrides[slug];
+                return {
+                    name: override.title || categoryName,
+                    emoji: override.emoji || originalEmoji,
+                    color: override.color || getCategoryColor(categoryName)
+                };
+            }
+
+            // Check custom categories
+            const customCat = customCategories.find(c => c.title === categoryName);
+            if (customCat) {
+                return {
+                    name: customCat.title,
+                    emoji: customCat.emoji,
+                    color: customCat.color
+                };
+            }
+
+            return {
+                name: categoryName,
+                emoji: originalEmoji,
+                color: getCategoryColor(categoryName)
+            };
         }
 
         function populateTransactionCategoryDropdown() {
@@ -9328,8 +9379,12 @@
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).substr(-2)}`;
             const amount = Math.abs(transaction.amount).toFixed(2);
             const isDebit = parseFloat(transaction.amount) < 0;
-            const categoryColor = getCategoryColor(transaction.category);
-            const categoryEmoji = getCategoryEmoji(transaction.category);
+
+            // Get category info with overrides applied
+            const categoryDisplay = getCategoryDisplayFromName(transaction.category);
+            const categoryColor = categoryDisplay.color;
+            const categoryEmoji = categoryDisplay.emoji;
+            const categoryName = categoryDisplay.name;
 
             const transactionCard = document.createElement('div');
             transactionCard.className = 'transaction-card';
@@ -9367,7 +9422,7 @@
                 </div>
                 <div class="transaction-footer">
                     <div class="transaction-tag clickable-tag" style="background: ${tagBackground}; ${tagBorder} cursor: pointer;">
-                        <span style="margin-right: 4px;">${categoryEmoji}</span>${toTitleCase(transaction.category)}
+                        <span style="margin-right: 4px;">${categoryEmoji}</span>${toTitleCase(categoryName)}
                         <i class="fa-solid fa-caret-down"></i>
                     </div>
                     <div class="transaction-bank-wrapper">
@@ -9561,9 +9616,12 @@
             txnEl.setAttribute('data-transaction-id', transaction.id);
             txnEl.style.position = 'relative';
 
-            // All transaction tags are clickable for re-categorization
-            const categoryColor = getCategoryColor(transaction.category);
-            const categoryEmoji = getCategoryEmoji(transaction.category);
+            // Get category info with overrides applied
+            const categoryDisplay = getCategoryDisplayFromName(transaction.category);
+            const categoryColor = categoryDisplay.color;
+            const categoryEmoji = categoryDisplay.emoji;
+            const categoryName = categoryDisplay.name;
+
             const isUnsorted = transaction.category === 'Unsorted';
             const accentColor = isUnsorted ? '#fff' : categoryColor;
             const tagBorder = isUnsorted ? 'border: 1px solid #E0E0E0;' : '';
@@ -9596,7 +9654,7 @@
                 </div>
                 <div class="transaction-footer">
                     <div class="transaction-tag clickable-tag" style="background: ${tagBackground}; ${tagBorder} cursor: pointer;">
-                        <span style="margin-right: 4px;">${categoryEmoji}</span>${toTitleCase(transaction.category)}
+                        <span style="margin-right: 4px;">${categoryEmoji}</span>${toTitleCase(categoryName)}
                         <i class="fa-solid fa-caret-down"></i>
                     </div>
                     <div class="transaction-bank-wrapper">
