@@ -2014,10 +2014,69 @@ function handleDeleteCategory(req, res) {
       }
 
       if (isCustom && id) {
+        // Get the category title first so we can reassign transactions
+        const categoryResult = await pool.query('SELECT title FROM custom_categories WHERE id = $1', [id]);
+        const categoryTitle = categoryResult.rows[0]?.title;
+
+        if (categoryTitle) {
+          // Reassign all transactions with this category to 'Unsorted'
+          const updateResult = await pool.query(
+            'UPDATE transactions SET category = $1 WHERE category = $2',
+            ['Unsorted', categoryTitle]
+          );
+          console.log(`📝 Reassigned ${updateResult.rowCount} transactions from "${categoryTitle}" to "Unsorted"`);
+
+          // Also update in-memory transactions
+          transactions.forEach((transaction, id) => {
+            if (transaction.category === categoryTitle) {
+              transaction.category = 'Unsorted';
+              transactions.set(id, transaction);
+            }
+          });
+        }
+
         // Delete custom category from custom_categories table
         await pool.query('DELETE FROM custom_categories WHERE id = $1', [id]);
         console.log(`🗑️ Deleted custom category ID: ${id}`);
       } else if (slug) {
+        // For hardcoded categories, get the display name from SLUG_TO_DISPLAY mapping
+        const slugToDisplay = {
+          'out-about': 'Out & About', 'grocery': 'Grocery', 'gas': 'Gas', 'auto': 'Auto',
+          'clothing': 'Clothing', 'gifts': 'Gifts', 'health-care': 'Health & Care', 'home': 'Home',
+          'travel': 'Travel', 'treats': 'Treats', 'personal-nick': 'Personal Nick',
+          'personal-chelsea': 'Personal Chelsea', 'school': 'School', 'giving': 'Giving',
+          'auto-loan': 'Auto Loan', 'rent': 'Rent', 'electric': 'Electric',
+          'insurance-auto': 'Insurance Auto', 'insurance---rent': 'Insurance - Rent',
+          'nw-mutual': 'NW Mutual', 'internet': 'Internet', 'spotify': 'Spotify',
+          'sp-fitness': 'SP Fitness', 'alamo-drafthouse': 'Alamo Drafthouse', 'phone': 'Phone',
+          'costco': 'Costco', 'letterboxd': 'Letterboxd', 'grammarly': 'Grammarly',
+          'domain': 'Domain', 'google-one': 'Google One',
+          'c---capital-one-annual-fee': 'C - Capital One Annual Fee',
+          'c---sw-annual-fee': 'C - SW Annual Fee',
+          'n---capital-one-annual-fee': 'N - Capital One Annual Fee',
+          'n---sw-annual-fee': 'N - SW Annual Fee',
+          'n---chase-sapphire-annual-fee': 'N - Chase Sapphire Annual Fee',
+          'income': 'Income', 'ignore': 'Ignore'
+        };
+
+        const categoryName = slugToDisplay[slug];
+        if (categoryName) {
+          // Reassign all transactions with this category to 'Unsorted'
+          const updateResult = await pool.query(
+            'UPDATE transactions SET category = $1 WHERE category = $2',
+            ['Unsorted', categoryName]
+          );
+          console.log(`📝 Reassigned ${updateResult.rowCount} transactions from "${categoryName}" to "Unsorted"`);
+
+          // Also update in-memory transactions
+          transactions.forEach((transaction, id) => {
+            if (transaction.category === categoryName) {
+              transaction.category = 'Unsorted';
+              transactions.set(id, transaction);
+            }
+          });
+        }
+
         // Mark hardcoded category as deleted
         await pool.query(`
           INSERT INTO deleted_categories (slug, deleted_at)
