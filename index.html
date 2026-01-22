@@ -9379,8 +9379,85 @@
                             budgetedEl.setAttribute('data-value', savedBudget);
                         }
                         if (statusEl) {
-                            statusEl.textContent = filtered.length > 0 ? '✔️' : '✖️';
+                            statusEl.textContent = filtered.length > 0 ? '✅' : '✖️';
                         }
+                        if (totalEl) {
+                            totalEl.textContent = filtered.length > 0 ? '$' + spent.toFixed(2) : '--';
+                        }
+                    } else if (currentCustomCategory.type === 'annual') {
+                        // Annual bill calculations - same as hardcoded annual bills
+                        const annualCost = currentCustomCategory.annual_cost ? parseFloat(currentCustomCategory.annual_cost) : 0;
+                        const monthlyBudgeted = annualCost / 12;
+
+                        // Get all transactions for this category for the entire year
+                        const yearTransactions = result.transactions.filter(t => {
+                            if (t.category !== currentCustomCategory.title) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+
+                        // Calculate pot month by month with reset logic
+                        let runningPot = 0;
+                        for (let month = 1; month <= selectedMonth; month++) {
+                            runningPot += monthlyBudgeted;
+
+                            const monthSpent = yearTransactions
+                                .filter(t => {
+                                    const txnDate = new Date(t.date);
+                                    return txnDate.getMonth() + 1 === month;
+                                })
+                                .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                            runningPot -= monthSpent;
+
+                            // If pot is negative and we're not on the selected month yet, reset to 0
+                            if (runningPot < 0 && month < selectedMonth) {
+                                runningPot = 0;
+                            }
+                        }
+
+                        const pot = runningPot;
+                        const extraMonthlyNeeded = pot < 0 ? Math.abs(pot) : 0;
+
+                        // Update Annual Projected Cost
+                        const annualCostEl = document.getElementById('custom-detail-annual-cost');
+                        if (annualCostEl) {
+                            annualCostEl.textContent = '$' + annualCost.toFixed(2);
+                            annualCostEl.setAttribute('data-value', annualCost);
+                        }
+
+                        // Update Monthly Budgeted
+                        const budgetedEl = document.getElementById('custom-detail-budgeted');
+                        if (budgetedEl) {
+                            budgetedEl.textContent = '$' + monthlyBudgeted.toFixed(2);
+                            budgetedEl.setAttribute('data-value', monthlyBudgeted);
+                        }
+
+                        // Update Extra Monthly Needed
+                        const extraNeededEl = document.getElementById('custom-detail-extra-needed');
+                        if (extraNeededEl) {
+                            extraNeededEl.textContent = '$' + extraMonthlyNeeded.toFixed(2);
+                        }
+
+                        // Update Pot
+                        const potEl = document.getElementById('custom-detail-pot');
+                        if (potEl) {
+                            if (pot < 0) {
+                                potEl.textContent = `-$${Math.abs(pot).toFixed(2)}`;
+                                potEl.style.color = '#ff4444';
+                            } else {
+                                potEl.textContent = `$${pot.toFixed(2)}`;
+                                potEl.style.color = '';
+                            }
+                        }
+
+                        // Update Status
+                        const statusEl = document.getElementById('custom-detail-status');
+                        if (statusEl) {
+                            statusEl.textContent = filtered.length > 0 ? '✅' : '-';
+                        }
+
+                        // Update Total
+                        const totalEl = document.getElementById('custom-detail-total');
                         if (totalEl) {
                             totalEl.textContent = filtered.length > 0 ? '$' + spent.toFixed(2) : '--';
                         }
@@ -11241,17 +11318,20 @@
                                         }
                                     }
                                 } else if (category.type === 'monthly') {
-                                    // Monthly bill card - show budgeted amount and paid status
+                                    // Monthly bill card - show total if paid, budgeted if not
                                     const budgetedValue = customBudgetMap[category.title] || 0;
                                     const billStatusElement = card.querySelector('.bill-status');
+                                    const isPaid = categoryTransactions.length > 0;
 
                                     if (categoryAmountElement) {
-                                        categoryAmountElement.textContent = `$${budgetedValue.toFixed(2)}`;
+                                        // Show total if paid, budgeted if not paid
+                                        const displayAmount = isPaid ? totalSpent : budgetedValue;
+                                        categoryAmountElement.textContent = `$${displayAmount.toFixed(2)}`;
                                         categoryAmountElement.className = 'category-amount'; // No positive/negative styling
                                     }
 
                                     if (billStatusElement) {
-                                        if (categoryTransactions.length > 0) {
+                                        if (isPaid) {
                                             billStatusElement.textContent = 'Paid ✓';
                                             billStatusElement.className = 'bill-status paid';
                                         } else {
@@ -11261,18 +11341,48 @@
                                         }
                                     }
                                 } else if (category.type === 'annual') {
-                                    // Annual bill card - show monthly budgeted and paid status
+                                    // Annual bill card - show monthly budgeted (+ extra needed if pot negative)
                                     const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
                                     const monthlyBudgeted = annualCost / 12;
                                     const billStatusElement = card.querySelector('.bill-status');
+                                    const isPaid = categoryTransactions.length > 0;
+
+                                    // Calculate pot for annual bills (like hardcoded ones)
+                                    // Get all transactions for this category for the entire year
+                                    const yearTransactions = result.transactions.filter(t => {
+                                        if (!t.category || t.category !== category.title) return false;
+                                        const txnDate = new Date(t.date);
+                                        return txnDate.getFullYear() === selectedYear;
+                                    });
+
+                                    // Calculate pot month by month with reset logic
+                                    let runningPot = 0;
+                                    for (let month = 1; month <= selectedMonth; month++) {
+                                        runningPot += monthlyBudgeted;
+
+                                        const monthSpent = yearTransactions
+                                            .filter(t => {
+                                                const txnDate = new Date(t.date);
+                                                return txnDate.getMonth() + 1 === month;
+                                            })
+                                            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                                        runningPot -= monthSpent;
+
+                                        if (runningPot < 0 && month < selectedMonth) {
+                                            runningPot = 0;
+                                        }
+                                    }
+
+                                    const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                                    const displayAmount = monthlyBudgeted + extraMonthlyNeeded;
 
                                     if (categoryAmountElement) {
-                                        categoryAmountElement.textContent = `$${monthlyBudgeted.toFixed(2)}`;
+                                        categoryAmountElement.textContent = `$${displayAmount.toFixed(2)}`;
                                         categoryAmountElement.className = 'category-amount'; // No positive/negative styling
                                     }
 
                                     if (billStatusElement) {
-                                        if (categoryTransactions.length > 0) {
+                                        if (isPaid) {
                                             billStatusElement.textContent = 'Paid ✓';
                                             billStatusElement.className = 'bill-status paid';
                                         } else {
