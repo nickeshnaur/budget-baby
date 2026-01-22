@@ -8635,8 +8635,12 @@
                             const emoji = emojiMatch ? emojiMatch[1] : '';
                             const title = titleText.replace(emoji, '').trim();
 
-                            // Get color from accent
-                            const color = accentEl ? accentEl.style.background || accentEl.style.backgroundColor : '#4DABF7';
+                            // Get color from accent and convert to hex if needed
+                            let color = '#4DABF7';
+                            if (accentEl) {
+                                const rawColor = accentEl.style.background || accentEl.style.backgroundColor;
+                                color = rgbToHex(rawColor) || rawColor || '#4DABF7';
+                            }
 
                             // Determine type for the form
                             let formType = 'flexible';
@@ -8909,6 +8913,22 @@
             }
         }
 
+        // Helper function to convert RGB to hex
+        function rgbToHex(rgb) {
+            if (!rgb) return null;
+            // If already hex, return as-is
+            if (rgb.startsWith('#')) return rgb;
+            // Parse rgb(r, g, b) format
+            const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if (match) {
+                const r = parseInt(match[1]).toString(16).padStart(2, '0');
+                const g = parseInt(match[2]).toString(16).padStart(2, '0');
+                const b = parseInt(match[3]).toString(16).padStart(2, '0');
+                return `#${r}${g}${b}`;
+            }
+            return null;
+        }
+
         // Show custom category detail page
         function showCustomCategoryDetail(category) {
             currentCustomCategory = category;
@@ -9010,6 +9030,23 @@
         }
 
         // Populate transaction category dropdown with same order as category home page
+        // Helper to get category with overrides applied
+        function getCategoryDisplayInfo(name, emoji, slug) {
+            // Check if deleted
+            if (slug && deletedCategories.includes(slug)) {
+                return null;
+            }
+            // Check for overrides
+            if (slug && categoryOverrides[slug]) {
+                const override = categoryOverrides[slug];
+                return {
+                    name: override.title || name,
+                    emoji: override.emoji || emoji
+                };
+            }
+            return { name, emoji };
+        }
+
         function populateTransactionCategoryDropdown() {
             const transactionCategorySelect = document.getElementById('transactionCategory');
             if (!transactionCategorySelect) return;
@@ -9018,49 +9055,50 @@
             transactionCategorySelect.innerHTML = '';
 
             // Build category groups in same order as category home page
+            // Each category includes slug for override lookup
             const categoryGroups = {
                 'Income': [
-                    { name: 'Income', emoji: '💰' }
+                    { name: 'Income', emoji: '💰', slug: 'income' }
                 ],
                 'Flexible Monthly': [
-                    { name: 'Out & About', emoji: '🎉' },
-                    { name: 'Grocery', emoji: '🛒' },
-                    { name: 'Gas', emoji: '⛽' },
-                    { name: 'Auto', emoji: '🔧' },
-                    { name: 'Clothing', emoji: '👕' },
-                    { name: 'Gifts', emoji: '🎁' },
-                    { name: 'Health & Care', emoji: '🌿' },
-                    { name: 'Home', emoji: '🏠' },
-                    { name: 'Travel', emoji: '✈️' },
-                    { name: 'Treats', emoji: '🍭' },
-                    { name: 'Personal Nick', emoji: '👨' },
-                    { name: 'Personal Chelsea', emoji: '👩' },
-                    { name: 'School', emoji: '🎓' },
-                    { name: 'Giving', emoji: '🤝' }
+                    { name: 'Out & About', emoji: '🎉', slug: 'out-about' },
+                    { name: 'Grocery', emoji: '🛒', slug: 'grocery' },
+                    { name: 'Gas', emoji: '⛽', slug: 'gas' },
+                    { name: 'Auto', emoji: '🔧', slug: 'auto' },
+                    { name: 'Clothing', emoji: '👕', slug: 'clothing' },
+                    { name: 'Gifts', emoji: '🎁', slug: 'gifts' },
+                    { name: 'Health & Care', emoji: '🌿', slug: 'health-care' },
+                    { name: 'Home', emoji: '🏠', slug: 'home' },
+                    { name: 'Travel', emoji: '✈️', slug: 'travel' },
+                    { name: 'Treats', emoji: '🍭', slug: 'treats' },
+                    { name: 'Personal Nick', emoji: '👨', slug: 'personal-nick' },
+                    { name: 'Personal Chelsea', emoji: '👩', slug: 'personal-chelsea' },
+                    { name: 'School', emoji: '🎓', slug: 'school' },
+                    { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
-                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName) })),
+                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
                 'Annual Bills': [
-                    { name: 'Phone', emoji: '📱' },
-                    { name: 'Costco', emoji: '🏬' },
-                    { name: 'Insurance - Rent', emoji: '🏠' },
-                    { name: 'Letterboxd', emoji: '🎬' },
-                    { name: 'Grammarly', emoji: '✏️' },
-                    { name: 'Domain', emoji: '🌐' },
-                    { name: 'Google One', emoji: '☁️' },
-                    { name: 'C - Capital One Annual Fee', emoji: '💳' },
-                    { name: 'C - SW Annual Fee', emoji: '✈️' },
-                    { name: 'N - Capital One Annual Fee', emoji: '💎' },
-                    { name: 'N - SW Annual Fee', emoji: '🛫' }
+                    { name: 'Phone', emoji: '📱', slug: 'phone' },
+                    { name: 'Costco', emoji: '🏬', slug: 'costco' },
+                    { name: 'Insurance - Rent', emoji: '🏠', slug: 'insurance---rent' },
+                    { name: 'Letterboxd', emoji: '🎬', slug: 'letterboxd' },
+                    { name: 'Grammarly', emoji: '✏️', slug: 'grammarly' },
+                    { name: 'Domain', emoji: '🌐', slug: 'domain' },
+                    { name: 'Google One', emoji: '☁️', slug: 'google-one' },
+                    { name: 'C - Capital One Annual Fee', emoji: '💳', slug: 'c---capital-one-annual-fee' },
+                    { name: 'C - SW Annual Fee', emoji: '✈️', slug: 'c---sw-annual-fee' },
+                    { name: 'N - Capital One Annual Fee', emoji: '💎', slug: 'n---capital-one-annual-fee' },
+                    { name: 'N - SW Annual Fee', emoji: '🛫', slug: 'n---sw-annual-fee' }
                 ],
                 'Other': [
-                    { name: 'Ignore', emoji: '🚫' }
+                    { name: 'Ignore', emoji: '🚫', slug: 'ignore' }
                 ]
             };
 
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -9083,9 +9121,13 @@
                 optgroup.label = groupName;
 
                 categories.forEach(category => {
+                    // Apply overrides and check for deletion
+                    const displayInfo = getCategoryDisplayInfo(category.name, category.emoji, category.slug);
+                    if (!displayInfo) return; // Skip deleted categories
+
                     const option = document.createElement('option');
-                    option.value = category.name;
-                    option.textContent = `${category.emoji} ${category.name}`;
+                    option.value = displayInfo.name;
+                    option.textContent = `${displayInfo.emoji} ${displayInfo.name}`;
                     optgroup.appendChild(option);
                 });
 
@@ -9677,50 +9719,50 @@
         }
 
         function showCategoryDropdown(transactionId, tagElement, transaction) {
-            // Systematic category organization with emojis
+            // Systematic category organization with emojis and slugs for override lookup
             const categoryGroups = {
                 'Income': [
-                    { name: 'Income', emoji: '💰' }
+                    { name: 'Income', emoji: '💰', slug: 'income' }
                 ],
                 'Flexible Monthly': [
-                    { name: 'Out & About', emoji: '🎉' },
-                    { name: 'Grocery', emoji: '🛒' },
-                    { name: 'Gas', emoji: '⛽' },
-                    { name: 'Auto', emoji: '🔧' },
-                    { name: 'Clothing', emoji: '👕' },
-                    { name: 'Gifts', emoji: '🎁' },
-                    { name: 'Health & Care', emoji: '🏥' },
-                    { name: 'Home', emoji: '🏠' },
-                    { name: 'Travel', emoji: '✈️' },
-                    { name: 'Treats', emoji: '🍭' },
-                    { name: 'Personal Nick', emoji: '👤' },
-                    { name: 'Personal Chelsea', emoji: '👤' },
-                    { name: 'School', emoji: '🎓' },
-                    { name: 'Giving', emoji: '🤝' }
+                    { name: 'Out & About', emoji: '🎉', slug: 'out-about' },
+                    { name: 'Grocery', emoji: '🛒', slug: 'grocery' },
+                    { name: 'Gas', emoji: '⛽', slug: 'gas' },
+                    { name: 'Auto', emoji: '🔧', slug: 'auto' },
+                    { name: 'Clothing', emoji: '👕', slug: 'clothing' },
+                    { name: 'Gifts', emoji: '🎁', slug: 'gifts' },
+                    { name: 'Health & Care', emoji: '🏥', slug: 'health-care' },
+                    { name: 'Home', emoji: '🏠', slug: 'home' },
+                    { name: 'Travel', emoji: '✈️', slug: 'travel' },
+                    { name: 'Treats', emoji: '🍭', slug: 'treats' },
+                    { name: 'Personal Nick', emoji: '👤', slug: 'personal-nick' },
+                    { name: 'Personal Chelsea', emoji: '👤', slug: 'personal-chelsea' },
+                    { name: 'School', emoji: '🎓', slug: 'school' },
+                    { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
-                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName) })),
+                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
                 'Annual Bills': [
-                    { name: 'Phone', emoji: '📱' },
-                    { name: 'Costco', emoji: '🏬' },
-                    { name: 'Insurance - Rent', emoji: '🏠' },
-                    { name: 'Letterboxd', emoji: '🎬' },
-                    { name: 'Grammarly', emoji: '✏️' },
-                    { name: 'Domain', emoji: '🌐' },
-                    { name: 'Google One', emoji: '☁️' },
-                    { name: 'C - Capital One Annual Fee', emoji: '💳' },
-                    { name: 'C - SW Annual Fee', emoji: '✈️' },
-                    { name: 'N - Capital One Annual Fee', emoji: '💎' },
-                    { name: 'N - SW Annual Fee', emoji: '🛫' }
+                    { name: 'Phone', emoji: '📱', slug: 'phone' },
+                    { name: 'Costco', emoji: '🏬', slug: 'costco' },
+                    { name: 'Insurance - Rent', emoji: '🏠', slug: 'insurance---rent' },
+                    { name: 'Letterboxd', emoji: '🎬', slug: 'letterboxd' },
+                    { name: 'Grammarly', emoji: '✏️', slug: 'grammarly' },
+                    { name: 'Domain', emoji: '🌐', slug: 'domain' },
+                    { name: 'Google One', emoji: '☁️', slug: 'google-one' },
+                    { name: 'C - Capital One Annual Fee', emoji: '💳', slug: 'c---capital-one-annual-fee' },
+                    { name: 'C - SW Annual Fee', emoji: '✈️', slug: 'c---sw-annual-fee' },
+                    { name: 'N - Capital One Annual Fee', emoji: '💎', slug: 'n---capital-one-annual-fee' },
+                    { name: 'N - SW Annual Fee', emoji: '🛫', slug: 'n---sw-annual-fee' }
                 ],
                 'Other': [
-                    { name: 'Ignore', emoji: '🚫' }
+                    { name: 'Ignore', emoji: '🚫', slug: 'ignore' }
                 ]
             };
 
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -9771,8 +9813,12 @@
 
                 // Add categories in this group
                 categories.forEach(category => {
+                    // Apply overrides and check for deletion
+                    const displayInfo = getCategoryDisplayInfo(category.name, category.emoji, category.slug);
+                    if (!displayInfo) return; // Skip deleted categories
+
                     const option = document.createElement('div');
-                    option.innerHTML = `${category.emoji} ${category.name}`;
+                    option.innerHTML = `${displayInfo.emoji} ${displayInfo.name}`;
                     option.style.cssText = `
                         padding: 8px 16px;
                         cursor: pointer;
@@ -9792,7 +9838,7 @@
                     option.addEventListener('click', (e) => {
                         e.stopPropagation();
                         dropdown.remove();
-                        updateTransactionCategory(transactionId, category.name, tagElement);
+                        updateTransactionCategory(transactionId, displayInfo.name, tagElement);
                     });
 
                     dropdown.appendChild(option);
