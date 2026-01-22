@@ -2358,16 +2358,16 @@
         }
 
         .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #E6E6E6;
+            padding: 32px 24px 20px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-header h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 24px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
             margin: 0;
         }
 
@@ -2383,7 +2383,7 @@
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 0px 24px 32px 24px;
         }
 
         .form-group {
@@ -2393,10 +2393,9 @@
         .form-group label {
             display: block;
             font-family: "Roboto", sans-serif;
-            font-weight: 700;
+            font-weight: 400;
             font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0;
             color: #666;
             margin-bottom: 8px;
         }
@@ -2432,8 +2431,8 @@
             font-size: 14px;
             background: #ffffff;
             color: #333;
-            border: 1px solid #E6E6E6;
-            border-radius: 8px;
+            border: 1px solid #F2F4F5;
+            border-radius: 40px;
             cursor: pointer;
             transition: background 0.2s;
         }
@@ -2447,16 +2446,16 @@
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 14px;
-            background: #4A90E2;
+            background: #000000;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 40px;
             cursor: pointer;
             transition: background 0.2s;
         }
 
         .btn-submit:hover {
-            background: #357ABD;
+            background: #333333;
         }
 
 
@@ -2694,7 +2693,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Add Transaction</h2>
-                <span class="close-modal" onclick="closeAddTransactionModal()">&times;</span>
+                <span class="close-modal" onclick="closeAddTransactionModal()"><i class="fa-solid fa-xmark"></i></span>
             </div>
             <div class="modal-body">
                 <form id="addTransactionForm">
@@ -2753,7 +2752,7 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeAddTransactionModal()">Cancel</button>
-                        <button type="submit" class="btn-submit">Add Transaction</button>
+                        <button type="submit" class="btn-submit">Add</button>
                     </div>
                 </form>
             </div>
