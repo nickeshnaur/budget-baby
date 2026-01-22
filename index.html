@@ -8639,7 +8639,7 @@
             title.textContent = `${category.emoji} ${category.title}`;
 
             const typeLabel = category.type === 'flexible' ? 'Flexible Monthly' :
-                              category.type === 'monthly' ? 'Monthly Bill' : 'Annual Bill';
+                              category.type === 'monthly' ? 'Monthly Bills' : 'Annual Bills';
             type.textContent = typeLabel;
 
             // Build budget summary based on category type
@@ -8666,7 +8666,7 @@
                 budgetSummary.innerHTML = `
                     <div class="budget-item">
                         <div class="budget-label"><span>📅</span>Due Date</div>
-                        <div class="budget-value">${category.due_day}${getDaySuffix(category.due_day)}</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-due-date">${category.due_day}${getDaySuffix(category.due_day)}</div>
                     </div>
                     <div class="budget-item">
                         <div class="budget-label"><span>📊</span>Budgeted</div>
@@ -8682,23 +8682,40 @@
                     </div>
                 `;
             } else {
-                // Annual
+                // Annual - match exact structure of existing Annual Bills pages
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dueDateFormatted = `${monthNames[category.due_month - 1]} ${category.due_day}`;
+                const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
+                const monthlyBudgeted = annualCost / 12;
+
                 budgetSummary.innerHTML = `
                     <div class="budget-item">
-                        <div class="budget-label"><span>📅</span>Due Date</div>
-                        <div class="budget-value">${category.due_month}/${category.due_day}</div>
+                        <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-annual-cost" data-value="${annualCost}">$${annualCost.toFixed(2)}</div>
                     </div>
                     <div class="budget-item">
-                        <div class="budget-label"><span>📊</span>Annual Cost</div>
-                        <div class="budget-value">${category.annual_cost ? '$' + parseFloat(category.annual_cost).toFixed(2) : '$0.00'}</div>
+                        <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="${monthlyBudgeted.toFixed(2)}">$${monthlyBudgeted.toFixed(2)}</div>
                     </div>
                     <div class="budget-item">
-                        <div class="budget-label"><span>💰</span>Monthly</div>
-                        <div class="budget-value">${category.annual_cost ? '$' + (parseFloat(category.annual_cost) / 12).toFixed(2) : '$0.00'}</div>
+                        <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
+                        <div class="budget-value" id="custom-detail-extra-needed">$0.00</div>
                     </div>
                     <div class="budget-item">
                         <div class="budget-label"><span>🏦</span>Pot</div>
                         <div class="budget-value" id="custom-detail-pot">$0.00</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📅</span>Due Date</div>
+                        <div class="budget-value editable" contenteditable="true" id="custom-detail-due-date" data-value="${monthNames[category.due_month - 1]} ${category.due_day}">${dueDateFormatted}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>✓</span>Status</div>
+                        <div class="budget-value" id="custom-detail-status">-</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label"><span>📋</span>Total</div>
+                        <div class="budget-value" id="custom-detail-total">--</div>
                     </div>
                 `;
             }
@@ -8752,7 +8769,7 @@
 
                     // Render transactions
                     if (filtered.length === 0) {
-                        transactionsContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No transactions for this category</p>';
+                        transactionsContainer.innerHTML = '<div class="section-subtitle no-transactions-message">No Transactions to Sort</div>';
                     } else {
                         transactionsContainer.innerHTML = '';
                         filtered.forEach(transaction => {
