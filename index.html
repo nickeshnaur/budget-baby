@@ -2618,17 +2618,9 @@
 
         .account-name {
             font-family: "Roboto", sans-serif;
-            font-weight: 700;
-            font-size: 16px;
-            color: #000;
-            margin-bottom: 4px;
-        }
-
-        .account-type {
-            font-family: "Roboto", sans-serif;
             font-weight: 400;
-            font-size: 12px;
-            color: #666;
+            font-size: 14px;
+            color: #000;
         }
 
         .account-card-wrapper {
@@ -2685,6 +2677,133 @@
 
         .account-menu-btn:hover {
             background: #f0f0f0;
+        }
+
+        /* Account Edit Overlay */
+        .account-edit-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .account-edit-modal {
+            background: white;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .account-edit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .account-edit-header h3 {
+            font-family: "Roboto", sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0;
+            color: #000;
+        }
+
+        .account-edit-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .account-edit-close:hover {
+            color: #000;
+        }
+
+        .account-edit-content {
+            padding: 24px;
+        }
+
+        .account-edit-field {
+            margin-bottom: 20px;
+        }
+
+        .account-edit-field label {
+            display: block;
+            font-family: "Roboto", sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .account-edit-field input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-family: "Roboto", sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .account-edit-field input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .account-edit-actions {
+            display: flex;
+            gap: 12px;
+            padding: 0 24px 24px;
+        }
+
+        .account-edit-remove {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: "Roboto", sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            background: #ffebeb;
+            color: #ff6b6b;
+        }
+
+        .account-edit-remove:hover {
+            background: #ffdddd;
+        }
+
+        .account-edit-save {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: "Roboto", sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            background: #000;
+            color: #fff;
+        }
+
+        .account-edit-save:hover {
+            background: #333;
         }
 
     </style>
@@ -5735,6 +5854,22 @@
             }
             return null;
         }
+
+        // Get card image for a transaction, checking custom images first
+        function getCardImageForTransaction(lastFour) {
+            if (!lastFour) return null;
+
+            // Check if there's a custom card image for this account
+            if (window.connectedAccountsData) {
+                const account = window.connectedAccountsData.find(a => a.lastFour === lastFour);
+                if (account && account.customCardImage) {
+                    return account.customCardImage;
+                }
+            }
+
+            // Fall back to default mapping
+            return CARD_IMAGE_MAP[lastFour] || null;
+        }
         // =====================================================
 
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
@@ -6495,6 +6630,19 @@
             loadConnectedAccounts();
         }
 
+        // Preload accounts data for use by transactions (without rendering to UI)
+        async function preloadAccountsData() {
+            try {
+                const response = await fetch('/api/accounts');
+                const result = await response.json();
+                if (result.accounts) {
+                    window.connectedAccountsData = result.accounts;
+                }
+            } catch (error) {
+                console.error('Error preloading accounts data:', error);
+            }
+        }
+
         async function loadConnectedAccounts() {
             try {
                 const response = await fetch('/api/accounts');
@@ -6504,30 +6652,37 @@
                     const accountsContainer = document.getElementById('connected-accounts');
                     accountsContainer.innerHTML = '';
 
+                    // Store accounts globally for access in edit overlay
+                    window.connectedAccountsData = result.accounts;
+
                     result.accounts.forEach(account => {
                         const isDisconnected = account.status === 'disconnected';
-                        const bankLogo = getBankLogo(account.institutionName);
-                        const cardImage = account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : null;
+
+                        // Use custom values if available, otherwise fall back to defaults
+                        const logoSrc = account.customLogo || getBankLogo(account.institutionName);
+                        const logoHeight = account.customLogoHeight || 120;
+                        const displayName = account.customName || `${account.accountName || account.subtype || 'Account'}${account.lastFour ? ' ****' + account.lastFour : ''}`;
+                        const cardImageSrc = account.customCardImage || (account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : null);
+                        const ownerName = account.owner || 'Chelsea';
 
                         const accountDiv = document.createElement('div');
                         accountDiv.className = 'connected-account';
                         accountDiv.setAttribute('data-account-id', account.id);
                         accountDiv.innerHTML = `
-                            <button class="account-menu-btn" onclick="showAccountMenu('${account.id}', this, ${isDisconnected})" title="More options">
+                            <button class="account-menu-btn" onclick="showAccountEditOverlay('${account.id}')" title="More options">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
-                            ${bankLogo ? `<img class="account-bank-logo" src="${bankLogo}" alt="${account.institutionName}">` : `<div class="account-name" style="margin-bottom: 16px;">${account.institutionName}</div>`}
+                            ${logoSrc ? `<img class="account-bank-logo" src="${logoSrc}" alt="${account.institutionName}" style="height: ${logoHeight}px; width: auto;">` : `<div class="account-name" style="margin-bottom: 16px; font-weight: 700; font-size: 16px;">${account.institutionName}</div>`}
                             <div class="account-content-row">
                                 <div class="account-info">
-                                    <div class="account-name">${account.accountName || account.subtype || 'Account'}</div>
-                                    <div class="account-type">${account.lastFour ? '****' + account.lastFour : ''}</div>
+                                    <div class="account-name">${displayName}</div>
                                 </div>
                                 <div class="account-card-wrapper">
-                                    ${cardImage ? `<img class="account-card-image" src="${cardImage}" alt="Card">` : '<div class="account-card-image" style="background: #ccc;"></div>'}
+                                    ${cardImageSrc ? `<img class="account-card-image" src="${cardImageSrc}" alt="Card">` : '<div class="account-card-image" style="background: #ccc;"></div>'}
                                     <div class="account-status">${isDisconnected ? 'Disconnected' : 'Connected'}</div>
                                 </div>
                             </div>
-                            <div class="account-owner-tag">Chelsea</div>
+                            <div class="account-owner-tag">${ownerName}</div>
                         `;
                         accountsContainer.appendChild(accountDiv);
                     });
@@ -6537,52 +6692,123 @@
             }
         }
 
-        function showAccountMenu(accountId, menuButton, isDisconnected) {
-            const existingMenu = document.querySelector('.account-menu-dropdown');
-            if (existingMenu) {
-                existingMenu.remove();
+        function showAccountEditOverlay(accountId) {
+            // Find the account data
+            const account = window.connectedAccountsData?.find(a => a.id === accountId);
+            if (!account) {
+                console.error('Account not found:', accountId);
+                return;
             }
 
-            const menu = document.createElement('div');
-            menu.className = 'account-menu-dropdown';
-            menu.style.cssText = `
-                position: absolute;
-                top: 40px;
-                right: 24px;
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                min-width: 140px;
-                overflow: hidden;
+            // Get current values
+            const currentLogo = account.customLogo || getBankLogo(account.institutionName) || '';
+            const currentLogoHeight = account.customLogoHeight || 120;
+            const currentName = account.customName || `${account.accountName || account.subtype || 'Account'}${account.lastFour ? ' ****' + account.lastFour : ''}`;
+            const currentCardImage = account.customCardImage || (account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : '');
+            const currentOwner = account.owner || 'Chelsea';
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'account-edit-overlay';
+            overlay.innerHTML = `
+                <div class="account-edit-modal">
+                    <div class="account-edit-header">
+                        <h3>Edit Account</h3>
+                        <button class="account-edit-close" onclick="closeAccountEditOverlay()">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="account-edit-content">
+                        <div class="account-edit-field">
+                            <label>Bank Logo URL</label>
+                            <input type="text" id="edit-account-logo" value="${currentLogo}" placeholder="Enter image URL or path">
+                        </div>
+                        <div class="account-edit-field">
+                            <label>Logo Height (px)</label>
+                            <input type="number" id="edit-account-logo-height" value="${currentLogoHeight}" min="20" max="200">
+                        </div>
+                        <div class="account-edit-field">
+                            <label>Account Name</label>
+                            <input type="text" id="edit-account-name" value="${currentName}" placeholder="e.g., Sapphire Preferred ****0241">
+                        </div>
+                        <div class="account-edit-field">
+                            <label>Card Image URL</label>
+                            <input type="text" id="edit-account-card-image" value="${currentCardImage}" placeholder="Enter image URL or path">
+                        </div>
+                        <div class="account-edit-field">
+                            <label>Account Owner</label>
+                            <input type="text" id="edit-account-owner" value="${currentOwner}" placeholder="e.g., Chelsea or Nick">
+                        </div>
+                    </div>
+                    <div class="account-edit-actions">
+                        <button class="account-edit-remove" onclick="removeAccountFromOverlay('${accountId}')">
+                            Remove Account
+                        </button>
+                        <button class="account-edit-save" onclick="saveAccountDetails('${accountId}')">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
             `;
 
-            menu.innerHTML = `
-                <button style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: none;
-                    background: none;
-                    text-align: left;
-                    cursor: pointer;
-                    font-family: 'Roboto', sans-serif;
-                    font-size: 14px;
-                    color: #ff6b6b;
-                " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'" onclick="removeAccount('${accountId}')">
-                    Remove Account
-                </button>
-            `;
+            document.body.appendChild(overlay);
 
-            menuButton.closest('.connected-account').appendChild(menu);
+            // Close on overlay background click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeAccountEditOverlay();
+                }
+            });
+        }
 
-            setTimeout(() => {
-                document.addEventListener('click', function closeMenu(e) {
-                    if (!menu.contains(e.target) && e.target !== menuButton) {
-                        menu.remove();
-                        document.removeEventListener('click', closeMenu);
-                    }
+        function closeAccountEditOverlay() {
+            const overlay = document.querySelector('.account-edit-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        async function saveAccountDetails(accountId) {
+            const customLogo = document.getElementById('edit-account-logo').value.trim() || null;
+            const customLogoHeight = parseInt(document.getElementById('edit-account-logo-height').value) || 120;
+            const customName = document.getElementById('edit-account-name').value.trim() || null;
+            const customCardImage = document.getElementById('edit-account-card-image').value.trim() || null;
+            const owner = document.getElementById('edit-account-owner').value.trim() || 'Chelsea';
+
+            try {
+                const response = await fetch('/api/account/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId,
+                        customLogo,
+                        customLogoHeight,
+                        customName,
+                        customCardImage,
+                        owner
+                    })
                 });
-            }, 0);
+
+                const result = await response.json();
+                if (result.success) {
+                    closeAccountEditOverlay();
+                    // Reload accounts to show changes
+                    await loadConnectedAccounts();
+                    // Refresh transactions to show updated card images
+                    await loadTransactionsFromAPI();
+                } else {
+                    alert('Failed to save changes');
+                }
+            } catch (error) {
+                console.error('Error saving account details:', error);
+                alert('Failed to save changes');
+            }
+        }
+
+        async function removeAccountFromOverlay(accountId) {
+            if (!confirm('Remove this account? You can reconnect it later.')) return;
+            closeAccountEditOverlay();
+            await removeAccount(accountId);
         }
 
         async function removeAccount(accountId) {
@@ -6629,10 +6855,11 @@
             // Initialize category detail menu buttons
             initializeCategoryDetailMenus();
 
-            // Fetch custom categories and overrides if authenticated
+            // Fetch custom categories, overrides, and preload accounts if authenticated
             if (isAuthenticated) {
                 fetchCustomCategories();
                 fetchCategoryOverrides();
+                preloadAccountsData();
             }
 
             // Login form handling
@@ -6660,6 +6887,7 @@
                         errorMessage.style.display = 'none';
                         fetchCustomCategories();
                         fetchCategoryOverrides();
+                        preloadAccountsData();
                         router.handleRoute();
                     } else {
                         errorMessage.textContent = result.error || 'Login failed';
@@ -10074,7 +10302,7 @@
                         <i class="fa-solid fa-caret-down"></i>
                     </div>
                     <div class="transaction-bank-wrapper">
-                        ${isManual ? '<img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">' : (transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>')}
+                        ${isManual ? '<img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">' : (transaction.accountLastFour && getCardImageForTransaction(transaction.accountLastFour) ? `<img class="transaction-card-image" src="${getCardImageForTransaction(transaction.accountLastFour)}" alt="Card">` : '<div class="transaction-card-image"></div>')}
                         <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? transaction.bank : 'Manual Entry') : (transaction.accountName || transaction.bank || 'Unknown Account').replace('CapitalOne', 'Capital One')}</div>
                     </div>
                 </div>

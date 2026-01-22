@@ -84,6 +84,13 @@ async function initializeDatabase() {
       ALTER TABLE accounts ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'connected';
     `).catch(() => {});
 
+    // Add custom display columns for account cards
+    await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS custom_logo TEXT;`).catch(() => {});
+    await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS custom_logo_height INTEGER DEFAULT 120;`).catch(() => {});
+    await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS custom_name TEXT;`).catch(() => {});
+    await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS custom_card_image TEXT;`).catch(() => {});
+    await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS owner TEXT DEFAULT 'Chelsea';`).catch(() => {});
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY,
@@ -202,8 +209,8 @@ async function loadFromDatabase() {
   }
 
   try {
-    // Load accounts
-    const accountsResult = await pool.query('SELECT * FROM accounts');
+    // Load accounts (exclude the 'manual' placeholder account)
+    const accountsResult = await pool.query("SELECT * FROM accounts WHERE id != 'manual'");
     accountsResult.rows.forEach(row => {
       connectedAccounts.set(row.id, {
         id: row.id,
@@ -214,7 +221,13 @@ async function loadFromDatabase() {
         subtype: row.subtype,
         lastFour: row.last_four,
         status: row.status || 'connected',
-        connectedAt: row.connected_at
+        connectedAt: row.connected_at,
+        // Custom display settings
+        customLogo: row.custom_logo,
+        customLogoHeight: row.custom_logo_height,
+        customName: row.custom_name,
+        customCardImage: row.custom_card_image,
+        owner: row.owner
       });
     });
     console.log(`🏦 Loaded ${connectedAccounts.size} accounts from PostgreSQL`);
@@ -556,6 +569,8 @@ function handleApiRequest(req, res, pathname) {
     handleGetAccounts(req, res);
   } else if (pathname === '/api/account/delete' && req.method === 'POST') {
     handleDeleteAccount(req, res);
+  } else if (pathname === '/api/account/update' && req.method === 'POST') {
+    handleUpdateAccountDetails(req, res);
   } else if (pathname === '/api/account/details' && req.method === 'POST') {
     handleGetAccountDetails(req, res);
   } else if (pathname === '/api/transactions/clear' && req.method === 'POST') {
@@ -1256,6 +1271,62 @@ async function handleDeleteAccount(req, res) {
       console.error('Delete account error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to delete account' }));
+    }
+  });
+}
+
+async function handleUpdateAccountDetails(req, res) {
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { accountId, customLogo, customLogoHeight, customName, customCardImage, owner } = JSON.parse(body);
+
+      if (!accountId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Account ID required' }));
+        return;
+      }
+
+      // Update in memory
+      const account = connectedAccounts.get(accountId);
+      if (account) {
+        if (customLogo !== undefined) account.customLogo = customLogo;
+        if (customLogoHeight !== undefined) account.customLogoHeight = customLogoHeight;
+        if (customName !== undefined) account.customName = customName;
+        if (customCardImage !== undefined) account.customCardImage = customCardImage;
+        if (owner !== undefined) account.owner = owner;
+        connectedAccounts.set(accountId, account);
+      }
+
+      // Update in database
+      if (pool) {
+        await pool.query(
+          `UPDATE accounts SET
+            custom_logo = COALESCE($2, custom_logo),
+            custom_logo_height = COALESCE($3, custom_logo_height),
+            custom_name = COALESCE($4, custom_name),
+            custom_card_image = COALESCE($5, custom_card_image),
+            owner = COALESCE($6, owner)
+          WHERE id = $1`,
+          [accountId, customLogo, customLogoHeight, customName, customCardImage, owner]
+        );
+      }
+
+      // Save to file backup
+      saveAccounts(connectedAccounts);
+
+      console.log(`✏️ Updated account details: ${accountId}`);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, account: connectedAccounts.get(accountId) }));
+    } catch (error) {
+      console.error('Update account error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to update account' }));
     }
   });
 }
