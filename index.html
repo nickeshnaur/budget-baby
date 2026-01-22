@@ -2591,8 +2591,7 @@
         /* Connected Account Styles */
         .connected-account {
             position: relative;
-            padding: 24px;
-            padding-bottom: 48px;
+            padding: 32px 24px 48px 24px;
             background: white;
             border-radius: 32px;
             border: none;
@@ -2608,6 +2607,7 @@
 
         .account-bank-logo.capital-one {
             max-height: 20px;
+            margin-bottom: 8px;
         }
 
         .account-content-row {
@@ -2631,7 +2631,7 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 4px;
+            gap: 12px;
         }
 
         .account-card-image {
@@ -2644,9 +2644,16 @@
         .account-status {
             font-family: "Roboto", sans-serif;
             font-weight: 400;
-            font-size: 10px;
-            color: #000;
+            font-size: 12px;
             text-align: right;
+        }
+
+        .account-status.connected {
+            color: #0ECB27;
+        }
+
+        .account-status.disconnected {
+            color: #EE3636;
         }
 
         .account-owner-tag {
@@ -2658,7 +2665,7 @@
             font-family: "Roboto", sans-serif;
             font-weight: 500;
             font-size: 12px;
-            padding: 8px 16px;
+            padding: 12px 24px;
             border-top-right-radius: 22px;
         }
 
@@ -6689,7 +6696,7 @@
                                 </div>
                                 <div class="account-card-wrapper">
                                     ${cardImageSrc ? `<img class="account-card-image" src="${cardImageSrc}" alt="Card">` : '<div class="account-card-image" style="background: #ccc;"></div>'}
-                                    <div class="account-status">${isDisconnected ? 'Disconnected' : 'Connected'}</div>
+                                    <div class="account-status ${isDisconnected ? 'disconnected' : 'connected'}">${isDisconnected ? 'Disconnected' : 'Connected'}</div>
                                 </div>
                             </div>
                             <div class="account-owner-tag">${ownerName}</div>
