@@ -2601,9 +2601,13 @@
         }
 
         .account-bank-logo {
-            width: 120px;
-            height: auto;
+            max-height: 12px;
+            width: auto;
             margin-bottom: 16px;
+        }
+
+        .account-bank-logo.capital-one {
+            max-height: 20px;
         }
 
         .account-content-row {
@@ -5842,6 +5846,7 @@
         const BANK_LOGO_MAP = {
             'Bank of America': '_Assets/Bank-BankofAmerica-Logo.png',
             'Capital One': '_Assets/Bank-CapitalOne-Logo.png',
+            'CapitalOne': '_Assets/Bank-CapitalOne-Logo.png',
             'Chase': '_Assets/Bank-Chase-Logo.png'
         };
 
@@ -5853,6 +5858,11 @@
                 }
             }
             return null;
+        }
+
+        function isCapitalOneAccount(institutionName) {
+            if (!institutionName) return false;
+            return institutionName.toLowerCase().includes('capital') || institutionName.toLowerCase().includes('capitalone');
         }
 
         // Get card image for a transaction, checking custom images first
@@ -6660,7 +6670,7 @@
 
                         // Use custom values if available, otherwise fall back to defaults
                         const logoSrc = account.customLogo || getBankLogo(account.institutionName);
-                        const logoHeight = account.customLogoHeight || 120;
+                        const isCapitalOne = isCapitalOneAccount(account.institutionName);
                         const displayName = account.customName || `${account.accountName || account.subtype || 'Account'}${account.lastFour ? ' ****' + account.lastFour : ''}`;
                         const cardImageSrc = account.customCardImage || (account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : null);
                         const ownerName = account.owner || 'Chelsea';
@@ -6672,7 +6682,7 @@
                             <button class="account-menu-btn" onclick="showAccountEditOverlay('${account.id}')" title="More options">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
-                            ${logoSrc ? `<img class="account-bank-logo" src="${logoSrc}" alt="${account.institutionName}" style="height: ${logoHeight}px; width: auto;">` : `<div class="account-name" style="margin-bottom: 16px; font-weight: 700; font-size: 16px;">${account.institutionName}</div>`}
+                            ${logoSrc ? `<img class="account-bank-logo${isCapitalOne ? ' capital-one' : ''}" src="${logoSrc}" alt="${account.institutionName}">` : `<div class="account-name" style="margin-bottom: 16px; font-weight: 700; font-size: 16px;">${account.institutionName}</div>`}
                             <div class="account-content-row">
                                 <div class="account-info">
                                     <div class="account-name">${displayName}</div>
@@ -6702,7 +6712,6 @@
 
             // Get current values
             const currentLogo = account.customLogo || getBankLogo(account.institutionName) || '';
-            const currentLogoHeight = account.customLogoHeight || 120;
             const currentName = account.customName || `${account.accountName || account.subtype || 'Account'}${account.lastFour ? ' ****' + account.lastFour : ''}`;
             const currentCardImage = account.customCardImage || (account.lastFour && CARD_IMAGE_MAP[account.lastFour] ? CARD_IMAGE_MAP[account.lastFour] : '');
             const currentOwner = account.owner || 'Chelsea';
@@ -6722,10 +6731,6 @@
                         <div class="account-edit-field">
                             <label>Bank Logo URL</label>
                             <input type="text" id="edit-account-logo" value="${currentLogo}" placeholder="Enter image URL or path">
-                        </div>
-                        <div class="account-edit-field">
-                            <label>Logo Height (px)</label>
-                            <input type="number" id="edit-account-logo-height" value="${currentLogoHeight}" min="20" max="200">
                         </div>
                         <div class="account-edit-field">
                             <label>Account Name</label>
@@ -6770,7 +6775,6 @@
 
         async function saveAccountDetails(accountId) {
             const customLogo = document.getElementById('edit-account-logo').value.trim() || null;
-            const customLogoHeight = parseInt(document.getElementById('edit-account-logo-height').value) || 120;
             const customName = document.getElementById('edit-account-name').value.trim() || null;
             const customCardImage = document.getElementById('edit-account-card-image').value.trim() || null;
             const owner = document.getElementById('edit-account-owner').value.trim() || 'Chelsea';
@@ -6782,7 +6786,6 @@
                     body: JSON.stringify({
                         accountId,
                         customLogo,
-                        customLogoHeight,
                         customName,
                         customCardImage,
                         owner
