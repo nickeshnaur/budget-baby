@@ -5590,6 +5590,19 @@
                 ">
                     Original Date: ${originalDateStr}
                 </div>
+                <div class="menu-option edit-transaction-option" style="
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 14px;
+                    border-bottom: 1px solid #eee;
+                ">
+                    <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
+                    Edit
+                </div>
                 <div class="menu-option edit-date-option" style="
                     padding: 12px 16px;
                     cursor: pointer;
@@ -5647,6 +5660,13 @@
                 option.addEventListener('mouseleave', () => {
                     option.style.background = 'white';
                 });
+            });
+
+            // Edit Transaction click handler
+            menu.querySelector('.edit-transaction-option').addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.remove();
+                showEditTransactionForm(transaction, isManual);
             });
 
             // Edit Date click handler
@@ -8015,14 +8035,47 @@
             return option;
         }
 
+        // Track edit mode state
+        let editingTransaction = null;
+        let editingIsManual = false;
+
         // Show add transaction form
         function showAddTransactionForm() {
+            // Reset edit state
+            editingTransaction = null;
+            editingIsManual = false;
+
             const modal = document.getElementById('addTransactionModal');
             modal.style.display = 'flex';
+
+            // Update modal title for add mode
+            modal.querySelector('.modal-header h2').textContent = 'Add Transaction';
+            modal.querySelector('.btn-submit').textContent = 'Add';
 
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transactionDate').value = today;
+        }
+
+        // Show edit transaction form
+        function showEditTransactionForm(transaction, isManual) {
+            editingTransaction = transaction;
+            editingIsManual = isManual;
+
+            const modal = document.getElementById('addTransactionModal');
+            modal.style.display = 'flex';
+
+            // Update modal title for edit mode
+            modal.querySelector('.modal-header h2').textContent = 'Edit Transaction';
+            modal.querySelector('.btn-submit').textContent = 'Save';
+
+            // Pre-populate form fields
+            document.getElementById('transactionDescription').value = transaction.description || '';
+            document.getElementById('transactionAmount').value = Math.abs(parseFloat(transaction.amount) || 0);
+            document.getElementById('positiveTransaction').checked = parseFloat(transaction.amount) >= 0;
+            document.getElementById('transactionDate').value = transaction.date || '';
+            document.getElementById('transactionCategory').value = transaction.category || 'Unsorted';
+            document.getElementById('transactionBank').value = (transaction.bank && transaction.bank !== 'Manual Entry') ? transaction.bank : '';
         }
 
         // Close add transaction modal
@@ -8030,6 +8083,14 @@
             const modal = document.getElementById('addTransactionModal');
             modal.style.display = 'none';
             document.getElementById('addTransactionForm').reset();
+
+            // Reset edit state
+            editingTransaction = null;
+            editingIsManual = false;
+
+            // Reset modal title
+            modal.querySelector('.modal-header h2').textContent = 'Add Transaction';
+            modal.querySelector('.btn-submit').textContent = 'Add';
         }
 
         // Delete transaction function - now uses server API for all transactions
@@ -8199,7 +8260,7 @@
                         <i class="fa-solid fa-caret-down"></i>
                     </div>
                     <div class="transaction-bank-wrapper">
-                        ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
+                        <img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">
                         <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>'}</div>
                     </div>
                 </div>
@@ -8289,33 +8350,62 @@
                     };
 
                     try {
-                        // Save to server
-                        const response = await fetch('/api/transactions/manual', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                            body: JSON.stringify(transactionData)
-                        });
+                        // Check if we're editing or adding
+                        if (editingTransaction) {
+                            // Update existing transaction
+                            transactionData.transactionId = editingTransaction.id;
+                            const response = await fetch('/api/transactions/update', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify(transactionData)
+                            });
 
-                        const result = await response.json();
+                            const result = await response.json();
 
-                        if (result.success) {
-                            console.log('New transaction:', result.transaction);
+                            if (result.success) {
+                                console.log('Updated transaction:', result.transaction);
 
-                            // Close modal and reset form
-                            closeAddTransactionModal();
+                                // Close modal and reset form
+                                closeAddTransactionModal();
 
-                            // Display the transaction immediately
-                            addManualTransactionToDisplay(result.transaction);
+                                // Reload transactions to show updated data
+                                loadTransactionsFromAPI();
 
-                            // Show success message
-                            alert('Transaction added successfully!');
+                                // Show success message
+                                alert('Transaction updated successfully!');
+                            } else {
+                                alert('Failed to update transaction: ' + (result.error || 'Unknown error'));
+                            }
                         } else {
-                            alert('Failed to add transaction: ' + (result.error || 'Unknown error'));
+                            // Save new transaction to server
+                            const response = await fetch('/api/transactions/manual', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify(transactionData)
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                console.log('New transaction:', result.transaction);
+
+                                // Close modal and reset form
+                                closeAddTransactionModal();
+
+                                // Display the transaction immediately
+                                addManualTransactionToDisplay(result.transaction);
+
+                                // Show success message
+                                alert('Transaction added successfully!');
+                            } else {
+                                alert('Failed to add transaction: ' + (result.error || 'Unknown error'));
+                            }
                         }
                     } catch (error) {
-                        console.error('Error adding transaction:', error);
-                        alert('Failed to add transaction. Please try again.');
+                        console.error('Error saving transaction:', error);
+                        alert('Failed to save transaction. Please try again.');
                     }
                 });
             }
@@ -8399,7 +8489,7 @@
                         <i class="fa-solid fa-caret-down"></i>
                     </div>
                     <div class="transaction-bank-wrapper">
-                        ${transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>'}
+                        ${isManual ? '<img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">' : (transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>')}
                         <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() ? `<strong>Manual Entry</strong> | ${transaction.bank}` : '<strong>Manual Entry</strong>') : (transaction.accountName || transaction.bank || 'Unknown Account').replace('CapitalOne', 'Capital One')}</div>
                     </div>
                 </div>

@@ -506,6 +506,8 @@ function handleApiRequest(req, res, pathname) {
     handleUpdateTransactionDate(req, res);
   } else if (pathname === '/api/transactions/update-amount' && req.method === 'POST') {
     handleUpdateTransactionAmount(req, res);
+  } else if (pathname === '/api/transactions/update' && req.method === 'POST') {
+    handleUpdateTransaction(req, res);
   } else if (pathname === '/api/transactions/delete' && req.method === 'POST') {
     handleDeleteTransaction(req, res);
   } else if (pathname === '/api/transactions/manual' && req.method === 'POST') {
@@ -1470,6 +1472,71 @@ function handleUpdateTransactionAmount(req, res) {
       console.error('Update amount error:', error);
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Failed to update amount' }));
+    }
+  });
+}
+
+function handleUpdateTransaction(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  req.on('end', async () => {
+    try {
+      const { transactionId, description, amount, date, category, bank } = JSON.parse(body);
+
+      if (!transactionId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Transaction ID required' }));
+        return;
+      }
+
+      if (transactions.has(transactionId)) {
+        const transaction = transactions.get(transactionId);
+
+        // Update fields if provided
+        if (description !== undefined) transaction.description = description;
+        if (amount !== undefined) transaction.amount = parseFloat(amount);
+        if (date !== undefined) transaction.date = date;
+        if (category !== undefined) transaction.category = category;
+        if (bank !== undefined) transaction.bank = bank;
+
+        transactions.set(transactionId, transaction);
+
+        console.log(`✏️ Updated transaction ${transactionId}`);
+
+        // Update in PostgreSQL database
+        if (pool) {
+          try {
+            await pool.query(
+              'UPDATE transactions SET description = $1, amount = $2, date = $3, category = $4, bank = $5 WHERE id = $6',
+              [transaction.description, transaction.amount, transaction.date, transaction.category, transaction.bank, transactionId]
+            );
+          } catch (dbError) {
+            console.error('Failed to update transaction in database:', dbError);
+          }
+        }
+
+        // Save to file as backup
+        saveTransactions(transactions);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, transaction }));
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Transaction not found' }));
+      }
+    } catch (error) {
+      console.error('Update transaction error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to update transaction' }));
     }
   });
 }
