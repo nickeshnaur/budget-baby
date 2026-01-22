@@ -6095,8 +6095,100 @@
                     const categoryId = parseInt(hash.replace('custom-category-', ''));
                     const category = customCategories.find(c => c.id === categoryId);
                     if (category) {
+                        // Set up the page fully (accent, title, type, budget summary)
                         currentCustomCategory = category;
-                        document.getElementById('customCategoryDetailPage').style.display = 'block';
+                        const page = document.getElementById('customCategoryDetailPage');
+                        const accent = document.getElementById('custom-category-accent');
+                        const title = document.getElementById('custom-category-title');
+                        const type = document.getElementById('custom-category-type');
+
+                        accent.style.background = category.color;
+                        title.textContent = `${category.emoji} ${category.title}`;
+
+                        const typeLabel = category.type === 'flexible' ? 'Flexible Monthly' :
+                                          category.type === 'monthly' ? 'Monthly Bills' : 'Annual Bills';
+                        type.textContent = typeLabel;
+
+                        // Build budget summary based on category type
+                        const budgetSummary = document.getElementById('custom-category-budget-summary');
+                        if (category.type === 'flexible') {
+                            budgetSummary.innerHTML = `
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>✅</span>Remaining</div>
+                                    <div class="budget-value positive" id="custom-detail-remaining">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📊</span>Budgeted</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="0">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>🏦</span>Pot</div>
+                                    <div class="budget-value" id="custom-detail-rollover" data-value="0">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>💸</span>Spent</div>
+                                    <div class="budget-value" id="custom-detail-spent">$0.00</div>
+                                </div>
+                            `;
+                        } else if (category.type === 'monthly') {
+                            budgetSummary.innerHTML = `
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📅</span>Due Date</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-due-date">${category.due_day}${getDaySuffix(category.due_day)}</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📊</span>Budgeted</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="0">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>✓</span>Status</div>
+                                    <div class="budget-value" id="custom-detail-status">✖️</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📋</span>Total</div>
+                                    <div class="budget-value" id="custom-detail-total">--</div>
+                                </div>
+                            `;
+                        } else {
+                            // Annual
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const dueDateFormatted = `${monthNames[category.due_month - 1]} ${category.due_day}`;
+                            const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
+                            const monthlyBudgeted = annualCost / 12;
+
+                            budgetSummary.innerHTML = `
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📈</span>Annual Projected Cost</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-annual-cost" data-value="${annualCost}">$${annualCost.toFixed(2)}</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📊</span>Monthly Budgeted</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-budgeted" data-value="${monthlyBudgeted.toFixed(2)}">$${monthlyBudgeted.toFixed(2)}</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>⚠️</span>Extra Monthly Needed</div>
+                                    <div class="budget-value" id="custom-detail-extra-needed">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>🏦</span>Pot</div>
+                                    <div class="budget-value" id="custom-detail-pot">$0.00</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📅</span>Due Date</div>
+                                    <div class="budget-value editable" contenteditable="true" id="custom-detail-due-date" data-value="${monthNames[category.due_month - 1]} ${category.due_day}">${dueDateFormatted}</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>✓</span>Status</div>
+                                    <div class="budget-value" id="custom-detail-status">-</div>
+                                </div>
+                                <div class="budget-item">
+                                    <div class="budget-label"><span>📋</span>Total</div>
+                                    <div class="budget-value" id="custom-detail-total">--</div>
+                                </div>
+                            `;
+                        }
+
+                        page.style.display = 'block';
                         initializeCustomCategorySelectors();
                         loadCustomCategoryTransactions();
                     } else {
@@ -8836,6 +8928,12 @@
                     customCategories = result.categories || [];
                     renderCustomCategoryCards();
                     updateTransactionCategoryDropdowns();
+
+                    // Re-route if we're on a custom category page (handles race condition on page load)
+                    const hash = window.location.hash.substring(1);
+                    if (hash.startsWith('custom-category-')) {
+                        router.handleRoute();
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching custom categories:', error);
@@ -9222,17 +9320,51 @@
                     } else {
                         transactionsContainer.innerHTML = '';
                         filtered.forEach(transaction => {
-                            const isManual = transaction.id && transaction.id.startsWith('manual_');
-                            const card = createTransactionElement(transaction, isManual);
+                            const card = createManualTransactionCard(transaction);
                             transactionsContainer.appendChild(card);
                         });
                     }
 
-                    // Calculate and update budget summary for flexible categories
+                    // Calculate spent
+                    const spent = filtered.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+                    // Load saved budget for this category
+                    const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+                    const budgetData = await loadBudget(currentCustomCategory.title, selectedPeriod);
+                    const savedBudget = budgetData.amount || 0;
+
+                    // Update budget summary based on category type
                     if (currentCustomCategory.type === 'flexible') {
-                        const spent = filtered.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                         const spentEl = document.getElementById('custom-detail-spent');
+                        const budgetedEl = document.getElementById('custom-detail-budgeted');
+                        const remainingEl = document.getElementById('custom-detail-remaining');
+
                         if (spentEl) spentEl.textContent = '$' + spent.toFixed(2);
+                        if (budgetedEl) {
+                            budgetedEl.textContent = '$' + savedBudget.toFixed(2);
+                            budgetedEl.setAttribute('data-value', savedBudget);
+                        }
+                        if (remainingEl) {
+                            const remaining = savedBudget - spent;
+                            remainingEl.textContent = `${remaining < 0 ? '-' : ''}$${Math.abs(remaining).toFixed(2)}`;
+                            remainingEl.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
+                        }
+                    } else if (currentCustomCategory.type === 'monthly') {
+                        // Update status and total for monthly bills
+                        const statusEl = document.getElementById('custom-detail-status');
+                        const totalEl = document.getElementById('custom-detail-total');
+                        const budgetedEl = document.getElementById('custom-detail-budgeted');
+
+                        if (budgetedEl) {
+                            budgetedEl.textContent = '$' + savedBudget.toFixed(2);
+                            budgetedEl.setAttribute('data-value', savedBudget);
+                        }
+                        if (statusEl) {
+                            statusEl.textContent = filtered.length > 0 ? '✔️' : '✖️';
+                        }
+                        if (totalEl) {
+                            totalEl.textContent = filtered.length > 0 ? '$' + spent.toFixed(2) : '--';
+                        }
                     }
                 }
             } catch (error) {
@@ -9250,6 +9382,86 @@
             }
             if (yearSelector) {
                 yearSelector.onclick = () => showDateDropdown(yearSelector, 'years');
+            }
+
+            // Initialize editable budget fields
+            initializeCustomCategoryEditableFields();
+        }
+
+        // Initialize editable fields for custom category detail page
+        function initializeCustomCategoryEditableFields() {
+            if (!currentCustomCategory) return;
+
+            const budgetedEl = document.getElementById('custom-detail-budgeted');
+            if (budgetedEl && !budgetedEl.dataset.initialized) {
+                budgetedEl.dataset.initialized = 'true';
+
+                // Handle focus: select all text
+                budgetedEl.addEventListener('focus', function() {
+                    this.dataset.original = this.textContent;
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+
+                // Handle blur: save changes
+                budgetedEl.addEventListener('blur', async function() {
+                    const text = this.textContent.replace(/[^0-9.-]/g, '');
+                    const numericValue = parseFloat(text) || 0;
+
+                    // Update display format
+                    this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    this.setAttribute('data-value', numericValue);
+
+                    // Get selected month
+                    const monthSelector = document.getElementById('custom-category-month-selector');
+                    const yearSelector = document.getElementById('custom-category-year-selector');
+                    const selectedMonth = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+                    const selectedYear = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
+                    const month = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+
+                    // Save budget using category title
+                    await saveBudget(currentCustomCategory.title, month, numericValue);
+
+                    // Recalculate remaining for flexible categories
+                    if (currentCustomCategory.type === 'flexible') {
+                        updateCustomCategoryRemaining();
+                    }
+                });
+
+                // Handle Enter key
+                budgetedEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.blur();
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        const original = this.dataset.original;
+                        if (original) this.textContent = original;
+                        this.blur();
+                    }
+                });
+            }
+        }
+
+        // Update remaining value for custom flexible categories
+        function updateCustomCategoryRemaining() {
+            const budgetedEl = document.getElementById('custom-detail-budgeted');
+            const spentEl = document.getElementById('custom-detail-spent');
+            const remainingEl = document.getElementById('custom-detail-remaining');
+            const rolloverEl = document.getElementById('custom-detail-rollover');
+
+            if (budgetedEl && spentEl && remainingEl) {
+                const budgeted = parseFloat(budgetedEl.getAttribute('data-value')) || 0;
+                const spent = parseFloat(spentEl.textContent.replace(/[^0-9.-]/g, '')) || 0;
+                const rollover = rolloverEl ? parseFloat(rolloverEl.getAttribute('data-value')) || 0 : 0;
+                const remaining = (budgeted + rollover) - spent;
+
+                remainingEl.textContent = `${remaining < 0 ? '-' : ''}$${Math.abs(remaining).toFixed(2)}`;
+                remainingEl.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
             }
         }
 
