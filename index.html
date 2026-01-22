@@ -9896,7 +9896,9 @@
                     option.addEventListener('click', (e) => {
                         e.stopPropagation();
                         dropdown.remove();
-                        updateTransactionCategory(transactionId, displayInfo.name, tagElement);
+                        // Pass original category name to server, not the display name
+                        const originalName = category.isCustom ? category.name : category.name;
+                        updateTransactionCategory(transactionId, originalName, tagElement);
                     });
 
                     dropdown.appendChild(option);
@@ -10703,11 +10705,15 @@
                     );
                     const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
 
+                    // Get overridden display name if it exists
+                    const override = categoryOverrides[categorySlug];
+                    const actualDisplayName = override?.title || displayName;
+
                     // Update homepage card
                     const homeCards = document.querySelectorAll(`.home-category-item`);
                     homeCards.forEach(card => {
                         const categoryNameEl = card.querySelector('.category-name');
-                        if (categoryNameEl && categoryNameEl.textContent.trim() === displayName) {
+                        if (categoryNameEl && categoryNameEl.textContent.trim() === actualDisplayName) {
                             const categoryAmountElement = card.querySelector('.category-amount');
                             let budgetInfoDiv = card.querySelector('.budget-info');
                             const progressBarContainer = card.querySelector('.progress-bar-container');

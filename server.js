@@ -1352,7 +1352,7 @@ function handleUpdateTransactionCategory(req, res) {
   req.on('data', chunk => {
     body += chunk.toString();
   });
-  req.on('end', () => {
+  req.on('end', async () => {
     try {
       const { transactionId, category, assignedMonth } = JSON.parse(body);
 
@@ -1362,8 +1362,21 @@ function handleUpdateTransactionCategory(req, res) {
         return;
       }
 
-      // Valid categories
+      // Valid categories (hardcoded)
       const validCategories = ['Income', 'Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving', 'Auto Loan', 'Rent', 'Electric', 'Insurance Auto', 'Insurance - Rent', 'NW Mutual', 'Internet', 'Spotify', 'SP Fitness', 'Alamo Drafthouse', 'Phone', 'Costco', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee', 'N - Chase Sapphire Annual Fee', 'Ignore', 'Unsorted'];
+
+      // Also fetch custom category titles from database
+      if (pool) {
+        try {
+          const customCatsResult = await pool.query('SELECT title FROM custom_categories');
+          customCatsResult.rows.forEach(row => {
+            validCategories.push(row.title);
+          });
+        } catch (dbError) {
+          console.error('Error fetching custom categories for validation:', dbError);
+        }
+      }
+
       if (!validCategories.includes(category)) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid category' }));
