@@ -8732,26 +8732,20 @@
 
         // Add custom categories to transaction category dropdowns
         function updateTransactionCategoryDropdowns() {
-            console.log('updateTransactionCategoryDropdowns called, customCategories:', customCategories);
             const transactionCategorySelect = document.getElementById('transactionCategory');
-            if (!transactionCategorySelect) {
-                console.log('transactionCategory select not found');
-                return;
-            }
+            if (!transactionCategorySelect) return;
 
             // Remove existing custom category options (marked with data-custom)
             transactionCategorySelect.querySelectorAll('option[data-custom]').forEach(opt => opt.remove());
 
             // Add custom categories
             customCategories.forEach(category => {
-                console.log('Adding category to dropdown:', category.title);
                 const option = document.createElement('option');
                 option.value = category.title;
                 option.textContent = category.title;
                 option.setAttribute('data-custom', 'true');
                 transactionCategorySelect.appendChild(option);
             });
-            console.log('Dropdown now has', transactionCategorySelect.options.length, 'options');
         }
 
         // Load custom category transactions
@@ -9372,6 +9366,20 @@
                     { name: 'Ignore', emoji: '🚫' }
                 ]
             };
+
+            // Add custom categories to appropriate groups
+            if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                customCategories.forEach(category => {
+                    const categoryItem = { name: category.title, emoji: category.emoji };
+                    if (category.type === 'flexible') {
+                        categoryGroups['Flexible Monthly'].push(categoryItem);
+                    } else if (category.type === 'monthly') {
+                        categoryGroups['Monthly Bills'].push(categoryItem);
+                    } else if (category.type === 'annual') {
+                        categoryGroups['Annual Bills'].push(categoryItem);
+                    }
+                });
+            }
 
             // Remove any existing dropdown
             const existingDropdown = document.querySelector('.category-dropdown');
