@@ -882,7 +882,8 @@
             margin-bottom: 40px;
         }
 
-        [id^="categoryDetailPage-"] .section-title {
+        [id^="categoryDetailPage-"] .section-title,
+        #customCategoryDetailPage .section-title {
             margin-bottom: 20px;
         }
 
@@ -8992,12 +8993,10 @@
                         <div class="category-accent" style="background: ${category.color};"></div>
                     </div>
                 `;
-            } else {
-                // Monthly or Annual bill card
+            } else if (category.type === 'monthly') {
+                // Monthly bill card - shows budgeted amount, not negative/red
                 const currentMonth = new Date().getMonth() + 1; // 1-12
-                const dueText = category.type === 'monthly'
-                    ? `Due ${currentMonth}/${category.due_day}`
-                    : `Due ${category.due_month}/${category.due_day}`;
+                const dueText = `Due ${currentMonth}/${category.due_day}`;
                 div.innerHTML = `
                     <div class="bill-card">
                         <div class="category-header">
@@ -9007,7 +9006,27 @@
                             </div>
                             <div class="bill-right-group">
                                 <span class="bill-status due" id="custom-${category.id}-status">${dueText}</span>
-                                <span class="category-amount" id="custom-${category.id}-amount">${category.annual_cost ? '$' + parseFloat(category.annual_cost).toFixed(2) : '--'}</span>
+                                <span class="category-amount" id="custom-${category.id}-amount">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="category-accent" style="background: ${category.color};"></div>
+                    </div>
+                `;
+            } else {
+                // Annual bill card - shows monthly budgeted (annual_cost / 12)
+                const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
+                const monthlyBudgeted = annualCost / 12;
+                const dueText = `Due ${category.due_month}/${category.due_day}`;
+                div.innerHTML = `
+                    <div class="bill-card">
+                        <div class="category-header">
+                            <div class="category-left-group">
+                                <span class="category-emoji">${category.emoji}</span>
+                                <span class="category-name">${category.title}</span>
+                            </div>
+                            <div class="bill-right-group">
+                                <span class="bill-status due" id="custom-${category.id}-status">${dueText}</span>
+                                <span class="category-amount" id="custom-${category.id}-amount">$${monthlyBudgeted.toFixed(2)}</span>
                             </div>
                         </div>
                         <div class="category-accent" style="background: ${category.color};"></div>
@@ -11142,6 +11161,14 @@
 
                 // Update custom category cards
                 if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                    // Load budgets for all custom categories
+                    const customBudgetPromises = customCategories.map(c => loadBudget(c.title, selectedPeriod));
+                    const customBudgetResults = await Promise.all(customBudgetPromises);
+                    const customBudgetMap = {};
+                    customCategories.forEach((c, index) => {
+                        customBudgetMap[c.title] = customBudgetResults[index].amount || 0;
+                    });
+
                     customCategories.forEach(category => {
                         // Filter transactions for this custom category
                         const categoryTransactions = filteredTransactions.filter(t =>
@@ -11159,8 +11186,8 @@
                                 const progressBarContainer = card.querySelector('.progress-bar-container');
 
                                 if (category.type === 'flexible') {
-                                    // Get budgeted value for this custom category (default 0 for now)
-                                    const budgetedValue = 0; // TODO: Store/retrieve custom category budgets
+                                    // Get budgeted value from loaded budgets
+                                    const budgetedValue = customBudgetMap[category.title] || 0;
                                     const rolloverValue = 0;
                                     const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
 
@@ -11213,12 +11240,45 @@
                                             progressBar.style.backgroundColor = progressColor;
                                         }
                                     }
-                                } else if (category.type === 'monthly' || category.type === 'annual') {
-                                    // Update bill card status if paid
+                                } else if (category.type === 'monthly') {
+                                    // Monthly bill card - show budgeted amount and paid status
+                                    const budgetedValue = customBudgetMap[category.title] || 0;
                                     const billStatusElement = card.querySelector('.bill-status');
-                                    if (billStatusElement && categoryTransactions.length > 0) {
-                                        billStatusElement.textContent = 'Paid ✓';
-                                        billStatusElement.className = 'bill-status paid';
+
+                                    if (categoryAmountElement) {
+                                        categoryAmountElement.textContent = `$${budgetedValue.toFixed(2)}`;
+                                        categoryAmountElement.className = 'category-amount'; // No positive/negative styling
+                                    }
+
+                                    if (billStatusElement) {
+                                        if (categoryTransactions.length > 0) {
+                                            billStatusElement.textContent = 'Paid ✓';
+                                            billStatusElement.className = 'bill-status paid';
+                                        } else {
+                                            const currentMonth = new Date().getMonth() + 1;
+                                            billStatusElement.textContent = `Due ${currentMonth}/${category.due_day}`;
+                                            billStatusElement.className = 'bill-status due';
+                                        }
+                                    }
+                                } else if (category.type === 'annual') {
+                                    // Annual bill card - show monthly budgeted and paid status
+                                    const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
+                                    const monthlyBudgeted = annualCost / 12;
+                                    const billStatusElement = card.querySelector('.bill-status');
+
+                                    if (categoryAmountElement) {
+                                        categoryAmountElement.textContent = `$${monthlyBudgeted.toFixed(2)}`;
+                                        categoryAmountElement.className = 'category-amount'; // No positive/negative styling
+                                    }
+
+                                    if (billStatusElement) {
+                                        if (categoryTransactions.length > 0) {
+                                            billStatusElement.textContent = 'Paid ✓';
+                                            billStatusElement.className = 'bill-status paid';
+                                        } else {
+                                            billStatusElement.textContent = `Due ${category.due_month}/${category.due_day}`;
+                                            billStatusElement.className = 'bill-status due';
+                                        }
                                     }
                                 }
                             }
