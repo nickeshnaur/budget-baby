@@ -2351,8 +2351,8 @@
         .modal-content {
             background-color: #fefefe;
             border-radius: 32px;
-            width: 90%;
-            max-width: 500px;
+            width: calc(100% - 40px);
+            max-width: 800px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -2425,6 +2425,10 @@
             appearance: none;
         }
 
+        .form-group input::placeholder {
+            color: rgba(0, 0, 0, 0.3);
+        }
+
         .form-group input:focus,
         .form-group select:focus {
             border-color: #4A90E2;
@@ -2441,7 +2445,7 @@
 
         .input-with-icon .input-icon {
             position: absolute;
-            right: 16px;
+            right: 20px;
             top: 50%;
             transform: translateY(-50%);
             color: #000;
@@ -2787,8 +2791,8 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="transactionBank">Bank/Account</label>
-                        <input type="text" id="transactionBank" placeholder="e.g., Chase - Credit Card">
+                        <label for="transactionBank">Bank / Account</label>
+                        <input type="text" id="transactionBank" placeholder="e.g., Venmo">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeAddTransactionModal()">Cancel</button>
