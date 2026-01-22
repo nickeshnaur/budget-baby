@@ -8069,6 +8069,22 @@
             modal.querySelector('.modal-header h2').textContent = 'Edit Transaction';
             modal.querySelector('.btn-submit').textContent = 'Save';
 
+            // Update Cancel/Delete button based on manual status
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            if (isManual) {
+                cancelBtn.textContent = 'Delete';
+                cancelBtn.style.color = '#000';
+                cancelBtn.style.borderColor = '#EE3636';
+                cancelBtn.style.backgroundColor = 'rgba(238, 54, 54, 0.1)';
+                cancelBtn.onclick = handleDeleteFromModal;
+            } else {
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.style.color = '#000';
+                cancelBtn.style.borderColor = '#F2F4F5';
+                cancelBtn.style.backgroundColor = '#ffffff';
+                cancelBtn.onclick = closeAddTransactionModal;
+            }
+
             // Pre-populate form fields
             document.getElementById('transactionDescription').value = transaction.description || '';
             document.getElementById('transactionAmount').value = Math.abs(parseFloat(transaction.amount) || 0);
@@ -8090,6 +8106,14 @@
             }
         }
 
+        // Handle delete from modal
+        function handleDeleteFromModal() {
+            if (editingTransaction && editingIsManual) {
+                deleteTransaction(editingTransaction.id);
+                closeAddTransactionModal();
+            }
+        }
+
         // Close add transaction modal
         function closeAddTransactionModal() {
             const modal = document.getElementById('addTransactionModal');
@@ -8103,6 +8127,14 @@
             // Reset modal title
             modal.querySelector('.modal-header h2').textContent = 'Add Transaction';
             modal.querySelector('.btn-submit').textContent = 'Add';
+
+            // Reset Cancel button
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.color = '#000';
+            cancelBtn.style.borderColor = '#F2F4F5';
+            cancelBtn.style.backgroundColor = '#ffffff';
+            cancelBtn.onclick = closeAddTransactionModal;
 
             // Reset bank field to editable
             const bankField = document.getElementById('transactionBank');
@@ -8278,7 +8310,7 @@
                     </div>
                     <div class="transaction-bank-wrapper">
                         <img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">
-                        <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : 'Manual Entry'}</div>
+                        <div class="transaction-bank">${transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? transaction.bank : 'Manual Entry'}</div>
                     </div>
                 </div>
             `;
@@ -8507,7 +8539,7 @@
                     </div>
                     <div class="transaction-bank-wrapper">
                         ${isManual ? '<img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">' : (transaction.accountLastFour && CARD_IMAGE_MAP[transaction.accountLastFour] ? `<img class="transaction-card-image" src="${CARD_IMAGE_MAP[transaction.accountLastFour]}" alt="Card">` : '<div class="transaction-card-image"></div>')}
-                        <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? `<strong>Manual Entry</strong> | ${transaction.bank}` : 'Manual Entry') : (transaction.accountName || transaction.bank || 'Unknown Account').replace('CapitalOne', 'Capital One')}</div>
+                        <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? transaction.bank : 'Manual Entry') : (transaction.accountName || transaction.bank || 'Unknown Account').replace('CapitalOne', 'Capital One')}</div>
                     </div>
                 </div>
             `;
