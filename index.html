@@ -8212,6 +8212,9 @@
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transactionDate').value = today;
+
+            // Ensure custom categories are in the dropdown
+            updateTransactionCategoryDropdowns();
         }
 
         // Show edit transaction form
@@ -8241,6 +8244,9 @@
                 cancelBtn.style.backgroundColor = '#ffffff';
                 cancelBtn.onclick = closeAddTransactionModal;
             }
+
+            // Ensure custom categories are in the dropdown before setting value
+            updateTransactionCategoryDropdowns();
 
             // Pre-populate form fields
             document.getElementById('transactionDescription').value = transaction.description || '';
