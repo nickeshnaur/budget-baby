@@ -5887,6 +5887,23 @@
             // Fall back to default mapping
             return CARD_IMAGE_MAP[lastFour] || null;
         }
+
+        // Get account display name for a transaction (matches profile page)
+        function getAccountNameForTransaction(lastFour, fallbackName) {
+            if (!lastFour) return fallbackName || 'Unknown Account';
+
+            // Check connected accounts for custom name or default format
+            if (window.connectedAccountsData) {
+                const account = window.connectedAccountsData.find(a => a.lastFour === lastFour);
+                if (account) {
+                    // Use same logic as profile page
+                    return account.customName || `${account.accountName || account.subtype || 'Account'} ****${account.lastFour}`;
+                }
+            }
+
+            // Fall back to provided name
+            return (fallbackName || 'Unknown Account').replace('CapitalOne', 'Capital One');
+        }
         // =====================================================
 
         let isAuthenticated = localStorage.getItem('authenticated') === 'true';
@@ -10313,7 +10330,7 @@
                     </div>
                     <div class="transaction-bank-wrapper">
                         ${isManual ? '<img class="transaction-card-image" src="_Assets/Card-ManualTransaction.png" alt="Card">' : (transaction.accountLastFour && getCardImageForTransaction(transaction.accountLastFour) ? `<img class="transaction-card-image" src="${getCardImageForTransaction(transaction.accountLastFour)}" alt="Card">` : '<div class="transaction-card-image"></div>')}
-                        <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? transaction.bank : 'Manual Entry') : (transaction.accountName || transaction.bank || 'Unknown Account').replace('CapitalOne', 'Capital One')}</div>
+                        <div class="transaction-bank">${isManual ? (transaction.bank && transaction.bank.trim() && transaction.bank !== 'Manual Entry' ? transaction.bank : 'Manual Entry') : getAccountNameForTransaction(transaction.accountLastFour, transaction.accountName || transaction.bank)}</div>
                     </div>
                 </div>
             `;
