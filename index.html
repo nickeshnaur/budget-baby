@@ -2350,7 +2350,7 @@
 
         .modal-content {
             background-color: #fefefe;
-            border-radius: 12px;
+            border-radius: 32px;
             width: 90%;
             max-width: 500px;
             max-height: 90vh;
@@ -2369,11 +2369,12 @@
             font-weight: 700;
             font-size: 20px;
             margin: 0;
+            color: #000;
         }
 
         .close-modal {
-            color: #aaa;
-            font-size: 28px;
+            color: #000;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -2396,18 +2397,18 @@
             font-weight: 400;
             font-size: 12px;
             letter-spacing: 0;
-            color: #666;
+            color: #000;
             margin-bottom: 8px;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 20px;
             font-family: "Roboto", sans-serif;
             font-size: 14px;
-            border: 1px solid #E6E6E6;
-            border-radius: 8px;
+            border: 1px solid #F2F4F5;
+            border-radius: 20px;
             outline: none;
             transition: border-color 0.2s;
         }
@@ -2415,6 +2416,25 @@
         .form-group input:focus,
         .form-group select:focus {
             border-color: #4A90E2;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon input,
+        .input-with-icon select {
+            padding-right: 40px;
+        }
+
+        .input-with-icon .input-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #000;
+            pointer-events: none;
+            font-size: 14px;
         }
 
         .form-actions {
@@ -2425,12 +2445,13 @@
         }
 
         .btn-cancel {
+            flex: 1;
             padding: 10px 24px;
             font-family: "Roboto", sans-serif;
             font-weight: 700;
             font-size: 14px;
             background: #ffffff;
-            color: #333;
+            color: #000;
             border: 1px solid #F2F4F5;
             border-radius: 40px;
             cursor: pointer;
@@ -2442,6 +2463,7 @@
         }
 
         .btn-submit {
+            flex: 1;
             padding: 10px 24px;
             font-family: "Roboto", sans-serif;
             font-weight: 700;
@@ -2715,15 +2737,19 @@
                             margin-right: 8px;
                             accent-color: #007bff;
                         ">
-                        <label for="positiveTransaction" style="margin: 0; font-weight: normal;">Positive transaction</label>
+                        <label for="positiveTransaction" style="margin: 0; font-weight: normal;">Positive Transaction</label>
                     </div>
                     <div class="form-group">
                         <label for="transactionDate">Date</label>
-                        <input type="date" id="transactionDate" required>
+                        <div class="input-with-icon">
+                            <input type="date" id="transactionDate" required>
+                            <i class="fa-regular fa-calendar input-icon"></i>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="transactionCategory">Category</label>
-                        <select id="transactionCategory">
+                        <div class="input-with-icon">
+                            <select id="transactionCategory">
                             <option value="Unsorted">Unsorted</option>
                             <option value="Income">Income</option>
                             <option value="Grocery">Grocery</option>
@@ -2744,7 +2770,9 @@
                             <option value="Insurance">Insurance</option>
                             <option value="Student Loan">Student Loan</option>
                             <option value="Credit Card">Credit Card</option>
-                        </select>
+                            </select>
+                            <i class="fa-solid fa-caret-down input-icon"></i>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="transactionBank">Bank/Account</label>
