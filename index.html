@@ -8589,8 +8589,9 @@
                 `;
             } else {
                 // Monthly or Annual bill card
+                const currentMonth = new Date().getMonth() + 1; // 1-12
                 const dueText = category.type === 'monthly'
-                    ? `Due ${category.due_day}${getDaySuffix(category.due_day)}`
+                    ? `Due ${currentMonth}/${category.due_day}`
                     : `Due ${category.due_month}/${category.due_day}`;
                 div.innerHTML = `
                     <div class="bill-card">
@@ -8600,7 +8601,7 @@
                                 <span class="category-name">${category.title}</span>
                             </div>
                             <div class="bill-right-group">
-                                <span class="bill-status" id="custom-${category.id}-status">${dueText}</span>
+                                <span class="bill-status due" id="custom-${category.id}-status">${dueText}</span>
                                 <span class="category-amount" id="custom-${category.id}-amount">${category.annual_cost ? '$' + parseFloat(category.annual_cost).toFixed(2) : '--'}</span>
                             </div>
                         </div>
