@@ -2786,25 +2786,25 @@
         .account-edit-remove {
             flex: 1;
             padding: 14px 20px;
-            border: none;
-            border-radius: 12px;
+            border: 1px solid #EE3636;
+            border-radius: 40px;
             font-family: "Roboto", sans-serif;
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
-            background: #ffebeb;
-            color: #ff6b6b;
+            background: rgba(238, 54, 54, 0.1);
+            color: #EE3636;
         }
 
         .account-edit-remove:hover {
-            background: #ffdddd;
+            background: rgba(238, 54, 54, 0.2);
         }
 
         .account-edit-save {
             flex: 1;
             padding: 14px 20px;
             border: none;
-            border-radius: 12px;
+            border-radius: 40px;
             font-family: "Roboto", sans-serif;
             font-weight: 600;
             font-size: 14px;
@@ -6828,10 +6828,10 @@
                     </div>
                     <div class="account-edit-actions">
                         <button class="account-edit-remove" onclick="removeAccountFromOverlay('${accountId}')">
-                            Remove Account
+                            Delete
                         </button>
                         <button class="account-edit-save" onclick="saveAccountDetails('${accountId}')">
-                            Save Changes
+                            Save
                         </button>
                     </div>
                 </div>
@@ -8806,7 +8806,7 @@
             const cancelBtn = modal.querySelector('.btn-cancel');
             if (isManual) {
                 cancelBtn.textContent = 'Delete';
-                cancelBtn.style.color = '#000';
+                cancelBtn.style.color = '#EE3636';
                 cancelBtn.style.borderColor = '#EE3636';
                 cancelBtn.style.backgroundColor = 'rgba(238, 54, 54, 0.1)';
                 cancelBtn.onclick = handleDeleteFromModal;
@@ -8950,7 +8950,7 @@
             // Update Cancel button to Delete with red styling
             const cancelBtn = modal.querySelector('.btn-cancel');
             cancelBtn.textContent = 'Delete';
-            cancelBtn.style.color = '#000';
+            cancelBtn.style.color = '#EE3636';
             cancelBtn.style.borderColor = '#EE3636';
             cancelBtn.style.backgroundColor = 'rgba(238, 54, 54, 0.1)';
             cancelBtn.onclick = handleDeleteCategory;
