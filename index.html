@@ -10448,6 +10448,92 @@
                     });
                 });
 
+                // Update custom category cards
+                if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                    customCategories.forEach(category => {
+                        // Filter transactions for this custom category
+                        const categoryTransactions = filteredTransactions.filter(t =>
+                            t.category && t.category === category.title
+                        );
+                        const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+                        // Find the card by category name
+                        const homeCards = document.querySelectorAll('.home-category-item');
+                        homeCards.forEach(card => {
+                            const categoryNameEl = card.querySelector('.category-name');
+                            if (categoryNameEl && categoryNameEl.textContent.trim() === category.title) {
+                                const categoryAmountElement = card.querySelector('.category-amount');
+                                let budgetInfoDiv = card.querySelector('.budget-info');
+                                const progressBarContainer = card.querySelector('.progress-bar-container');
+
+                                if (category.type === 'flexible') {
+                                    // Get budgeted value for this custom category (default 0 for now)
+                                    const budgetedValue = 0; // TODO: Store/retrieve custom category budgets
+                                    const rolloverValue = 0;
+                                    const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
+
+                                    if (categoryAmountElement) {
+                                        const sign = remainingValue >= 0 ? '' : '-';
+                                        categoryAmountElement.textContent = `${sign}$${Math.abs(remainingValue).toFixed(2)}`;
+                                        categoryAmountElement.className = remainingValue >= 0 ? 'category-amount positive' : 'category-amount negative';
+                                    }
+
+                                    // Update budget info text
+                                    const budgetText = card.querySelector('.budget-text');
+                                    const spentText = card.querySelector('.spent-text');
+                                    if (budgetText) budgetText.textContent = `BUDGETED: $${budgetedValue.toFixed(2)}`;
+                                    if (spentText) spentText.textContent = `SPENT: $${totalSpent.toFixed(2)}`;
+
+                                    // Add progress bar if it doesn't exist and budget > 0
+                                    const isOverBudget = totalSpent > budgetedValue;
+                                    const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
+
+                                    if (!progressBarContainer) {
+                                        const progressContainer = document.createElement('div');
+                                        progressContainer.className = 'progress-bar-container';
+                                        progressContainer.style.width = '100%';
+                                        progressContainer.style.height = '2px';
+                                        progressContainer.style.backgroundColor = '#F1F1F1';
+                                        progressContainer.style.borderRadius = '1px';
+                                        progressContainer.style.marginBottom = '8px';
+
+                                        const progressBar = document.createElement('div');
+                                        progressBar.className = 'progress-bar';
+                                        progressBar.style.height = '100%';
+                                        progressBar.style.backgroundColor = progressColor;
+                                        progressBar.style.borderRadius = '1px';
+                                        progressBar.style.transition = 'width 0.3s ease';
+
+                                        const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                        progressBar.style.width = `${percentage}%`;
+
+                                        progressContainer.appendChild(progressBar);
+
+                                        const progressDiv = card.querySelector('.category-progress');
+                                        if (progressDiv && budgetInfoDiv) {
+                                            progressDiv.insertBefore(progressContainer, budgetInfoDiv);
+                                        }
+                                    } else {
+                                        const progressBar = progressBarContainer.querySelector('.progress-bar');
+                                        if (progressBar) {
+                                            const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                            progressBar.style.width = `${percentage}%`;
+                                            progressBar.style.backgroundColor = progressColor;
+                                        }
+                                    }
+                                } else if (category.type === 'monthly' || category.type === 'annual') {
+                                    // Update bill card status if paid
+                                    const billStatusElement = card.querySelector('.bill-status');
+                                    if (billStatusElement && categoryTransactions.length > 0) {
+                                        billStatusElement.textContent = 'Paid ✓';
+                                        billStatusElement.className = 'bill-status paid';
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+
                 // Update ignore count
                 const ignoreTransactions = result.transactions.filter(t =>
                     t.category && t.category === 'Ignore'
