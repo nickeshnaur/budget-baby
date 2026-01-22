@@ -2807,26 +2807,7 @@
                         <label for="transactionCategory">Category</label>
                         <div class="input-with-icon">
                             <select id="transactionCategory">
-                            <option value="Unsorted">Unsorted</option>
-                            <option value="Income">Income</option>
-                            <option value="Grocery">Grocery</option>
-                            <option value="Gas">Gas</option>
-                            <option value="Out & About">Out & About</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Treats">Treats</option>
-                            <option value="Gifts">Gifts</option>
-                            <option value="Home">Home</option>
-                            <option value="Medical">Medical</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Phone">Phone</option>
-                            <option value="Internet">Internet</option>
-                            <option value="Subscriptions">Subscriptions</option>
-                            <option value="Car">Car</option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Student Loan">Student Loan</option>
-                            <option value="Credit Card">Credit Card</option>
+                            <!-- Populated dynamically by populateTransactionCategoryDropdown() -->
                             </select>
                             <i class="fa-solid fa-caret-down input-icon"></i>
                         </div>
@@ -6449,6 +6430,9 @@
             // Initial route handling on page load
             router.handleRoute();
 
+            // Populate transaction category dropdown
+            populateTransactionCategoryDropdown();
+
             // Fetch custom categories if authenticated
             if (isAuthenticated) {
                 fetchCustomCategories();
@@ -8730,22 +8714,93 @@
             window.location.hash = 'custom-category-' + category.id;
         }
 
-        // Add custom categories to transaction category dropdowns
-        function updateTransactionCategoryDropdowns() {
+        // Populate transaction category dropdown with same order as category home page
+        function populateTransactionCategoryDropdown() {
             const transactionCategorySelect = document.getElementById('transactionCategory');
             if (!transactionCategorySelect) return;
 
-            // Remove existing custom category options (marked with data-custom)
-            transactionCategorySelect.querySelectorAll('option[data-custom]').forEach(opt => opt.remove());
+            // Clear existing options
+            transactionCategorySelect.innerHTML = '';
 
-            // Add custom categories
-            customCategories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.title;
-                option.textContent = category.title;
-                option.setAttribute('data-custom', 'true');
-                transactionCategorySelect.appendChild(option);
+            // Build category groups in same order as category home page
+            const categoryGroups = {
+                'Income': [
+                    { name: 'Income', emoji: '💰' }
+                ],
+                'Flexible Monthly': [
+                    { name: 'Out & About', emoji: '🎉' },
+                    { name: 'Grocery', emoji: '🛒' },
+                    { name: 'Gas', emoji: '⛽' },
+                    { name: 'Auto', emoji: '🔧' },
+                    { name: 'Clothing', emoji: '👕' },
+                    { name: 'Gifts', emoji: '🎁' },
+                    { name: 'Health & Care', emoji: '🌿' },
+                    { name: 'Home', emoji: '🏠' },
+                    { name: 'Travel', emoji: '✈️' },
+                    { name: 'Treats', emoji: '🍭' },
+                    { name: 'Personal Nick', emoji: '👨' },
+                    { name: 'Personal Chelsea', emoji: '👩' },
+                    { name: 'School', emoji: '🎓' },
+                    { name: 'Giving', emoji: '🤝' }
+                ],
+                'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName) })),
+                'Annual Bills': [
+                    { name: 'Phone', emoji: '📱' },
+                    { name: 'Costco', emoji: '🏬' },
+                    { name: 'Insurance - Rent', emoji: '🏠' },
+                    { name: 'Letterboxd', emoji: '🎬' },
+                    { name: 'Grammarly', emoji: '✏️' },
+                    { name: 'Domain', emoji: '🌐' },
+                    { name: 'Google One', emoji: '☁️' },
+                    { name: 'C - Capital One Annual Fee', emoji: '💳' },
+                    { name: 'C - SW Annual Fee', emoji: '✈️' },
+                    { name: 'N - Capital One Annual Fee', emoji: '💎' },
+                    { name: 'N - SW Annual Fee', emoji: '🛫' }
+                ],
+                'Other': [
+                    { name: 'Ignore', emoji: '🚫' }
+                ]
+            };
+
+            // Add custom categories to appropriate groups
+            if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                customCategories.forEach(category => {
+                    const categoryItem = { name: category.title, emoji: category.emoji };
+                    if (category.type === 'flexible') {
+                        categoryGroups['Flexible Monthly'].push(categoryItem);
+                    } else if (category.type === 'monthly') {
+                        categoryGroups['Monthly Bills'].push(categoryItem);
+                    } else if (category.type === 'annual') {
+                        categoryGroups['Annual Bills'].push(categoryItem);
+                    }
+                });
+            }
+
+            // Add Unsorted as first option
+            const unsortedOption = document.createElement('option');
+            unsortedOption.value = 'Unsorted';
+            unsortedOption.textContent = 'Unsorted';
+            transactionCategorySelect.appendChild(unsortedOption);
+
+            // Add grouped options
+            Object.entries(categoryGroups).forEach(([groupName, categories]) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = groupName;
+
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.name;
+                    option.textContent = `${category.emoji} ${category.name}`;
+                    optgroup.appendChild(option);
+                });
+
+                transactionCategorySelect.appendChild(optgroup);
             });
+        }
+
+        // Legacy function - now calls populateTransactionCategoryDropdown
+        function updateTransactionCategoryDropdowns() {
+            populateTransactionCategoryDropdown();
         }
 
         // Load custom category transactions
