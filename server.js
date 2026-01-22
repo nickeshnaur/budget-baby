@@ -2014,11 +2014,21 @@ function handleDeleteCategory(req, res) {
       }
 
       if (isCustom && id) {
+        console.log(`🔍 Deleting custom category with ID: ${id}, isCustom: ${isCustom}`);
+
         // Get the category title first so we can reassign transactions
         const categoryResult = await pool.query('SELECT title FROM custom_categories WHERE id = $1', [id]);
         const categoryTitle = categoryResult.rows[0]?.title;
+        console.log(`🔍 Found category title: "${categoryTitle}"`);
 
         if (categoryTitle) {
+          // First, count how many transactions will be affected
+          const countResult = await pool.query(
+            'SELECT COUNT(*) FROM transactions WHERE category = $1',
+            [categoryTitle]
+          );
+          console.log(`🔍 Found ${countResult.rows[0].count} transactions with category "${categoryTitle}"`);
+
           // Reassign all transactions with this category to 'Unsorted'
           const updateResult = await pool.query(
             'UPDATE transactions SET category = $1 WHERE category = $2',
@@ -2026,13 +2036,25 @@ function handleDeleteCategory(req, res) {
           );
           console.log(`📝 Reassigned ${updateResult.rowCount} transactions from "${categoryTitle}" to "Unsorted"`);
 
+          // Verify the update worked
+          const verifyResult = await pool.query(
+            'SELECT COUNT(*) FROM transactions WHERE category = $1',
+            [categoryTitle]
+          );
+          console.log(`🔍 After update, ${verifyResult.rows[0].count} transactions still have category "${categoryTitle}"`);
+
           // Also update in-memory transactions
-          transactions.forEach((transaction, id) => {
+          let memoryUpdates = 0;
+          transactions.forEach((transaction, txnId) => {
             if (transaction.category === categoryTitle) {
               transaction.category = 'Unsorted';
-              transactions.set(id, transaction);
+              transactions.set(txnId, transaction);
+              memoryUpdates++;
             }
           });
+          console.log(`📝 Updated ${memoryUpdates} in-memory transactions`);
+        } else {
+          console.log(`⚠️ No category found with ID ${id} - skipping transaction reassignment`);
         }
 
         // Delete custom category from custom_categories table
