@@ -8092,6 +8092,21 @@
             document.getElementById('transactionDate').value = transaction.date || '';
             document.getElementById('transactionCategory').value = transaction.category || 'Unsorted';
 
+            // Amount and Positive Transaction - editable only for manual transactions
+            const amountField = document.getElementById('transactionAmount');
+            const positiveCheckbox = document.getElementById('positiveTransaction');
+            if (isManual) {
+                amountField.readOnly = false;
+                amountField.style.backgroundColor = '';
+                positiveCheckbox.disabled = false;
+                positiveCheckbox.style.opacity = '1';
+            } else {
+                amountField.readOnly = true;
+                amountField.style.backgroundColor = '#f5f5f5';
+                positiveCheckbox.disabled = true;
+                positiveCheckbox.style.opacity = '0.5';
+            }
+
             // Bank/Account field - editable only for manual transactions
             const bankField = document.getElementById('transactionBank');
             if (isManual) {
@@ -8135,6 +8150,14 @@
             cancelBtn.style.borderColor = '#F2F4F5';
             cancelBtn.style.backgroundColor = '#ffffff';
             cancelBtn.onclick = closeAddTransactionModal;
+
+            // Reset Amount and Positive Transaction fields
+            const amountField = document.getElementById('transactionAmount');
+            const positiveCheckbox = document.getElementById('positiveTransaction');
+            amountField.readOnly = false;
+            amountField.style.backgroundColor = '';
+            positiveCheckbox.disabled = false;
+            positiveCheckbox.style.opacity = '1';
 
             // Reset bank field to editable
             const bankField = document.getElementById('transactionBank');
