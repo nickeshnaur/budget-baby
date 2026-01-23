@@ -11012,10 +11012,11 @@
                 // Calculate remaining budget for this category
                 const remaining = await calculateCategoryRemaining(category);
                 if (remaining < 0) {
-                    subtitleLine.innerHTML = `You have overspent`;
+                    const overspentAmount = Math.abs(remaining).toFixed(2);
+                    subtitleLine.innerHTML = `You have overspent by <strong>$${overspentAmount}</strong> in this category`;
                     subtitleLine.style.cssText = `
                         font-family: "Roboto", sans-serif;
-                        font-weight: 700;
+                        font-weight: 400;
                         font-size: 14px;
                         color: #EE3636;
                     `;
