@@ -10696,13 +10696,22 @@
             dropdown.style.cssText = `
                 position: absolute;
                 background: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
+                border-radius: 32px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 1000;
-                min-width: 120px;
-                max-height: 200px;
+                width: 200px;
+                max-height: 300px;
+                overflow: hidden;
+                padding: 16px 8px 24px 32px;
+            `;
+
+            // Create scroll wrapper
+            const scrollWrapper = document.createElement('div');
+            scrollWrapper.className = 'dropdown-scroll-wrapper';
+            scrollWrapper.style.cssText = `
+                max-height: 252px;
                 overflow-y: auto;
+                padding-right: 20px;
             `;
 
             // Create grouped dropdown with emojis
@@ -10711,16 +10720,27 @@
                 const groupHeader = document.createElement('div');
                 groupHeader.textContent = groupName;
                 groupHeader.style.cssText = `
-                    padding: 8px 12px;
-                    font-weight: bold;
-                    background: #f8f8f8;
-                    border-bottom: 1px solid #ddd;
-                    font-family: "Roboto-Bold", sans-serif;
-                    font-size: 12px;
-                    color: #666;
-                    text-transform: uppercase;
+                    background: #F2F4F5;
+                    border-radius: 30px;
+                    padding: 8px 16px;
+                    margin-bottom: 16px;
+                    margin-left: -16px;
+                    width: fit-content;
+                    font-family: "Roboto", sans-serif;
+                    font-weight: 700;
+                    font-size: 14px;
+                    color: black;
                 `;
-                dropdown.appendChild(groupHeader);
+                scrollWrapper.appendChild(groupHeader);
+
+                // Create options container for this group
+                const optionsContainer = document.createElement('div');
+                optionsContainer.style.cssText = `
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    margin-bottom: 16px;
+                `;
 
                 // Add categories in this group
                 categories.forEach(category => {
@@ -10731,11 +10751,13 @@
                     const option = document.createElement('div');
                     option.innerHTML = `${displayInfo.emoji} ${displayInfo.name}`;
                     option.style.cssText = `
-                        padding: 8px 16px;
+                        padding: 0;
                         cursor: pointer;
-                        border-bottom: 1px solid #eee;
-                        font-family: "Roboto-Regular", sans-serif;
-                        font-size: 14px;
+                        font-family: "Roboto", sans-serif;
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: black;
+                        border-radius: 6px;
                     `;
 
                     option.addEventListener('mouseover', () => {
@@ -10743,7 +10765,7 @@
                     });
 
                     option.addEventListener('mouseout', () => {
-                        option.style.background = 'white';
+                        option.style.background = 'transparent';
                     });
 
                     option.addEventListener('click', (e) => {
@@ -10754,9 +10776,13 @@
                         updateTransactionCategory(transactionId, originalName, tagElement);
                     });
 
-                    dropdown.appendChild(option);
+                    optionsContainer.appendChild(option);
                 });
+
+                scrollWrapper.appendChild(optionsContainer);
             });
+
+            dropdown.appendChild(scrollWrapper);
 
             // Position dropdown near the tag with scroll offset
             const tagRect = tagElement.getBoundingClientRect();
