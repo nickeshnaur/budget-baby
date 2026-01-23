@@ -11061,8 +11061,7 @@
                 viewBtn.addEventListener('click', () => {
                     toast.remove();
                     // Navigate to the category page
-                    const slug = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '');
-                    navigateToCategory(slug, category);
+                    navigateToCategory(null, category);
                 });
                 toast.appendChild(viewBtn);
             }
@@ -11106,8 +11105,11 @@
         }
 
         function calculateCategoryRemaining(category) {
-            // Convert category name to slug
-            const categorySlug = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '');
+            // Convert category name to slug (same method as showCategoryDetail)
+            const categorySlug = category.toLowerCase()
+                .replace(/\s*&\s*/g, '-')
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
 
             // Try to read from DOM elements (same approach as updateFlexibleCategoryRemaining)
             const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
@@ -11137,14 +11139,14 @@
         }
 
         function navigateToCategory(slug, categoryName) {
-            // Try to navigate to category detail page
-            const categoryPage = document.getElementById(`categoryDetailPage-${slug}`);
-            if (categoryPage) {
-                router.navigate(`/category/${slug}`);
-            } else {
-                // Fallback to categories page
-                router.navigate('/categories');
-            }
+            // Generate proper slug (same method as showCategoryDetail)
+            const categorySlug = categoryName.toLowerCase()
+                .replace(/\s*&\s*/g, '-')
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+
+            // Navigate to category detail page
+            router.navigate('category-' + categorySlug);
         }
 
         function getCategoryColor(category) {
