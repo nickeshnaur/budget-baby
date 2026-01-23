@@ -8692,26 +8692,32 @@
                 padding-right: 20px;
             `;
 
-            // Create header (inside scroll wrapper)
+            // Create header with wrapper for sticky background
+            const headerWrapper = document.createElement('div');
+            headerWrapper.style.cssText = `
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                background: white;
+                padding-top: 16px;
+                padding-bottom: 16px;
+                margin-left: 16px;
+            `;
+
             const header = document.createElement('div');
             header.style.cssText = `
                 background: #F2F4F5;
                 border-radius: 30px;
                 padding: 8px 16px;
-                margin-top: 16px;
-                margin-bottom: 16px;
-                margin-left: 16px;
                 width: fit-content;
                 font-family: "Roboto", sans-serif;
                 font-weight: 700;
                 font-size: 14px;
                 color: black;
-                position: sticky;
-                top: 0;
-                z-index: 1;
             `;
             header.textContent = type === 'month' ? 'Month Selection' : 'Year Selection';
-            scrollWrapper.appendChild(header);
+            headerWrapper.appendChild(header);
+            scrollWrapper.appendChild(headerWrapper);
 
             // Create options container
             const optionsContainer = document.createElement('div');
@@ -10724,27 +10730,33 @@
 
             // Create grouped dropdown with emojis
             Object.entries(categoryGroups).forEach(([groupName, categories]) => {
-                // Add group header
+                // Add group header with wrapper for sticky background
+                const headerWrapper = document.createElement('div');
+                headerWrapper.style.cssText = `
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    background: white;
+                    padding-top: ${isFirstGroup ? '16px' : '8px'};
+                    padding-bottom: 16px;
+                    margin-left: 16px;
+                `;
+
                 const groupHeader = document.createElement('div');
                 groupHeader.textContent = groupName;
                 groupHeader.style.cssText = `
                     background: #F2F4F5;
                     border-radius: 30px;
                     padding: 8px 16px;
-                    margin-top: ${isFirstGroup ? '16px' : '0'};
-                    margin-bottom: 16px;
-                    margin-left: 16px;
                     width: fit-content;
                     font-family: "Roboto", sans-serif;
                     font-weight: 700;
                     font-size: 14px;
                     color: black;
-                    position: sticky;
-                    top: 0;
-                    z-index: 1;
                 `;
                 isFirstGroup = false;
-                scrollWrapper.appendChild(groupHeader);
+                headerWrapper.appendChild(groupHeader);
+                scrollWrapper.appendChild(headerWrapper);
 
                 // Create options container for this group
                 const optionsContainer = document.createElement('div');
