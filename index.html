@@ -2317,21 +2317,21 @@
         }
 
         /* Dropdown menu scrollbar */
-        .custom-date-dropdown::-webkit-scrollbar {
+        .dropdown-scroll-wrapper::-webkit-scrollbar {
             width: 4px;
         }
 
-        .custom-date-dropdown::-webkit-scrollbar-track {
+        .dropdown-scroll-wrapper::-webkit-scrollbar-track {
             background: transparent;
-            margin: 24px 0;
+            margin: 16px 0;
         }
 
-        .custom-date-dropdown::-webkit-scrollbar-thumb {
+        .dropdown-scroll-wrapper::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             border-radius: 100px;
         }
 
-        .custom-date-dropdown::-webkit-scrollbar-thumb:hover {
+        .dropdown-scroll-wrapper::-webkit-scrollbar-thumb:hover {
             background: rgba(0, 0, 0, 0.25);
         }
 
@@ -8680,8 +8680,17 @@
                 z-index: 1000;
                 width: 200px;
                 max-height: 300px;
+                overflow: hidden;
+                padding: 16px 8px 24px 32px;
+            `;
+
+            // Create scroll wrapper
+            const scrollWrapper = document.createElement('div');
+            scrollWrapper.className = 'dropdown-scroll-wrapper';
+            scrollWrapper.style.cssText = `
+                max-height: 252px;
                 overflow-y: auto;
-                padding: 16px 32px 24px 32px;
+                padding-right: 20px;
             `;
 
             // Create header
@@ -8699,7 +8708,7 @@
                 color: black;
             `;
             header.textContent = type === 'month' ? 'Month Selection' : 'Year Selection';
-            dropdown.appendChild(header);
+            scrollWrapper.appendChild(header);
 
             // Create options container
             const optionsContainer = document.createElement('div');
@@ -8736,7 +8745,8 @@
                     optionsContainer.appendChild(option);
                 });
             }
-            dropdown.appendChild(optionsContainer);
+            scrollWrapper.appendChild(optionsContainer);
+            dropdown.appendChild(scrollWrapper);
 
             // Position dropdown
             const rect = element.getBoundingClientRect();
