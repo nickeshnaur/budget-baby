@@ -8656,13 +8656,36 @@
             dropdown.style.cssText = `
                 position: absolute;
                 background: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
+                border-radius: 32px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 1000;
-                min-width: 120px;
-                max-height: 200px;
+                width: 280px;
+                max-height: 300px;
                 overflow-y: auto;
+                padding: 24px 32px;
+            `;
+
+            // Create header
+            const header = document.createElement('div');
+            header.style.cssText = `
+                background: #F2F4F5;
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin-bottom: 16px;
+                font-family: "Roboto", sans-serif;
+                font-weight: 700;
+                font-size: 14px;
+                color: black;
+            `;
+            header.textContent = type === 'month' ? 'Month' : 'Year';
+            dropdown.appendChild(header);
+
+            // Create options container
+            const optionsContainer = document.createElement('div');
+            optionsContainer.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
             `;
 
             // Create options based on type
@@ -8683,15 +8706,16 @@
                 ];
                 months.forEach(month => {
                     const option = createDropdownOption(month.label, month.value, element, 'month');
-                    dropdown.appendChild(option);
+                    optionsContainer.appendChild(option);
                 });
             } else if (type === 'year') {
                 const years = ['2026'];
                 years.forEach(year => {
                     const option = createDropdownOption(year, year, element, 'year');
-                    dropdown.appendChild(option);
+                    optionsContainer.appendChild(option);
                 });
             }
+            dropdown.appendChild(optionsContainer);
 
             // Position dropdown
             const rect = element.getBoundingClientRect();
@@ -8717,11 +8741,13 @@
             const option = document.createElement('div');
             option.textContent = label;
             option.style.cssText = `
-                padding: 8px 16px;
+                padding: 8px 12px;
                 cursor: pointer;
-                border-bottom: 1px solid #eee;
-                font-family: "Roboto-Regular", sans-serif;
-                font-size: 14px;
+                font-family: "Roboto", sans-serif;
+                font-weight: 400;
+                font-size: 12px;
+                color: black;
+                border-radius: 6px;
             `;
 
             option.addEventListener('mouseover', () => {
@@ -8729,7 +8755,7 @@
             });
 
             option.addEventListener('mouseout', () => {
-                option.style.background = 'white';
+                option.style.background = 'transparent';
             });
 
             option.addEventListener('click', () => {
