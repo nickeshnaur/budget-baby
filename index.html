@@ -8684,18 +8684,7 @@
                 padding: 16px 8px 24px 32px;
             `;
 
-            // Create scroll wrapper
-            const scrollWrapper = document.createElement('div');
-            scrollWrapper.className = 'dropdown-scroll-wrapper';
-            scrollWrapper.style.cssText = `
-                max-height: 252px;
-                overflow-y: auto;
-                padding-right: 20px;
-                padding-left: 16px;
-                margin-left: -16px;
-            `;
-
-            // Create header
+            // Create header (outside scroll wrapper)
             const header = document.createElement('div');
             header.style.cssText = `
                 background: #F2F4F5;
@@ -8710,7 +8699,16 @@
                 color: black;
             `;
             header.textContent = type === 'month' ? 'Month Selection' : 'Year Selection';
-            scrollWrapper.appendChild(header);
+            dropdown.appendChild(header);
+
+            // Create scroll wrapper
+            const scrollWrapper = document.createElement('div');
+            scrollWrapper.className = 'dropdown-scroll-wrapper';
+            scrollWrapper.style.cssText = `
+                max-height: 220px;
+                overflow-y: auto;
+                padding-right: 20px;
+            `;
 
             // Create options container
             const optionsContainer = document.createElement('div');
@@ -10714,8 +10712,6 @@
                 max-height: 252px;
                 overflow-y: auto;
                 padding-right: 20px;
-                padding-left: 16px;
-                margin-left: -16px;
             `;
 
             // Create grouped dropdown with emojis
@@ -10728,7 +10724,6 @@
                     border-radius: 30px;
                     padding: 8px 16px;
                     margin-bottom: 16px;
-                    margin-left: -16px;
                     width: fit-content;
                     font-family: "Roboto", sans-serif;
                     font-weight: 700;
