@@ -10875,7 +10875,7 @@
                     // Show toast notification for sorted category
                     if (category !== 'Unsorted') {
                         const categoryType = getCategoryType(category);
-                        showCategorySortedToast(category, categoryType);
+                        await showCategorySortedToast(category, categoryType);
                     }
 
                     // Refresh the transactions to ensure consistent state
@@ -10957,7 +10957,7 @@
             return 'other';
         }
 
-        function showCategorySortedToast(category, categoryType) {
+        async function showCategorySortedToast(category, categoryType) {
             // Remove any existing toast
             const existingToast = document.querySelector('.category-sorted-toast');
             if (existingToast) existingToast.remove();
@@ -11010,7 +11010,7 @@
             const subtitleLine = document.createElement('div');
             if (categoryType === 'flexible') {
                 // Calculate remaining budget for this category
-                const remaining = calculateCategoryRemaining(category);
+                const remaining = await calculateCategoryRemaining(category);
                 if (remaining < 0) {
                     subtitleLine.innerHTML = `You have overspent`;
                     subtitleLine.style.cssText = `
@@ -11104,38 +11104,46 @@
             }, 4500);
         }
 
-        function calculateCategoryRemaining(category) {
-            // Convert category name to slug (same method as showCategoryDetail)
-            const categorySlug = category.toLowerCase()
-                .replace(/\s*&\s*/g, '-')
-                .replace(/\s+/g, '-')
-                .replace(/[^a-z0-9-]/g, '');
+        async function calculateCategoryRemaining(category) {
+            try {
+                // Get current month/year
+                const now = new Date();
+                const selectedMonth = now.getMonth() + 1;
+                const selectedYear = now.getFullYear();
+                const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-            // Try to read from DOM elements (same approach as updateFlexibleCategoryRemaining)
-            const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-            const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
-            const spentElement = document.getElementById(`${categorySlug}-spent`);
-            const remainingElement = document.getElementById(`${categorySlug}-remaining`);
+                // Fetch budget from server
+                const budgetData = await loadBudget(category, selectedPeriod);
+                const budgetAmount = budgetData.amount || 0;
 
-            // If remaining element exists, parse its value directly
-            if (remainingElement) {
-                const remainingText = remainingElement.textContent.replace(/[^\d.-]/g, '');
-                const isNegative = remainingElement.textContent.includes('-');
-                const value = parseFloat(remainingText) || 0;
-                return isNegative ? -value : value;
+                // Fetch transactions from API
+                const response = await fetch('/api/transactions', { credentials: 'include' });
+                const result = await response.json();
+
+                if (!response.ok || !result.transactions) {
+                    return budgetAmount;
+                }
+
+                // Filter transactions for this category and current month
+                const categoryTransactions = result.transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    const tMonth = tDate.getMonth() + 1;
+                    const tYear = tDate.getFullYear();
+                    return tMonth === selectedMonth &&
+                           tYear === selectedYear &&
+                           t.category &&
+                           t.category.toUpperCase() === category.toUpperCase();
+                });
+
+                // Calculate spent
+                const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+                // Return remaining (can be negative)
+                return budgetAmount - spent;
+            } catch (error) {
+                console.error('Error calculating category remaining:', error);
+                return 0;
             }
-
-            // Fallback: calculate from budgeted, rollover, and spent
-            if (budgetedElement && spentElement) {
-                const budgetedValue = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
-                const rolloverValue = rolloverElement ? (parseFloat(rolloverElement.getAttribute('data-value')) || 0) : 0;
-                const spentText = spentElement.textContent.replace(/[^\d.]/g, '');
-                const spentValue = parseFloat(spentText) || 0;
-                return (budgetedValue + rolloverValue) - spentValue;
-            }
-
-            // Final fallback: return 0 if no data found
-            return 0;
         }
 
         function navigateToCategory(slug, categoryName) {
