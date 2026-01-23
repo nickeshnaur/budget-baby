@@ -8681,17 +8681,25 @@
                 width: 200px;
                 max-height: 300px;
                 overflow: hidden;
-                padding: 16px 8px 24px 32px;
+                padding: 16px 8px 24px 16px;
             `;
 
-            // Create header (outside scroll wrapper)
+            // Create scroll wrapper
+            const scrollWrapper = document.createElement('div');
+            scrollWrapper.className = 'dropdown-scroll-wrapper';
+            scrollWrapper.style.cssText = `
+                max-height: 260px;
+                overflow-y: auto;
+                padding-right: 20px;
+            `;
+
+            // Create header (inside scroll wrapper)
             const header = document.createElement('div');
             header.style.cssText = `
                 background: #F2F4F5;
                 border-radius: 30px;
                 padding: 8px 16px;
                 margin-bottom: 16px;
-                margin-left: -16px;
                 width: fit-content;
                 font-family: "Roboto", sans-serif;
                 font-weight: 700;
@@ -8699,16 +8707,7 @@
                 color: black;
             `;
             header.textContent = type === 'month' ? 'Month Selection' : 'Year Selection';
-            dropdown.appendChild(header);
-
-            // Create scroll wrapper
-            const scrollWrapper = document.createElement('div');
-            scrollWrapper.className = 'dropdown-scroll-wrapper';
-            scrollWrapper.style.cssText = `
-                max-height: 220px;
-                overflow-y: auto;
-                padding-right: 20px;
-            `;
+            scrollWrapper.appendChild(header);
 
             // Create options container
             const optionsContainer = document.createElement('div');
@@ -8716,6 +8715,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 12px;
+                padding-left: 16px;
             `;
 
             // Create options based on type
@@ -10702,14 +10702,14 @@
                 width: 200px;
                 max-height: 300px;
                 overflow: hidden;
-                padding: 16px 8px 24px 32px;
+                padding: 16px 8px 24px 16px;
             `;
 
             // Create scroll wrapper
             const scrollWrapper = document.createElement('div');
             scrollWrapper.className = 'dropdown-scroll-wrapper';
             scrollWrapper.style.cssText = `
-                max-height: 252px;
+                max-height: 260px;
                 overflow-y: auto;
                 padding-right: 20px;
             `;
@@ -10739,6 +10739,7 @@
                     flex-direction: column;
                     gap: 12px;
                     margin-bottom: 16px;
+                    padding-left: 16px;
                 `;
 
                 // Add categories in this group
