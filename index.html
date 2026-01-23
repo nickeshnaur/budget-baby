@@ -10872,6 +10872,12 @@
                         }
                     }
 
+                    // Show toast notification for sorted category
+                    if (category !== 'Unsorted') {
+                        const categoryType = getCategoryType(category);
+                        showCategorySortedToast(category, categoryType);
+                    }
+
                     // Refresh the transactions to ensure consistent state
                     await loadTransactionsFromAPI();
                 } else if (response.status === 401) {
@@ -10929,6 +10935,196 @@
                 'Unsorted': '📦'
             };
             return emojis[category] || '📦';
+        }
+
+        // Define category types for toast
+        const FLEXIBLE_CATEGORIES = ['Out & About', 'Grocery', 'Gas', 'Auto', 'Clothing', 'Gifts', 'Health & Care', 'Home', 'Travel', 'Treats', 'Personal Nick', 'Personal Chelsea', 'School', 'Giving'];
+        const ANNUAL_BILL_CATEGORIES = ['Phone', 'Costco', 'Insurance - Rent', 'Letterboxd', 'Grammarly', 'Domain', 'Google One', 'C - Capital One Annual Fee', 'C - SW Annual Fee', 'N - Capital One Annual Fee', 'N - SW Annual Fee'];
+
+        function getCategoryType(category) {
+            if (FLEXIBLE_CATEGORIES.includes(category)) return 'flexible';
+            if (ANNUAL_BILL_CATEGORIES.includes(category)) return 'annual';
+            // Check if it's a monthly bill (from FIXED_MONTHLY_SORTED)
+            if (typeof FIXED_MONTHLY_SORTED !== 'undefined') {
+                const isMonthlyBill = FIXED_MONTHLY_SORTED.some(c => c.displayName === category);
+                if (isMonthlyBill) return 'monthly';
+            }
+            // Check custom categories
+            if (typeof customCategories !== 'undefined') {
+                const customCat = customCategories.find(c => c.title === category);
+                if (customCat) return customCat.type;
+            }
+            return 'other';
+        }
+
+        function showCategorySortedToast(category, categoryType) {
+            // Remove any existing toast
+            const existingToast = document.querySelector('.category-sorted-toast');
+            if (existingToast) existingToast.remove();
+
+            const emoji = getEmojiForCategory(category);
+
+            // Create toast container
+            const toast = document.createElement('div');
+            toast.className = 'category-sorted-toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                border-radius: 32px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                padding: 24px 32px;
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                gap: 24px;
+                animation: toastSlideUp 0.3s ease-out;
+            `;
+
+            // Create text container
+            const textContainer = document.createElement('div');
+            textContainer.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            `;
+
+            // Title line
+            const titleLine = document.createElement('div');
+            titleLine.innerHTML = `Sorted in ${emoji} <strong>${category}</strong>`;
+            titleLine.style.cssText = `
+                font-family: "Roboto", sans-serif;
+                font-weight: 700;
+                font-size: 12px;
+                color: black;
+            `;
+            textContainer.appendChild(titleLine);
+
+            // Subtitle line
+            const subtitleLine = document.createElement('div');
+            if (categoryType === 'flexible') {
+                // Calculate remaining budget for this category
+                const remaining = calculateCategoryRemaining(category);
+                subtitleLine.innerHTML = `You have <strong>$${remaining.toFixed(2)}</strong> remaining in this category`;
+                subtitleLine.style.cssText = `
+                    font-family: "Roboto", sans-serif;
+                    font-weight: 400;
+                    font-size: 14px;
+                    color: black;
+                `;
+            } else if (categoryType === 'monthly' || categoryType === 'annual') {
+                subtitleLine.innerHTML = `Paid ✓`;
+                subtitleLine.style.cssText = `
+                    font-family: "Roboto", sans-serif;
+                    font-weight: 700;
+                    font-size: 14px;
+                    color: #0ECB27;
+                `;
+            }
+            if (categoryType !== 'other' && category !== 'Income' && category !== 'Ignore') {
+                textContainer.appendChild(subtitleLine);
+            }
+
+            toast.appendChild(textContainer);
+
+            // View button (only for non-other categories)
+            if (categoryType !== 'other' && category !== 'Income' && category !== 'Ignore') {
+                const viewBtn = document.createElement('button');
+                viewBtn.textContent = 'View';
+                viewBtn.style.cssText = `
+                    font-family: "Roboto", sans-serif;
+                    font-weight: 700;
+                    font-size: 14px;
+                    color: black;
+                    background: #F2F4F5;
+                    border: none;
+                    border-radius: 40px;
+                    padding: 12px 20px;
+                    cursor: pointer;
+                `;
+                viewBtn.addEventListener('click', () => {
+                    toast.remove();
+                    // Navigate to the category page
+                    const slug = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '');
+                    navigateToCategory(slug, category);
+                });
+                toast.appendChild(viewBtn);
+            }
+
+            // Add animation keyframes if not already added
+            if (!document.querySelector('#toast-animation-styles')) {
+                const style = document.createElement('style');
+                style.id = 'toast-animation-styles';
+                style.textContent = `
+                    @keyframes toastSlideUp {
+                        from {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                    }
+                    @keyframes toastFadeOut {
+                        from {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                        to {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(20px);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'toastFadeOut 0.3s ease-out forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function calculateCategoryRemaining(category) {
+            // Get budget for this category
+            const budgetData = window.categoryBudgets || {};
+            const budget = budgetData[category] || 0;
+
+            // Get spent amount for current month
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            let spent = 0;
+            if (window.allTransactions) {
+                window.allTransactions.forEach(t => {
+                    const tDate = new Date(t.date);
+                    if (tDate.getMonth() + 1 === currentMonth &&
+                        tDate.getFullYear() === currentYear &&
+                        t.category === category) {
+                        spent += Math.abs(parseFloat(t.amount) || 0);
+                    }
+                });
+            }
+
+            return Math.max(0, budget - spent);
+        }
+
+        function navigateToCategory(slug, categoryName) {
+            // Try to navigate to category detail page
+            const categoryPage = document.getElementById(`categoryDetailPage-${slug}`);
+            if (categoryPage) {
+                router.navigate(`/category/${slug}`);
+            } else {
+                // Fallback to categories page
+                router.navigate('/categories');
+            }
         }
 
         function getCategoryColor(category) {
