@@ -8678,7 +8678,7 @@
                 border-radius: 32px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 1000;
-                width: 200px;
+                width: 220px;
                 max-height: 300px;
                 overflow: hidden;
             `;
@@ -8706,6 +8706,9 @@
                 font-weight: 700;
                 font-size: 14px;
                 color: black;
+                position: sticky;
+                top: 0;
+                z-index: 1;
             `;
             header.textContent = type === 'month' ? 'Month Selection' : 'Year Selection';
             scrollWrapper.appendChild(header);
@@ -10701,7 +10704,7 @@
                 border-radius: 32px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 1000;
-                width: 200px;
+                width: 220px;
                 max-height: 300px;
                 overflow: hidden;
             `;
@@ -10736,6 +10739,9 @@
                     font-weight: 700;
                     font-size: 14px;
                     color: black;
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
                 `;
                 isFirstGroup = false;
                 scrollWrapper.appendChild(groupHeader);
