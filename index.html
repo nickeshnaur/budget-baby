@@ -8681,14 +8681,13 @@
                 width: 200px;
                 max-height: 300px;
                 overflow: hidden;
-                padding: 16px 8px 24px 0;
             `;
 
             // Create scroll wrapper
             const scrollWrapper = document.createElement('div');
             scrollWrapper.className = 'dropdown-scroll-wrapper';
             scrollWrapper.style.cssText = `
-                max-height: 260px;
+                max-height: 300px;
                 overflow-y: auto;
                 padding-right: 20px;
             `;
@@ -8699,6 +8698,7 @@
                 background: #F2F4F5;
                 border-radius: 30px;
                 padding: 8px 16px;
+                margin-top: 16px;
                 margin-bottom: 16px;
                 margin-left: 16px;
                 width: fit-content;
@@ -8717,6 +8717,7 @@
                 flex-direction: column;
                 gap: 12px;
                 margin-left: 32px;
+                margin-bottom: 24px;
             `;
 
             // Create options based on type
@@ -10703,17 +10704,20 @@
                 width: 200px;
                 max-height: 300px;
                 overflow: hidden;
-                padding: 16px 8px 24px 0;
             `;
 
             // Create scroll wrapper
             const scrollWrapper = document.createElement('div');
             scrollWrapper.className = 'dropdown-scroll-wrapper';
             scrollWrapper.style.cssText = `
-                max-height: 260px;
+                max-height: 300px;
                 overflow-y: auto;
                 padding-right: 20px;
+                padding-bottom: 8px;
             `;
+
+            // Track if this is the first group for top margin
+            let isFirstGroup = true;
 
             // Create grouped dropdown with emojis
             Object.entries(categoryGroups).forEach(([groupName, categories]) => {
@@ -10724,6 +10728,7 @@
                     background: #F2F4F5;
                     border-radius: 30px;
                     padding: 8px 16px;
+                    margin-top: ${isFirstGroup ? '16px' : '0'};
                     margin-bottom: 16px;
                     margin-left: 16px;
                     width: fit-content;
@@ -10732,6 +10737,7 @@
                     font-size: 14px;
                     color: black;
                 `;
+                isFirstGroup = false;
                 scrollWrapper.appendChild(groupHeader);
 
                 // Create options container for this group
