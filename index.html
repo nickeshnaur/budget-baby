@@ -11124,6 +11124,10 @@
                     return budgetAmount;
                 }
 
+                // Get the transaction name format (uppercase) from CATEGORY_CONFIG
+                const slug = DISPLAY_TO_SLUG[category];
+                const transactionName = slug ? SLUG_TO_TRANSACTION_NAME[slug] : category.toUpperCase();
+
                 // Filter transactions for this category and current month
                 const categoryTransactions = result.transactions.filter(t => {
                     const tDate = new Date(t.date);
@@ -11132,7 +11136,7 @@
                     return tMonth === selectedMonth &&
                            tYear === selectedYear &&
                            t.category &&
-                           t.category.toUpperCase() === category.toUpperCase();
+                           t.category.toUpperCase() === transactionName;
                 });
 
                 // Calculate spent
