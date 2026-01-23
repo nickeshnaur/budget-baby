@@ -2319,6 +2319,7 @@
         /* Dropdown menu scrollbar */
         .custom-date-dropdown::-webkit-scrollbar {
             width: 4px;
+            margin-right: 4px;
         }
 
         .custom-date-dropdown::-webkit-scrollbar-track {
@@ -2327,12 +2328,17 @@
         }
 
         .custom-date-dropdown::-webkit-scrollbar-thumb {
-            background: #D1D5DB;
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 4px;
         }
 
         .custom-date-dropdown::-webkit-scrollbar-thumb:hover {
-            background: #9CA3AF;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .custom-date-dropdown {
+            scrollbar-gutter: stable;
+            padding-right: 36px !important;
         }
 
         /* Add transaction button */
