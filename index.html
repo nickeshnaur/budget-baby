@@ -10970,8 +10970,11 @@
             toast.style.cssText = `
                 position: fixed;
                 bottom: 40px;
-                left: 50%;
-                transform: translateX(-50%);
+                left: 20px;
+                right: 20px;
+                width: calc(100% - 40px);
+                max-width: 800px;
+                margin: 0 auto;
                 background: white;
                 border-radius: 32px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -10979,6 +10982,7 @@
                 z-index: 10000;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 gap: 24px;
                 animation: toastSlideUp 0.3s ease-out;
             `;
@@ -11007,13 +11011,23 @@
             if (categoryType === 'flexible') {
                 // Calculate remaining budget for this category
                 const remaining = calculateCategoryRemaining(category);
-                subtitleLine.innerHTML = `You have <strong>$${remaining.toFixed(2)}</strong> remaining in this category`;
-                subtitleLine.style.cssText = `
-                    font-family: "Roboto", sans-serif;
-                    font-weight: 400;
-                    font-size: 14px;
-                    color: black;
-                `;
+                if (remaining < 0) {
+                    subtitleLine.innerHTML = `You have overspent`;
+                    subtitleLine.style.cssText = `
+                        font-family: "Roboto", sans-serif;
+                        font-weight: 700;
+                        font-size: 14px;
+                        color: #EE3636;
+                    `;
+                } else {
+                    subtitleLine.innerHTML = `You have <strong>$${remaining.toFixed(2)}</strong> remaining in this category`;
+                    subtitleLine.style.cssText = `
+                        font-family: "Roboto", sans-serif;
+                        font-weight: 400;
+                        font-size: 14px;
+                        color: black;
+                    `;
+                }
             } else if (categoryType === 'monthly' || categoryType === 'annual') {
                 subtitleLine.innerHTML = `Paid ✓`;
                 subtitleLine.style.cssText = `
@@ -11061,21 +11075,21 @@
                     @keyframes toastSlideUp {
                         from {
                             opacity: 0;
-                            transform: translateX(-50%) translateY(20px);
+                            transform: translateY(20px);
                         }
                         to {
                             opacity: 1;
-                            transform: translateX(-50%) translateY(0);
+                            transform: translateY(0);
                         }
                     }
                     @keyframes toastFadeOut {
                         from {
                             opacity: 1;
-                            transform: translateX(-50%) translateY(0);
+                            transform: translateY(0);
                         }
                         to {
                             opacity: 0;
-                            transform: translateX(-50%) translateY(20px);
+                            transform: translateY(20px);
                         }
                     }
                 `;
@@ -11084,36 +11098,42 @@
 
             document.body.appendChild(toast);
 
-            // Auto-remove after 3 seconds
+            // Auto-remove after 4.5 seconds
             setTimeout(() => {
                 toast.style.animation = 'toastFadeOut 0.3s ease-out forwards';
                 setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            }, 4500);
         }
 
         function calculateCategoryRemaining(category) {
-            // Get budget for this category
-            const budgetData = window.categoryBudgets || {};
-            const budget = budgetData[category] || 0;
+            // Convert category name to slug
+            const categorySlug = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '');
 
-            // Get spent amount for current month
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
+            // Try to read from DOM elements (same approach as updateFlexibleCategoryRemaining)
+            const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+            const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
+            const spentElement = document.getElementById(`${categorySlug}-spent`);
+            const remainingElement = document.getElementById(`${categorySlug}-remaining`);
 
-            let spent = 0;
-            if (window.allTransactions) {
-                window.allTransactions.forEach(t => {
-                    const tDate = new Date(t.date);
-                    if (tDate.getMonth() + 1 === currentMonth &&
-                        tDate.getFullYear() === currentYear &&
-                        t.category === category) {
-                        spent += Math.abs(parseFloat(t.amount) || 0);
-                    }
-                });
+            // If remaining element exists, parse its value directly
+            if (remainingElement) {
+                const remainingText = remainingElement.textContent.replace(/[^\d.-]/g, '');
+                const isNegative = remainingElement.textContent.includes('-');
+                const value = parseFloat(remainingText) || 0;
+                return isNegative ? -value : value;
             }
 
-            return Math.max(0, budget - spent);
+            // Fallback: calculate from budgeted, rollover, and spent
+            if (budgetedElement && spentElement) {
+                const budgetedValue = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
+                const rolloverValue = rolloverElement ? (parseFloat(rolloverElement.getAttribute('data-value')) || 0) : 0;
+                const spentText = spentElement.textContent.replace(/[^\d.]/g, '');
+                const spentValue = parseFloat(spentText) || 0;
+                return (budgetedValue + rolloverValue) - spentValue;
+            }
+
+            // Final fallback: return 0 if no data found
+            return 0;
         }
 
         function navigateToCategory(slug, categoryName) {
