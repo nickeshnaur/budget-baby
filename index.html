@@ -2696,21 +2696,20 @@
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            padding: 20px;
+            z-index: 9999;
         }
 
         .account-edit-modal {
-            background: white;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 400px;
+            background: #fefefe;
+            border-radius: 32px;
+            width: calc(100% - 40px);
+            max-width: 800px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -2719,33 +2718,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 24px;
-            border-bottom: 1px solid #eee;
+            padding: 32px 24px 20px 24px;
         }
 
         .account-edit-header h3 {
             font-family: "Roboto", sans-serif;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 20px;
             margin: 0;
             color: #000;
         }
 
         .account-edit-close {
-            background: none;
-            border: none;
+            color: #000;
             font-size: 20px;
-            color: #666;
+            font-weight: bold;
             cursor: pointer;
-            padding: 4px;
         }
 
         .account-edit-close:hover {
-            color: #000;
+            color: #666;
         }
 
         .account-edit-content {
-            padding: 24px;
+            padding: 0 24px 32px 24px;
         }
 
         .account-edit-field {
@@ -2755,46 +2751,50 @@
         .account-edit-field label {
             display: block;
             font-family: "Roboto", sans-serif;
-            font-weight: 500;
+            font-weight: 400;
             font-size: 12px;
-            color: #666;
+            color: #000;
             margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .account-edit-field input {
+        .account-edit-field input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
+            padding: 10px 20px;
+            border: 1px solid #F2F4F5;
+            border-radius: 20px;
             font-family: "Roboto", sans-serif;
-            font-size: 14px;
+            font-size: 12px;
             box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .account-edit-field input:focus {
-            outline: none;
-            border-color: #000;
+        .account-edit-field input[type="text"]::placeholder {
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        .account-edit-field input[type="text"]:focus {
+            border-color: #4A90E2;
         }
 
         .account-edit-actions {
             display: flex;
             gap: 12px;
-            padding: 0 24px 24px;
+            margin-top: 32px;
         }
 
         .account-edit-remove {
             flex: 1;
-            padding: 14px 20px;
+            padding: 10px 24px;
             border: 1px solid #EE3636;
             border-radius: 40px;
             font-family: "Roboto", sans-serif;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
             cursor: pointer;
             background: rgba(238, 54, 54, 0.1);
             color: #EE3636;
+            transition: background 0.2s;
         }
 
         .account-edit-remove:hover {
@@ -2803,15 +2803,16 @@
 
         .account-edit-save {
             flex: 1;
-            padding: 14px 20px;
+            padding: 10px 24px;
             border: none;
             border-radius: 40px;
             font-family: "Roboto", sans-serif;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
             cursor: pointer;
             background: #000;
             color: #fff;
+            transition: background 0.2s;
         }
 
         .account-edit-save:hover {
@@ -2820,9 +2821,9 @@
 
         /* File Upload Zone */
         .file-upload-zone {
-            border: 2px dashed #ddd;
-            border-radius: 12px;
-            padding: 24px;
+            border: 1px dashed #F2F4F5;
+            border-radius: 20px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -2831,29 +2832,29 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            min-height: 80px;
-            background: #fafafa;
+            min-height: 60px;
+            background: #fff;
         }
 
         .file-upload-zone:hover {
-            border-color: #999;
-            background: #f5f5f5;
+            border-color: #4A90E2;
+            background: #fafafa;
         }
 
         .file-upload-zone.drag-over {
-            border-color: #000;
-            background: #f0f0f0;
+            border-color: #4A90E2;
+            background: #f5f9ff;
         }
 
         .file-upload-zone i {
-            font-size: 24px;
-            color: #999;
+            font-size: 20px;
+            color: rgba(0, 0, 0, 0.3);
         }
 
         .file-upload-zone span {
             font-family: "Roboto", sans-serif;
             font-size: 12px;
-            color: #999;
+            color: rgba(0, 0, 0, 0.3);
         }
 
         .file-upload-zone .upload-preview {
@@ -6797,9 +6798,7 @@
                 <div class="account-edit-modal">
                     <div class="account-edit-header">
                         <h3>Edit Account</h3>
-                        <button class="account-edit-close" onclick="closeAccountEditOverlay()">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
+                        <span class="account-edit-close" onclick="closeAccountEditOverlay()"><i class="fa-solid fa-xmark"></i></span>
                     </div>
                     <div class="account-edit-content">
                         <div class="account-edit-field">
@@ -6826,14 +6825,10 @@
                             <label>Account Owner</label>
                             <input type="text" id="edit-account-owner" value="${currentOwner}" placeholder="e.g., Chelsea or Nick">
                         </div>
-                    </div>
-                    <div class="account-edit-actions">
-                        <button class="account-edit-remove" onclick="removeAccountFromOverlay('${accountId}')">
-                            Delete
-                        </button>
-                        <button class="account-edit-save" onclick="saveAccountDetails('${accountId}')">
-                            Save
-                        </button>
+                        <div class="account-edit-actions">
+                            <button class="account-edit-remove" onclick="removeAccountFromOverlay('${accountId}')">Delete</button>
+                            <button class="account-edit-save" onclick="saveAccountDetails('${accountId}')">Save</button>
+                        </div>
                     </div>
                 </div>
             `;
