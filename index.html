@@ -10263,11 +10263,41 @@
             const monthSelector = document.getElementById('custom-category-month-selector');
             const yearSelector = document.getElementById('custom-category-year-selector');
 
+            // Try to inherit month/year from dashboard selector, fall back to current date
+            const dashboardMonthSelector = document.getElementById('dashboard-month-selector');
+            const dashboardYearSelector = document.getElementById('dashboard-year-selector');
+            const now = new Date();
+            const selectedMonth = dashboardMonthSelector ?
+                parseInt(dashboardMonthSelector.getAttribute('data-value')) || (now.getMonth() + 1) :
+                (now.getMonth() + 1);
+            const selectedYear = dashboardYearSelector ?
+                parseInt(dashboardYearSelector.getAttribute('data-value')) || now.getFullYear() :
+                now.getFullYear();
+            const months = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🍓 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
+
             if (monthSelector) {
-                monthSelector.onclick = () => showCustomDropdown(monthSelector, 'month');
+                monthSelector.setAttribute('data-value', selectedMonth);
+                monthSelector.querySelector('.dropdown-display').textContent = months[selectedMonth - 1];
+
+                if (!monthSelector.hasAttribute('data-initialized')) {
+                    monthSelector.setAttribute('data-initialized', 'true');
+                    monthSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(monthSelector, 'month');
+                    });
+                }
             }
             if (yearSelector) {
-                yearSelector.onclick = () => showCustomDropdown(yearSelector, 'year');
+                yearSelector.setAttribute('data-value', selectedYear);
+                yearSelector.querySelector('.dropdown-display').textContent = selectedYear.toString();
+
+                if (!yearSelector.hasAttribute('data-initialized')) {
+                    yearSelector.setAttribute('data-initialized', 'true');
+                    yearSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showCustomDropdown(yearSelector, 'year');
+                    });
+                }
             }
 
             // Initialize editable budget fields
