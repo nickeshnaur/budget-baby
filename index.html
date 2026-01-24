@@ -6403,7 +6403,7 @@
                             const { month, year } = window.pendingCategoryFilter;
                             const monthSelector = categoryPage.querySelector('.category-month-selector');
                             const yearSelector = categoryPage.querySelector('.category-year-selector');
-                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const monthNames = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🎂 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
                             if (monthSelector) {
                                 monthSelector.setAttribute('data-value', month);
                                 monthSelector.querySelector('.dropdown-display').textContent = monthNames[month - 1];
@@ -8180,7 +8180,7 @@
                 yearSelector.setAttribute('data-value', currentYear);
 
                 // Update display text
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const months = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🎂 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
@@ -8218,7 +8218,7 @@
                 yearSelector.setAttribute('data-value', currentYear);
 
                 // Update display text
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const months = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🎂 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
@@ -8256,7 +8256,7 @@
                 yearSelector.setAttribute('data-value', currentYear);
 
                 // Set display text
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const months = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🎂 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
                 monthSelector.querySelector('.dropdown-display').textContent = months[currentMonth - 1];
                 yearSelector.querySelector('.dropdown-display').textContent = currentYear;
 
@@ -8300,7 +8300,7 @@
             const selectedYear = dashboardYearSelector ?
                 parseInt(dashboardYearSelector.getAttribute('data-value')) || now.getFullYear() :
                 now.getFullYear();
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const months = ['❄️ Jan', '🦔 Feb', '🍀 Mar', '✝️ Apr', '🌸 May', '🎂 Jun', '🎆 Jul', '☀️ Aug', '🍂 Sep', '🎃 Oct', '🦃 Nov', '🎄 Dec'];
 
             monthSelectors.forEach(monthSelector => {
                 monthSelector.setAttribute('data-value', selectedMonth);
@@ -8737,18 +8737,18 @@
             // Create options based on type
             if (type === 'month') {
                 const months = [
-                    {value: '1', label: 'Jan', displayLabel: 'January'},
-                    {value: '2', label: 'Feb', displayLabel: 'February'},
-                    {value: '3', label: 'Mar', displayLabel: 'March'},
-                    {value: '4', label: 'Apr', displayLabel: 'April'},
-                    {value: '5', label: 'May', displayLabel: 'May'},
-                    {value: '6', label: 'Jun', displayLabel: 'June'},
-                    {value: '7', label: 'Jul', displayLabel: 'July'},
-                    {value: '8', label: 'Aug', displayLabel: 'August'},
-                    {value: '9', label: 'Sep', displayLabel: 'September'},
-                    {value: '10', label: 'Oct', displayLabel: 'October'},
-                    {value: '11', label: 'Nov', displayLabel: 'November'},
-                    {value: '12', label: 'Dec', displayLabel: 'December'}
+                    {value: '1', label: '❄️ Jan', displayLabel: '❄️ January'},
+                    {value: '2', label: '🦔 Feb', displayLabel: '🦔 February'},
+                    {value: '3', label: '🍀 Mar', displayLabel: '🍀 March'},
+                    {value: '4', label: '✝️ Apr', displayLabel: '✝️ April'},
+                    {value: '5', label: '🌸 May', displayLabel: '🌸 May'},
+                    {value: '6', label: '🎂 Jun', displayLabel: '🎂 June'},
+                    {value: '7', label: '🎆 Jul', displayLabel: '🎆 July'},
+                    {value: '8', label: '☀️ Aug', displayLabel: '☀️ August'},
+                    {value: '9', label: '🍂 Sep', displayLabel: '🍂 September'},
+                    {value: '10', label: '🎃 Oct', displayLabel: '🎃 October'},
+                    {value: '11', label: '🦃 Nov', displayLabel: '🦃 November'},
+                    {value: '12', label: '🎄 Dec', displayLabel: '🎄 December'}
                 ];
                 months.forEach(month => {
                     const option = createDropdownOption(month.displayLabel, month.value, element, 'month', month.label);
