@@ -12122,8 +12122,10 @@
                                 // Update progress bar
                                 const isOverBudget = flexibleSpent > budgetedValue;
                                 const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
+                                // Show progress bar if there's a budget OR if there's spending
+                                const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0;
 
-                                if (!progressBarContainer && budgetedValue > 0) {
+                                if (!progressBarContainer && shouldShowProgress) {
                                     const progressContainer = document.createElement('div');
                                     progressContainer.className = 'progress-bar-container';
                                     progressContainer.style.width = '100%';
@@ -12139,7 +12141,8 @@
                                     progressBar.style.borderRadius = '1px';
                                     progressBar.style.transition = 'width 0.3s ease';
 
-                                    const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : 0;
+                                    // If budget is 0 but there's spending, show 100% (overspent)
+                                    const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
                                     progressBar.style.width = `${percentage}%`;
 
                                     progressContainer.appendChild(progressBar);
@@ -12148,10 +12151,10 @@
                                     if (progressDiv) {
                                         progressDiv.insertBefore(progressContainer, budgetInfoDiv);
                                     }
-                                } else if (progressBarContainer && budgetedValue > 0) {
+                                } else if (progressBarContainer && shouldShowProgress) {
                                     const progressBar = progressBarContainer.querySelector('.progress-bar');
                                     if (progressBar) {
-                                        const percentage = Math.min((flexibleSpent / budgetedValue) * 100, 100);
+                                        const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
                                         progressBar.style.width = `${percentage}%`;
                                         progressBar.style.backgroundColor = progressColor;
                                     }
@@ -12226,7 +12229,8 @@
                                         progressBar.style.borderRadius = '1px';
                                         progressBar.style.transition = 'width 0.3s ease';
 
-                                        const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                        // If budget is 0 but there's spending, show 100% (overspent)
+                                        const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : (totalSpent > 0 ? 100 : 0);
                                         progressBar.style.width = `${percentage}%`;
 
                                         progressContainer.appendChild(progressBar);
@@ -12238,7 +12242,7 @@
                                     } else {
                                         const progressBar = progressBarContainer.querySelector('.progress-bar');
                                         if (progressBar) {
-                                            const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                            const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : (totalSpent > 0 ? 100 : 0);
                                             progressBar.style.width = `${percentage}%`;
                                             progressBar.style.backgroundColor = progressColor;
                                         }
