@@ -7356,10 +7356,11 @@
                 return sum - amount; // Subtracting negative = adding, subtracting positive = reducing
             }, 0);
 
-            // Update spent display
+            // Update spent display (show as positive since "spent" implies outgoing)
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             if (spentElement) {
-                spentElement.textContent = `-$${totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                const displaySpent = Math.max(0, totalSpent); // Don't show negative spent
+                spentElement.textContent = `$${displaySpent.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
             // Calculate and update remaining (Budgeted + Rollover - Spent)
@@ -9937,7 +9938,7 @@
                         const budgetedEl = document.getElementById('custom-detail-budgeted');
                         const remainingEl = document.getElementById('custom-detail-remaining');
 
-                        if (spentEl) spentEl.textContent = '$' + spent.toFixed(2);
+                        if (spentEl) spentEl.textContent = '$' + Math.max(0, spent).toFixed(2);
                         if (budgetedEl) {
                             budgetedEl.textContent = '$' + savedBudget.toFixed(2);
                             budgetedEl.setAttribute('data-value', savedBudget);
@@ -12123,13 +12124,14 @@
                                     }
                                 }
 
+                                const displaySpent = Math.max(0, flexibleSpent);
                                 budgetInfoDiv.innerHTML = `
                                     <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
-                                    <span class="spent-text">SPENT: $${flexibleSpent.toFixed(2)}</span>
+                                    <span class="spent-text">SPENT: $${displaySpent.toFixed(2)}</span>
                                 `;
 
                                 // Update progress bar
-                                const isOverBudget = flexibleSpent > budgetedValue;
+                                const isOverBudget = displaySpent > budgetedValue;
                                 const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                 if (!progressBarContainer && budgetedValue > 0) {
@@ -12216,11 +12218,12 @@
                                     // Update budget info text
                                     const budgetText = card.querySelector('.budget-text');
                                     const spentText = card.querySelector('.spent-text');
+                                    const displaySpentCustom = Math.max(0, flexibleSpentCustom);
                                     if (budgetText) budgetText.textContent = `BUDGETED: $${budgetedValue.toFixed(2)}`;
-                                    if (spentText) spentText.textContent = `SPENT: $${flexibleSpentCustom.toFixed(2)}`;
+                                    if (spentText) spentText.textContent = `SPENT: $${displaySpentCustom.toFixed(2)}`;
 
                                     // Add progress bar if it doesn't exist and budget > 0
-                                    const isOverBudget = flexibleSpentCustom > budgetedValue;
+                                    const isOverBudget = displaySpentCustom > budgetedValue;
                                     const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                     if (!progressBarContainer) {
