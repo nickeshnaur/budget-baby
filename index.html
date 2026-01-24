@@ -9756,11 +9756,13 @@
             }
             if (!monthlySection) return;
 
-            // Get all bill cards (both hardcoded and custom)
-            const billCards = Array.from(monthlySection.querySelectorAll('.home-category-item[data-due-day]'));
-
-            // Also get cards from custom-monthly-categories container
             const customContainer = document.getElementById('custom-monthly-categories');
+
+            // Get all bill cards, excluding those inside custom container to avoid duplicates
+            const allCards = Array.from(monthlySection.querySelectorAll('.home-category-item[data-due-day]'));
+            const billCards = allCards.filter(card => !customContainer || !customContainer.contains(card));
+
+            // Add custom cards
             if (customContainer) {
                 const customCards = Array.from(customContainer.querySelectorAll('.home-category-item[data-due-day]'));
                 billCards.push(...customCards);
@@ -9773,13 +9775,12 @@
                 return dayA - dayB;
             });
 
-            // Remove custom container's cards first (they'll be re-added in sorted order)
+            // Clear custom container
             if (customContainer) {
                 customContainer.innerHTML = '';
             }
 
-            // Re-append all cards in sorted order (after the section-subtitle)
-            const subtitle = monthlySection.querySelector('.section-subtitle');
+            // Re-append all cards in sorted order (before the custom container)
             billCards.forEach(card => {
                 monthlySection.insertBefore(card, customContainer);
             });
