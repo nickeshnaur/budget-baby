@@ -7356,11 +7356,16 @@
                 return sum - amount; // Subtracting negative = adding, subtracting positive = reducing
             }, 0);
 
-            // Update spent display (show as positive since "spent" implies outgoing)
+            // Update spent display
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             if (spentElement) {
-                const displaySpent = Math.max(0, totalSpent); // Don't show negative spent
-                spentElement.textContent = `$${displaySpent.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                if (Math.abs(totalSpent) < 0.001) {
+                    spentElement.textContent = '$0.00';
+                } else if (totalSpent < 0) {
+                    spentElement.textContent = `-$${Math.abs(totalSpent).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                } else {
+                    spentElement.textContent = `$${totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
             }
 
             // Calculate and update remaining (Budgeted + Rollover - Spent)
@@ -9938,7 +9943,15 @@
                         const budgetedEl = document.getElementById('custom-detail-budgeted');
                         const remainingEl = document.getElementById('custom-detail-remaining');
 
-                        if (spentEl) spentEl.textContent = '$' + Math.max(0, spent).toFixed(2);
+                        if (spentEl) {
+                            if (Math.abs(spent) < 0.001) {
+                                spentEl.textContent = '$0.00';
+                            } else if (spent < 0) {
+                                spentEl.textContent = `-$${Math.abs(spent).toFixed(2)}`;
+                            } else {
+                                spentEl.textContent = `$${spent.toFixed(2)}`;
+                            }
+                        }
                         if (budgetedEl) {
                             budgetedEl.textContent = '$' + savedBudget.toFixed(2);
                             budgetedEl.setAttribute('data-value', savedBudget);
@@ -12124,14 +12137,21 @@
                                     }
                                 }
 
-                                const displaySpent = Math.max(0, flexibleSpent);
+                                let spentDisplay;
+                                if (Math.abs(flexibleSpent) < 0.001) {
+                                    spentDisplay = '$0.00';
+                                } else if (flexibleSpent < 0) {
+                                    spentDisplay = `-$${Math.abs(flexibleSpent).toFixed(2)}`;
+                                } else {
+                                    spentDisplay = `$${flexibleSpent.toFixed(2)}`;
+                                }
                                 budgetInfoDiv.innerHTML = `
                                     <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
-                                    <span class="spent-text">SPENT: $${displaySpent.toFixed(2)}</span>
+                                    <span class="spent-text">SPENT: ${spentDisplay}</span>
                                 `;
 
                                 // Update progress bar
-                                const isOverBudget = displaySpent > budgetedValue;
+                                const isOverBudget = flexibleSpent > budgetedValue;
                                 const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                 if (!progressBarContainer && budgetedValue > 0) {
@@ -12218,12 +12238,19 @@
                                     // Update budget info text
                                     const budgetText = card.querySelector('.budget-text');
                                     const spentText = card.querySelector('.spent-text');
-                                    const displaySpentCustom = Math.max(0, flexibleSpentCustom);
+                                    let spentDisplayCustom;
+                                    if (Math.abs(flexibleSpentCustom) < 0.001) {
+                                        spentDisplayCustom = '$0.00';
+                                    } else if (flexibleSpentCustom < 0) {
+                                        spentDisplayCustom = `-$${Math.abs(flexibleSpentCustom).toFixed(2)}`;
+                                    } else {
+                                        spentDisplayCustom = `$${flexibleSpentCustom.toFixed(2)}`;
+                                    }
                                     if (budgetText) budgetText.textContent = `BUDGETED: $${budgetedValue.toFixed(2)}`;
-                                    if (spentText) spentText.textContent = `SPENT: $${displaySpentCustom.toFixed(2)}`;
+                                    if (spentText) spentText.textContent = `SPENT: ${spentDisplayCustom}`;
 
                                     // Add progress bar if it doesn't exist and budget > 0
-                                    const isOverBudget = displaySpentCustom > budgetedValue;
+                                    const isOverBudget = flexibleSpentCustom > budgetedValue;
                                     const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                     if (!progressBarContainer) {
