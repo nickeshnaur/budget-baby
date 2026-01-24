@@ -11978,20 +11978,18 @@
                                     }
                                 } else {
                                     // No transactions: show budgeted and due date
+                                    // Extract day number from due date (e.g., "30th" -> "30", "1st" -> "1")
+                                    const dueDay = dueDate.replace(/\D/g, '') || '1';
+
                                     if (categoryAmountElement) {
                                         categoryAmountElement.textContent = `$${budgetedValue.toFixed(2)}`;
                                         categoryAmountElement.className = 'category-amount';
                                     }
                                     if (budgetInfoDiv) {
-                                        budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
+                                        budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${selectedMonth}/${dueDay}</span>`;
                                     }
                                     if (billStatusElement) {
-                                        // Store original due text on first run
-                                        if (!billStatusElement.hasAttribute('data-original-due')) {
-                                            billStatusElement.setAttribute('data-original-due', billStatusElement.textContent);
-                                        }
-                                        const originalDue = billStatusElement.getAttribute('data-original-due');
-                                        billStatusElement.textContent = originalDue || `Due ${dueDate}`;
+                                        billStatusElement.textContent = `Due ${selectedMonth}/${dueDay}`;
                                         billStatusElement.className = 'bill-status due';
                                     }
                                 }
