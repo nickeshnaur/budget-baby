@@ -3462,6 +3462,12 @@
                 </div>
             </div>
 
+            <!-- Custom Flexible Monthly Categories -->
+            <div id="custom-flexible-categories"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-subtitle">Tithe</div>
             <div class="home-category-item" onclick="showCategoryDetail('flexible-monthly', 'Giving')" style="cursor: pointer;">
                 <div class="category-card">
                     <div class="category-header">
@@ -3480,8 +3486,6 @@
                     <div class="category-accent" style="background: #9c27b0;"></div>
                 </div>
             </div>
-            <!-- Custom Flexible Monthly Categories -->
-            <div id="custom-flexible-categories"></div>
         </div>
 
         <div class="section">
@@ -12761,8 +12765,8 @@
 
                                 // Update progress bar - red only if remaining is negative
                                 const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
-                                // Show progress bar if there's a budget OR if there's spending
-                                const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0;
+                                // Show progress bar if there's a budget OR if there's spending (always for Giving)
+                                const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0 || categorySlug === 'giving';
 
                                 if (!progressBarContainer && shouldShowProgress) {
                                     // Safety check: remove any existing progress bars to prevent duplicates
@@ -12802,8 +12806,17 @@
                                         progressBar.style.backgroundColor = progressColor;
                                     }
                                 } else if (progressBarContainer && !shouldShowProgress) {
-                                    // Remove progress bar if not needed (budget and spent are both 0)
-                                    progressBarContainer.remove();
+                                    // For Giving, always show gray progress bar even at 0
+                                    if (categorySlug === 'giving') {
+                                        const progressBar = progressBarContainer.querySelector('.progress-bar');
+                                        if (progressBar) {
+                                            progressBar.style.width = '0%';
+                                            progressBar.style.backgroundColor = '#D3D3D3';
+                                        }
+                                    } else {
+                                        // Remove progress bar if not needed (budget and spent are both 0)
+                                        progressBarContainer.remove();
+                                    }
                                 }
                             }
                         }
