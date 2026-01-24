@@ -8823,10 +8823,12 @@
                     }
                 } else if (parentElement.id.includes('categories')) {
                     updateHomepageCategoryCards();
+                    renderCustomCategoryCards();
                 } else if (parentElement.id.includes('dashboard')) {
                     loadTransactionsFromAPI();
                     updateHomeOverview();
                     updateHomepageCategoryCards();
+                    renderCustomCategoryCards();
                 } else {
                     loadTransactionsFromAPI();
                 }
@@ -9508,13 +9510,23 @@
             const monthlyContainer = document.getElementById('custom-monthly-categories');
             const annualContainer = document.getElementById('custom-annual-categories');
 
+            // Get selected month from categories page or dashboard
+            let selectedMonth = new Date().getMonth() + 1;
+            const categoriesMonthSelector = document.getElementById('categories-month-selector');
+            const dashboardMonthSelector = document.getElementById('dashboard-month-selector');
+            if (categoriesMonthSelector) {
+                selectedMonth = parseInt(categoriesMonthSelector.getAttribute('data-value')) || selectedMonth;
+            } else if (dashboardMonthSelector) {
+                selectedMonth = parseInt(dashboardMonthSelector.getAttribute('data-value')) || selectedMonth;
+            }
+
             // Clear existing
             if (flexibleContainer) flexibleContainer.innerHTML = '';
             if (monthlyContainer) monthlyContainer.innerHTML = '';
             if (annualContainer) annualContainer.innerHTML = '';
 
             customCategories.forEach(category => {
-                const card = createCustomCategoryCard(category);
+                const card = createCustomCategoryCard(category, selectedMonth);
                 if (category.type === 'flexible' && flexibleContainer) {
                     flexibleContainer.appendChild(card);
                 } else if (category.type === 'monthly' && monthlyContainer) {
@@ -9526,7 +9538,7 @@
         }
 
         // Create a category card element
-        function createCustomCategoryCard(category) {
+        function createCustomCategoryCard(category, selectedMonth) {
             const div = document.createElement('div');
             div.className = 'home-category-item';
             div.style.cursor = 'pointer';
@@ -9534,6 +9546,9 @@
 
             const typeLabel = category.type === 'flexible' ? 'Flexible Monthly' :
                               category.type === 'monthly' ? 'Monthly Bill' : 'Annual Bill';
+
+            // Use passed selectedMonth or fall back to current month
+            const displayMonth = selectedMonth || (new Date().getMonth() + 1);
 
             if (category.type === 'flexible') {
                 div.innerHTML = `
@@ -9556,8 +9571,7 @@
                 `;
             } else if (category.type === 'monthly') {
                 // Monthly bill card - shows budgeted amount, not negative/red
-                const currentMonth = new Date().getMonth() + 1; // 1-12
-                const dueText = `Due ${currentMonth}/${category.due_day}`;
+                const dueText = `Due ${displayMonth}/${category.due_day}`;
                 div.innerHTML = `
                     <div class="bill-card">
                         <div class="category-header">
@@ -10090,6 +10104,79 @@
 
                 // Handle Enter key
                 budgetedEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.blur();
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        const original = this.dataset.original;
+                        if (original) this.textContent = original;
+                        this.blur();
+                    }
+                });
+            }
+
+            // Initialize due date editing for monthly custom categories
+            const dueDateEl = document.getElementById('custom-detail-due-date');
+            if (dueDateEl && !dueDateEl.dataset.initialized && currentCustomCategory.type === 'monthly') {
+                dueDateEl.dataset.initialized = 'true';
+
+                // Handle focus: select all text
+                dueDateEl.addEventListener('focus', function() {
+                    this.dataset.original = this.textContent;
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+
+                // Handle blur: save changes
+                dueDateEl.addEventListener('blur', async function() {
+                    let value = this.textContent.trim();
+                    // Extract numeric day from input (e.g., "15th" -> 15, "1st" -> 1)
+                    const dayNum = parseInt(value.replace(/\D/g, '')) || 1;
+
+                    // Update display with suffix
+                    const suffix = getDaySuffix(dayNum);
+                    this.textContent = `${dayNum}${suffix}`;
+
+                    // Update the category's due_day and save to API
+                    currentCustomCategory.due_day = dayNum;
+
+                    try {
+                        await fetch('/api/categories/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                id: currentCustomCategory.id,
+                                slug: currentCustomCategory.slug,
+                                isCustom: true,
+                                title: currentCustomCategory.title,
+                                emoji: currentCustomCategory.emoji,
+                                color: currentCustomCategory.color,
+                                type: currentCustomCategory.type,
+                                dueDay: dayNum
+                            })
+                        });
+
+                        // Update in local array
+                        const idx = customCategories.findIndex(c => c.id === currentCustomCategory.id);
+                        if (idx !== -1) {
+                            customCategories[idx].due_day = dayNum;
+                        }
+
+                        // Re-render cards to reflect changes
+                        renderCustomCategoryCards();
+                    } catch (error) {
+                        console.error('Error saving due date:', error);
+                    }
+                });
+
+                // Handle Enter key
+                dueDateEl.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         this.blur();
