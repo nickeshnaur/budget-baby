@@ -4664,7 +4664,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="phone-status">-</div>
+                <div class="budget-value" id="phone-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4728,7 +4728,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="costco-status">-</div>
+                <div class="budget-value" id="costco-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4792,7 +4792,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="insurance-rent-status">-</div>
+                <div class="budget-value" id="insurance-rent-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4855,7 +4855,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="letterboxd-status">-</div>
+                <div class="budget-value" id="letterboxd-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4918,7 +4918,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="grammarly-status">-</div>
+                <div class="budget-value" id="grammarly-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -4981,7 +4981,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="domain-status">-</div>
+                <div class="budget-value" id="domain-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5044,7 +5044,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="google-one-status">-</div>
+                <div class="budget-value" id="google-one-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5107,7 +5107,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="c-capital-one-annual-fee-status">-</div>
+                <div class="budget-value" id="c-capital-one-annual-fee-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5170,7 +5170,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="c-sw-annual-fee-status">-</div>
+                <div class="budget-value" id="c-sw-annual-fee-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5233,7 +5233,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="n-capital-one-annual-fee-status">-</div>
+                <div class="budget-value" id="n-capital-one-annual-fee-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -5296,7 +5296,7 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>✓</span>Status</div>
-                <div class="budget-value" id="n-sw-annual-fee-status">-</div>
+                <div class="budget-value" id="n-sw-annual-fee-status">✖️</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📋</span>Total</div>
@@ -6510,7 +6510,7 @@
                                 </div>
                                 <div class="budget-item">
                                     <div class="budget-label"><span>✓</span>Status</div>
-                                    <div class="budget-value" id="custom-detail-status">-</div>
+                                    <div class="budget-value" id="custom-detail-status">✖️</div>
                                 </div>
                                 <div class="budget-item">
                                     <div class="budget-label"><span>📋</span>Total</div>
@@ -8037,13 +8037,8 @@
             const statusElement = document.getElementById(`${elementSlug}-status`);
             const isPaid = transactions && transactions.length > 0;
             if (statusElement) {
-                if (isPaid) {
-                    statusElement.textContent = '✅';
-                    statusElement.style.color = '#09bc00';
-                } else {
-                    statusElement.textContent = '-';
-                    statusElement.style.color = '';
-                }
+                statusElement.textContent = isPaid ? '✅' : '✖️';
+                statusElement.className = isPaid ? 'budget-value positive' : 'budget-value';
             }
 
             // Update bill-status on category cards (in categories page bill-cards)
@@ -9976,7 +9971,7 @@
                     </div>
                     <div class="budget-item">
                         <div class="budget-label"><span>✓</span>Status</div>
-                        <div class="budget-value" id="custom-detail-status">-</div>
+                        <div class="budget-value" id="custom-detail-status">✖️</div>
                     </div>
                     <div class="budget-item">
                         <div class="budget-label"><span>📋</span>Total</div>
@@ -10299,7 +10294,8 @@
                         // Update Status
                         const statusEl = document.getElementById('custom-detail-status');
                         if (statusEl) {
-                            statusEl.textContent = filtered.length > 0 ? '✅' : '-';
+                            statusEl.textContent = filtered.length > 0 ? '✅' : '✖️';
+                            statusEl.className = filtered.length > 0 ? 'budget-value positive' : 'budget-value';
                         }
 
                         // Update Total
