@@ -7548,10 +7548,10 @@
         function getSelectedMonth(categorySlug) {
             const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
             if (!categoryPage) return null;
-            const monthSelector = categoryPage.querySelector('.month-selector');
-            const yearSelector = categoryPage.querySelector('.year-selector');
-            const month = monthSelector ? parseInt(monthSelector.value) : new Date().getMonth() + 1;
-            const year = yearSelector ? parseInt(yearSelector.value) : new Date().getFullYear();
+            const monthSelector = categoryPage.querySelector('.category-month-selector');
+            const yearSelector = categoryPage.querySelector('.category-year-selector');
+            const month = monthSelector ? parseInt(monthSelector.getAttribute('data-value')) : new Date().getMonth() + 1;
+            const year = yearSelector ? parseInt(yearSelector.getAttribute('data-value')) : new Date().getFullYear();
             return `${year}-${String(month).padStart(2, '0')}`;
         }
 
