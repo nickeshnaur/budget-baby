@@ -5756,7 +5756,7 @@
                 <div class="category-detail-title">
                     🤝 Giving
                 </div>
-                <div class="category-detail-type">Flexible Monthly</div>
+                <div class="category-detail-type">Tithe</div>
             </div>
         </div>
 
@@ -10377,7 +10377,7 @@
                     { name: 'Personal Chelsea', emoji: '👩', slug: 'personal-chelsea' },
                     { name: 'School', emoji: '🎓', slug: 'school' }
                 ],
-                'Giving': [
+                'Tithe': [
                     { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
                 'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
@@ -11365,7 +11365,7 @@
                     { name: 'Personal Chelsea', emoji: '👤', slug: 'personal-chelsea' },
                     { name: 'School', emoji: '🎓', slug: 'school' }
                 ],
-                'Giving': [
+                'Tithe': [
                     { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
                 'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
@@ -12801,6 +12801,9 @@
                                         progressBar.style.width = `${progressPercent}%`;
                                         progressBar.style.backgroundColor = progressColor;
                                     }
+                                } else if (progressBarContainer && !shouldShowProgress) {
+                                    // Remove progress bar if not needed (budget and spent are both 0)
+                                    progressBarContainer.remove();
                                 }
                             }
                         }
