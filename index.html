@@ -12135,9 +12135,8 @@
                                     <span class="spent-text">SPENT: $${flexibleSpent.toFixed(2)}</span>
                                 `;
 
-                                // Update progress bar
-                                const isOverBudget = flexibleSpent > budgetedValue;
-                                const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
+                                // Update progress bar - red only if remaining is negative
+                                const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
                                 // Show progress bar if there's a budget OR if there's spending
                                 const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0;
 
@@ -12228,9 +12227,8 @@
                                     if (budgetText) budgetText.textContent = `BUDGETED: $${budgetedValue.toFixed(2)}`;
                                     if (spentText) spentText.textContent = `SPENT: $${totalSpent.toFixed(2)}`;
 
-                                    // Add progress bar if it doesn't exist and budget > 0
-                                    const isOverBudget = totalSpent > budgetedValue;
-                                    const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
+                                    // Add progress bar - red only if remaining is negative
+                                    const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
 
                                     if (!progressBarContainer) {
                                         const progressContainer = document.createElement('div');
