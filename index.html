@@ -7763,7 +7763,7 @@
             const budgetedElement = document.getElementById('giving-budgeted');
             if (budgetedElement) {
                 budgetedElement.setAttribute('data-value', budgeted.toString());
-                budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             }
 
             // Calculate pot (rollover from previous months)
@@ -7893,7 +7893,7 @@
                 const budgetedElement = document.getElementById('giving-budgeted');
                 if (budgetedElement) {
                     budgetedElement.setAttribute('data-value', budgeted.toString());
-                    budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 }
 
                 // Recalculate remaining
@@ -12765,6 +12765,10 @@
                                 const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0;
 
                                 if (!progressBarContainer && shouldShowProgress) {
+                                    // Safety check: remove any existing progress bars to prevent duplicates
+                                    const existingBars = card.querySelectorAll('.progress-bar-container');
+                                    existingBars.forEach(bar => bar.remove());
+
                                     const progressContainer = document.createElement('div');
                                     progressContainer.className = 'progress-bar-container';
                                     progressContainer.style.width = '100%';
@@ -12781,8 +12785,8 @@
                                     progressBar.style.transition = 'width 0.3s ease';
 
                                     // If budget is 0 but there's spending, show 100% (overspent)
-                                    const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
-                                    progressBar.style.width = `${percentage}%`;
+                                    const progressPercent = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
+                                    progressBar.style.width = `${progressPercent}%`;
 
                                     progressContainer.appendChild(progressBar);
 
@@ -12793,8 +12797,8 @@
                                 } else if (progressBarContainer && shouldShowProgress) {
                                     const progressBar = progressBarContainer.querySelector('.progress-bar');
                                     if (progressBar) {
-                                        const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
-                                        progressBar.style.width = `${percentage}%`;
+                                        const progressPercent = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : (flexibleSpent > 0 ? 100 : 0);
+                                        progressBar.style.width = `${progressPercent}%`;
                                         progressBar.style.backgroundColor = progressColor;
                                     }
                                 }
