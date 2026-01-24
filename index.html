@@ -7621,6 +7621,26 @@
         }
 
         function updateFixedMonthlyCalculations(categorySlug, transactions) {
+            // Get selected month/year from category page
+            const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+            let selectedMonth = new Date().getMonth() + 1;
+            let selectedYear = new Date().getFullYear();
+            if (categoryPage) {
+                const monthSelector = categoryPage.querySelector('.category-month-selector');
+                const yearSelector = categoryPage.querySelector('.category-year-selector');
+                if (monthSelector) selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
+                if (yearSelector) selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
+            }
+
+            // Load budgeted amount from localStorage for this month/year
+            const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+            if (budgetedElement) {
+                const defaultBudget = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
+                const savedBudget = getMonthlyBudgeted(categorySlug, selectedMonth, selectedYear, defaultBudget);
+                budgetedElement.setAttribute('data-value', savedBudget.toString());
+                budgetedElement.textContent = `$${savedBudget.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            }
+
             // Calculate total from transactions
             const total = transactions.reduce((sum, transaction) => {
                 const amount = Math.abs(parseFloat(transaction.amount) || 0);
@@ -7682,6 +7702,20 @@
 
                     // Update display format
                     this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+                    // Get selected month/year from category page
+                    const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+                    let month = new Date().getMonth() + 1;
+                    let year = new Date().getFullYear();
+                    if (categoryPage) {
+                        const monthSelector = categoryPage.querySelector('.category-month-selector');
+                        const yearSelector = categoryPage.querySelector('.category-year-selector');
+                        if (monthSelector) month = parseInt(monthSelector.getAttribute('data-value')) || month;
+                        if (yearSelector) year = parseInt(yearSelector.getAttribute('data-value')) || year;
+                    }
+
+                    // Save to localStorage with month/year key
+                    saveMonthlyBudgeted(categorySlug, month, year, numericValue);
                 });
 
                 // Handle Enter key: blur the field to save
