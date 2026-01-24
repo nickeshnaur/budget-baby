@@ -3635,7 +3635,7 @@
 
         <div class="section">
             <div class="section-subtitle">Annual Bills</div>
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Phone')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="7" data-due-day="11" onclick="showCategoryDetail('fixed-annual', 'Phone')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3651,7 +3651,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Costco')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="10" data-due-day="2" onclick="showCategoryDetail('fixed-annual', 'Costco')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3667,7 +3667,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Insurance - Rent')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="2" data-due-day="24" onclick="showCategoryDetail('fixed-annual', 'Insurance - Rent')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3683,7 +3683,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Letterboxd')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="1" data-due-day="1" onclick="showCategoryDetail('fixed-annual', 'Letterboxd')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3699,7 +3699,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Grammarly')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="12" data-due-day="9" onclick="showCategoryDetail('fixed-annual', 'Grammarly')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3715,7 +3715,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Domain')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="3" data-due-day="9" onclick="showCategoryDetail('fixed-annual', 'Domain')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3731,7 +3731,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'Google One')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="6" data-due-day="10" onclick="showCategoryDetail('fixed-annual', 'Google One')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3747,7 +3747,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'C - Capital One Annual Fee')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="12" data-due-day="21" onclick="showCategoryDetail('fixed-annual', 'C - Capital One Annual Fee')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3763,7 +3763,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'C - SW Annual Fee')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="3" data-due-day="1" onclick="showCategoryDetail('fixed-annual', 'C - SW Annual Fee')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3779,7 +3779,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'N - Capital One Annual Fee')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="1" data-due-day="18" onclick="showCategoryDetail('fixed-annual', 'N - Capital One Annual Fee')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3795,7 +3795,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-annual', 'N - SW Annual Fee')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-month="7" data-due-day="1" onclick="showCategoryDetail('fixed-annual', 'N - SW Annual Fee')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -5884,17 +5884,17 @@
             { slug: 'sp-fitness', displayName: 'SP Fitness', transactionName: 'SP FITNESS', type: 'fixed-monthly', dueDay: 1 },
             { slug: 'alamo-drafthouse', displayName: 'Alamo Drafthouse', transactionName: 'ALAMO DRAFTHOUSE', type: 'fixed-monthly', dueDay: 22 },
             // Fixed Annual Categories
-            { slug: 'phone', displayName: 'Phone', transactionName: 'PHONE', type: 'fixed-annual' },
-            { slug: 'costco', displayName: 'Costco', transactionName: 'COSTCO', type: 'fixed-annual' },
-            { slug: 'insurance---rent', displayName: 'Insurance - Rent', transactionName: 'INSURANCE - RENT', type: 'fixed-annual' },
-            { slug: 'letterboxd', displayName: 'Letterboxd', transactionName: 'LETTERBOXD', type: 'fixed-annual' },
-            { slug: 'grammarly', displayName: 'Grammarly', transactionName: 'GRAMMARLY', type: 'fixed-annual' },
-            { slug: 'domain', displayName: 'Domain', transactionName: 'DOMAIN', type: 'fixed-annual' },
-            { slug: 'google-one', displayName: 'Google One', transactionName: 'GOOGLE ONE', type: 'fixed-annual' },
-            { slug: 'c---capital-one-annual-fee', displayName: 'C - Capital One Annual Fee', transactionName: 'C - CAPITAL ONE ANNUAL FEE', type: 'fixed-annual' },
-            { slug: 'c---sw-annual-fee', displayName: 'C - SW Annual Fee', transactionName: 'C - SW ANNUAL FEE', type: 'fixed-annual' },
-            { slug: 'n---capital-one-annual-fee', displayName: 'N - Capital One Annual Fee', transactionName: 'N - CAPITAL ONE ANNUAL FEE', type: 'fixed-annual' },
-            { slug: 'n---sw-annual-fee', displayName: 'N - SW Annual Fee', transactionName: 'N - SW ANNUAL FEE', type: 'fixed-annual' },
+            { slug: 'phone', displayName: 'Phone', transactionName: 'PHONE', type: 'fixed-annual', dueMonth: 7, dueDay: 11 },
+            { slug: 'costco', displayName: 'Costco', transactionName: 'COSTCO', type: 'fixed-annual', dueMonth: 10, dueDay: 2 },
+            { slug: 'insurance---rent', displayName: 'Insurance - Rent', transactionName: 'INSURANCE - RENT', type: 'fixed-annual', dueMonth: 2, dueDay: 24 },
+            { slug: 'letterboxd', displayName: 'Letterboxd', transactionName: 'LETTERBOXD', type: 'fixed-annual', dueMonth: 1, dueDay: 1 },
+            { slug: 'grammarly', displayName: 'Grammarly', transactionName: 'GRAMMARLY', type: 'fixed-annual', dueMonth: 12, dueDay: 9 },
+            { slug: 'domain', displayName: 'Domain', transactionName: 'DOMAIN', type: 'fixed-annual', dueMonth: 3, dueDay: 9 },
+            { slug: 'google-one', displayName: 'Google One', transactionName: 'GOOGLE ONE', type: 'fixed-annual', dueMonth: 6, dueDay: 10 },
+            { slug: 'c---capital-one-annual-fee', displayName: 'C - Capital One Annual Fee', transactionName: 'C - CAPITAL ONE ANNUAL FEE', type: 'fixed-annual', dueMonth: 12, dueDay: 21 },
+            { slug: 'c---sw-annual-fee', displayName: 'C - SW Annual Fee', transactionName: 'C - SW ANNUAL FEE', type: 'fixed-annual', dueMonth: 3, dueDay: 1 },
+            { slug: 'n---capital-one-annual-fee', displayName: 'N - Capital One Annual Fee', transactionName: 'N - CAPITAL ONE ANNUAL FEE', type: 'fixed-annual', dueMonth: 1, dueDay: 18 },
+            { slug: 'n---sw-annual-fee', displayName: 'N - SW Annual Fee', transactionName: 'N - SW ANNUAL FEE', type: 'fixed-annual', dueMonth: 7, dueDay: 1 },
             // Special Categories
             { slug: 'income', displayName: 'Income', transactionName: 'INCOME', type: 'income' },
             { slug: 'ignore', displayName: 'Ignore', transactionName: 'IGNORE', type: 'ignore' }
@@ -5908,7 +5908,31 @@
         const FLEXIBLE_MONTHLY_CATEGORIES = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
         const FLEXIBLE_MONTHLY_NAMES = FLEXIBLE_MONTHLY_CATEGORIES.map(c => c.displayName);
         const FIXED_MONTHLY_SORTED = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly').sort((a, b) => a.dueDay - b.dueDay);
+        const FIXED_ANNUAL_CATEGORIES = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
         const ALL_CATEGORY_SLUGS = CATEGORY_CONFIG.map(c => c.slug);
+
+        // Calculate days until a due date (circular - past dates wrap to next year)
+        function getDaysUntilDue(dueMonth, dueDay) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            let dueDate = new Date(currentYear, dueMonth - 1, dueDay);
+
+            // If due date has passed this year, it's "far away" (add 365)
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // If negative (already passed), add 365 to push to end of sort
+            return diffDays < 0 ? diffDays + 365 : diffDays;
+        }
+
+        // Get annual bills sorted by next due date
+        function getAnnualBillsSortedByDueDate() {
+            return [...FIXED_ANNUAL_CATEGORIES].sort((a, b) => {
+                const daysA = getDaysUntilDue(a.dueMonth, a.dueDay);
+                const daysB = getDaysUntilDue(b.dueMonth, b.dueDay);
+                return daysA - daysB;
+            });
+        }
 
         // Card image mapping by last 4 digits
         const CARD_IMAGE_MAP = {
@@ -9735,6 +9759,8 @@
 
             // Sort monthly bills by due day after adding custom categories
             sortMonthlyBillsByDueDay();
+            // Sort annual bills by due date after adding custom categories
+            sortAnnualBillsByDueDate();
         }
 
         // Sort all monthly bills (built-in and custom) by due day
@@ -9778,6 +9804,55 @@
             // Re-append all cards in sorted order (before the custom container)
             billCards.forEach(card => {
                 monthlySection.insertBefore(card, customContainer);
+            });
+        }
+
+        // Sort all annual bills (built-in and custom) by next due date
+        function sortAnnualBillsByDueDate() {
+            // Find the Annual Bills section
+            const sections = document.querySelectorAll('#categoriesPage .section');
+            let annualSection = null;
+            for (const section of sections) {
+                const subtitle = section.querySelector('.section-subtitle');
+                if (subtitle && subtitle.textContent.trim() === 'Annual Bills') {
+                    annualSection = section;
+                    break;
+                }
+            }
+            if (!annualSection) return;
+
+            const customContainer = document.getElementById('custom-annual-categories');
+
+            // Get all annual bill cards, excluding those inside custom container
+            const allCards = Array.from(annualSection.querySelectorAll('.home-category-item[data-due-month]'));
+            const billCards = allCards.filter(card => !customContainer || !customContainer.contains(card));
+
+            // Add custom annual cards
+            if (customContainer) {
+                const customCards = Array.from(customContainer.querySelectorAll('.home-category-item[data-due-month]'));
+                billCards.push(...customCards);
+            }
+
+            // Sort by days until due (circular - upcoming first, recently passed last)
+            billCards.sort((a, b) => {
+                const monthA = parseInt(a.getAttribute('data-due-month')) || 1;
+                const dayA = parseInt(a.getAttribute('data-due-day')) || 1;
+                const monthB = parseInt(b.getAttribute('data-due-month')) || 1;
+                const dayB = parseInt(b.getAttribute('data-due-day')) || 1;
+
+                const daysA = getDaysUntilDue(monthA, dayA);
+                const daysB = getDaysUntilDue(monthB, dayB);
+                return daysA - daysB;
+            });
+
+            // Clear custom container
+            if (customContainer) {
+                customContainer.innerHTML = '';
+            }
+
+            // Re-append all cards in sorted order (before the custom container)
+            billCards.forEach(card => {
+                annualSection.insertBefore(card, customContainer);
             });
         }
 
@@ -9837,6 +9912,8 @@
                 const annualCost = category.annual_cost ? parseFloat(category.annual_cost) : 0;
                 const monthlyBudgeted = annualCost / 12;
                 const dueText = `Due ${category.due_month}/${category.due_day}`;
+                div.setAttribute('data-due-month', category.due_month);
+                div.setAttribute('data-due-day', category.due_day);
                 div.innerHTML = `
                     <div class="bill-card">
                         <div class="category-header">
@@ -10065,19 +10142,7 @@
                     { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
                 'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
-                'Annual Bills': [
-                    { name: 'Phone', emoji: '📱', slug: 'phone' },
-                    { name: 'Costco', emoji: '🏬', slug: 'costco' },
-                    { name: 'Insurance - Rent', emoji: '🏠', slug: 'insurance---rent' },
-                    { name: 'Letterboxd', emoji: '🎬', slug: 'letterboxd' },
-                    { name: 'Grammarly', emoji: '✏️', slug: 'grammarly' },
-                    { name: 'Domain', emoji: '🌐', slug: 'domain' },
-                    { name: 'Google One', emoji: '☁️', slug: 'google-one' },
-                    { name: 'C - Capital One Annual Fee', emoji: '💳', slug: 'c---capital-one-annual-fee' },
-                    { name: 'C - SW Annual Fee', emoji: '✈️', slug: 'c---sw-annual-fee' },
-                    { name: 'N - Capital One Annual Fee', emoji: '💎', slug: 'n---capital-one-annual-fee' },
-                    { name: 'N - SW Annual Fee', emoji: '🛫', slug: 'n---sw-annual-fee' }
-                ],
+                'Annual Bills': getAnnualBillsSortedByDueDate().map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug, dueMonth: c.dueMonth, dueDay: c.dueDay })),
                 'Other': [
                     { name: 'Ignore', emoji: '🚫', slug: 'ignore' }
                 ]
@@ -10086,7 +10151,7 @@
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day, dueMonth: category.due_month };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -10102,6 +10167,15 @@
                 const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 31;
                 const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 31;
                 return dayA - dayB;
+            });
+
+            // Sort Annual Bills by due date (upcoming first)
+            categoryGroups['Annual Bills'].sort((a, b) => {
+                const monthA = a.dueMonth || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueMonth) || 1;
+                const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 1;
+                const monthB = b.dueMonth || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueMonth) || 1;
+                const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 1;
+                return getDaysUntilDue(monthA, dayA) - getDaysUntilDue(monthB, dayB);
             });
 
             // Add Unsorted as first option
@@ -11054,19 +11128,7 @@
                     { name: 'Giving', emoji: '🤝', slug: 'giving' }
                 ],
                 'Monthly Bills': FIXED_MONTHLY_SORTED.map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug })),
-                'Annual Bills': [
-                    { name: 'Phone', emoji: '📱', slug: 'phone' },
-                    { name: 'Costco', emoji: '🏬', slug: 'costco' },
-                    { name: 'Insurance - Rent', emoji: '🏠', slug: 'insurance---rent' },
-                    { name: 'Letterboxd', emoji: '🎬', slug: 'letterboxd' },
-                    { name: 'Grammarly', emoji: '✏️', slug: 'grammarly' },
-                    { name: 'Domain', emoji: '🌐', slug: 'domain' },
-                    { name: 'Google One', emoji: '☁️', slug: 'google-one' },
-                    { name: 'C - Capital One Annual Fee', emoji: '💳', slug: 'c---capital-one-annual-fee' },
-                    { name: 'C - SW Annual Fee', emoji: '✈️', slug: 'c---sw-annual-fee' },
-                    { name: 'N - Capital One Annual Fee', emoji: '💎', slug: 'n---capital-one-annual-fee' },
-                    { name: 'N - SW Annual Fee', emoji: '🛫', slug: 'n---sw-annual-fee' }
-                ],
+                'Annual Bills': getAnnualBillsSortedByDueDate().map(c => ({ name: c.displayName, emoji: getCategoryEmoji(c.displayName), slug: c.slug, dueMonth: c.dueMonth, dueDay: c.dueDay })),
                 'Other': [
                     { name: 'Ignore', emoji: '🚫', slug: 'ignore' }
                 ]
@@ -11075,7 +11137,7 @@
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day, dueMonth: category.due_month };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -11091,6 +11153,15 @@
                 const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 31;
                 const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 31;
                 return dayA - dayB;
+            });
+
+            // Sort Annual Bills by due date (upcoming first)
+            categoryGroups['Annual Bills'].sort((a, b) => {
+                const monthA = a.dueMonth || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueMonth) || 1;
+                const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 1;
+                const monthB = b.dueMonth || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueMonth) || 1;
+                const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 1;
+                return getDaysUntilDue(monthA, dayA) - getDaysUntilDue(monthB, dayB);
             });
 
             // Remove any existing dropdown
