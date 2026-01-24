@@ -10264,10 +10264,10 @@
             const yearSelector = document.getElementById('custom-category-year-selector');
 
             if (monthSelector) {
-                monthSelector.onclick = () => showDateDropdown(monthSelector, 'months');
+                monthSelector.onclick = () => showCustomDropdown(monthSelector, 'month');
             }
             if (yearSelector) {
-                yearSelector.onclick = () => showDateDropdown(yearSelector, 'years');
+                yearSelector.onclick = () => showCustomDropdown(yearSelector, 'year');
             }
 
             // Initialize editable budget fields
