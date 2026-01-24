@@ -7679,7 +7679,9 @@
 
         function setupEditableFixedMonthlyBudgeted(categorySlug) {
             const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-            if (budgetedElement) {
+            if (budgetedElement && !budgetedElement.hasAttribute('data-initialized')) {
+                budgetedElement.setAttribute('data-initialized', 'true');
+
                 // Handle focus: select all text for easy editing
                 budgetedElement.addEventListener('focus', function() {
                     // Store original value
@@ -8965,7 +8967,16 @@
                 // Reload transactions or update categories based on which page is active
                 if (parentElement.classList.contains('category-month-selector') || parentElement.classList.contains('category-year-selector')) {
                     // Category detail page - reload that category's transactions
-                    const categorySlug = parentElement.getAttribute('data-category');
+                    let categorySlug = parentElement.getAttribute('data-category');
+
+                    // If no data-category attribute, try to find from parent page ID
+                    if (!categorySlug) {
+                        const categoryPage = parentElement.closest('[id^="categoryDetailPage-"]');
+                        if (categoryPage) {
+                            categorySlug = categoryPage.id.replace('categoryDetailPage-', '');
+                        }
+                    }
+
                     if (categorySlug) {
                         loadCategoryTransactions(categorySlug);
                     }
