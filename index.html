@@ -7482,6 +7482,44 @@
             }
         }
 
+        // Calculate pot for custom flexible categories using category title
+        async function calculateCustomFlexiblePot(categoryTitle, selectedMonth, selectedYear, allTransactions) {
+            try {
+                let pot = 0;
+
+                for (let year = 2026; year <= selectedYear; year++) {
+                    const startMonth = 1;
+                    const endMonth = (year === selectedYear) ? selectedMonth - 1 : 12;
+
+                    for (let month = startMonth; month <= endMonth; month++) {
+                        // Get budget for this month
+                        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+                        const budgetData = await loadBudget(categoryTitle, monthStr);
+                        const budgeted = budgetData.amount || 0;
+
+                        // Get net transactions for this month
+                        const monthTransactions = allTransactions.filter(t => {
+                            if (t.category !== categoryTitle) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
+                        });
+                        const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                        // Calculate remaining for this month
+                        const remaining = budgeted + pot + netTransactions;
+
+                        // Pot for next month = max(0, remaining) - don't carry negative
+                        pot = Math.max(0, remaining);
+                    }
+                }
+
+                return pot;
+            } catch (error) {
+                console.error('Error calculating custom pot:', error);
+                return 0;
+            }
+        }
+
         function updateFlexibleCategoryRemaining(categorySlug) {
             const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
             const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
@@ -10097,6 +10135,10 @@
                         const spentEl = document.getElementById('custom-detail-spent');
                         const budgetedEl = document.getElementById('custom-detail-budgeted');
                         const remainingEl = document.getElementById('custom-detail-remaining');
+                        const potEl = document.getElementById('custom-detail-rollover');
+
+                        // Calculate pot (rollover from previous months)
+                        const pot = await calculateCustomFlexiblePot(currentCustomCategory.title, selectedMonth, selectedYear, result.transactions);
 
                         if (spentEl) {
                             spentEl.textContent = `$${spent.toFixed(2)}`;
@@ -10106,9 +10148,13 @@
                             budgetedEl.textContent = '$' + savedBudget.toFixed(2);
                             budgetedEl.setAttribute('data-value', savedBudget);
                         }
+                        if (potEl) {
+                            potEl.textContent = `$${pot.toFixed(2)}`;
+                            potEl.setAttribute('data-value', pot);
+                        }
                         if (remainingEl) {
-                            // Remaining = Budget + NetTransactions (positive for refunds, negative for expenses)
-                            const remaining = savedBudget + netTransactions;
+                            // Remaining = Budget + Pot + NetTransactions (positive for refunds, negative for expenses)
+                            const remaining = savedBudget + pot + netTransactions;
                             remainingEl.textContent = `${remaining < 0 ? '-' : ''}$${Math.abs(remaining).toFixed(2)}`;
                             remainingEl.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
                         }
