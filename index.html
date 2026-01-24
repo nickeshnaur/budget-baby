@@ -8977,7 +8977,11 @@
                         }
                     }
 
-                    if (categorySlug) {
+                    // Check if this is the custom category detail page
+                    const customCategoryPage = parentElement.closest('#customCategoryDetailPage');
+                    if (customCategoryPage) {
+                        loadCustomCategoryTransactions();
+                    } else if (categorySlug) {
                         loadCategoryTransactions(categorySlug);
                     }
                 } else if (parentElement.id.includes('categories')) {
