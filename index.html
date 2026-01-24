@@ -5780,7 +5780,11 @@
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>📊</span>Budgeted</div>
-                <div class="budget-value editable" contenteditable="true" id="giving-budgeted" data-value="0">$0.00</div>
+                <div class="budget-value" id="giving-budgeted" data-value="0">$0.00</div>
+            </div>
+            <div class="budget-item">
+                <div class="budget-label"><span>💰</span>Percentage</div>
+                <div class="budget-value editable" contenteditable="true" id="giving-percentage" data-value="10">10%</div>
             </div>
             <div class="budget-item">
                 <div class="budget-label"><span>🏦</span>Pot</div>
@@ -7226,6 +7230,9 @@
 
                     if (categoryType === 'income') {
                         updateIncomePageCalculations(allCategoryTransactions);
+                    } else if (categorySlug === 'giving') {
+                        // Special handling for Giving - percentage-based budgeting
+                        updateGivingCalculations(allCategoryTransactions);
                     } else if (categoryType === 'flexible-monthly') {
                         updateFlexibleCategoryCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-monthly') {
@@ -7682,6 +7689,236 @@
                 });
             }
         }
+
+        // ========== GIVING CATEGORY SPECIAL HANDLING ==========
+
+        // Get total income (deposits) for a specific month/year
+        async function getIncomeForMonth(month, year) {
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+                if (!response.ok || !result.transactions) return 0;
+
+                // Filter for Income category transactions in the specified month/year
+                const incomeTransactions = result.transactions.filter(t => {
+                    if (!t.category || t.category.toUpperCase() !== 'INCOME') return false;
+                    const txnDate = new Date(t.date);
+                    return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
+                });
+
+                // Calculate total deposits (absolute value of positive amounts)
+                const totalDeposits = incomeTransactions.reduce((sum, t) => {
+                    const amount = parseFloat(t.amount) || 0;
+                    return sum + Math.abs(amount);
+                }, 0);
+
+                return totalDeposits;
+            } catch (error) {
+                console.error('Error fetching income:', error);
+                return 0;
+            }
+        }
+
+        // Save Giving percentage for a specific month/year
+        function saveGivingPercentage(month, year, percentage) {
+            const key = `giving-percentage-${year}-${String(month).padStart(2, '0')}`;
+            localStorage.setItem(key, percentage.toString());
+        }
+
+        // Load Giving percentage for a specific month/year (defaults to 10%)
+        function loadGivingPercentage(month, year) {
+            const key = `giving-percentage-${year}-${String(month).padStart(2, '0')}`;
+            const saved = localStorage.getItem(key);
+            return saved !== null ? parseFloat(saved) : 10;
+        }
+
+        // Update Giving category calculations (percentage-based budgeting)
+        async function updateGivingCalculations(transactions) {
+            const categorySlug = 'giving';
+
+            // Get selected month/year from category page
+            const categoryPage = document.getElementById('categoryDetailPage-giving');
+            let selectedMonth = new Date().getMonth() + 1;
+            let selectedYear = new Date().getFullYear();
+            if (categoryPage) {
+                const monthSelector = categoryPage.querySelector('.category-month-selector');
+                const yearSelector = categoryPage.querySelector('.category-year-selector');
+                if (monthSelector) selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
+                if (yearSelector) selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
+            }
+
+            // Load percentage for this month (defaults to 10%)
+            const percentage = loadGivingPercentage(selectedMonth, selectedYear);
+            const percentageElement = document.getElementById('giving-percentage');
+            if (percentageElement) {
+                percentageElement.setAttribute('data-value', percentage.toString());
+                percentageElement.textContent = `${percentage}%`;
+            }
+
+            // Get income for this month
+            const income = await getIncomeForMonth(selectedMonth, selectedYear);
+
+            // Calculate budgeted as percentage of income
+            const budgeted = (percentage / 100) * income;
+            const budgetedElement = document.getElementById('giving-budgeted');
+            if (budgetedElement) {
+                budgetedElement.setAttribute('data-value', budgeted.toString());
+                budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            }
+
+            // Calculate pot (rollover from previous months)
+            const pot = await calculateGivingPot(selectedMonth, selectedYear);
+            const rolloverElement = document.getElementById('giving-rollover');
+            if (rolloverElement) {
+                rolloverElement.setAttribute('data-value', pot.toString());
+                rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            }
+
+            // Calculate total spent (absolute value for display)
+            const totalSpentDisplay = transactions.reduce((sum, transaction) => {
+                return sum + Math.abs(parseFloat(transaction.amount) || 0);
+            }, 0);
+
+            // Calculate net transactions (with signs, for remaining calculation)
+            const netTransactions = transactions.reduce((sum, transaction) => {
+                return sum + (parseFloat(transaction.amount) || 0);
+            }, 0);
+
+            // Update spent display
+            const spentElement = document.getElementById('giving-spent');
+            if (spentElement) {
+                spentElement.textContent = `$${totalSpentDisplay.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                spentElement.setAttribute('data-net', netTransactions);
+            }
+
+            // Calculate and update remaining (Budgeted + Pot + NetTransactions)
+            updateFlexibleCategoryRemaining(categorySlug);
+
+            // Set up editable percentage field
+            setupEditableGivingPercentage();
+        }
+
+        // Calculate pot for Giving by accumulating positive remaining from previous months
+        async function calculateGivingPot(selectedMonth, selectedYear) {
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+                if (!response.ok || !result.transactions) return 0;
+
+                let pot = 0;
+
+                for (let year = 2026; year <= selectedYear; year++) {
+                    const startMonth = 1;
+                    const endMonth = (year === selectedYear) ? selectedMonth - 1 : 12;
+
+                    for (let month = startMonth; month <= endMonth; month++) {
+                        // Get percentage and income for this month
+                        const percentage = loadGivingPercentage(month, year);
+                        const income = await getIncomeForMonth(month, year);
+                        const budgeted = (percentage / 100) * income;
+
+                        // Get net transactions for this month
+                        const monthTransactions = result.transactions.filter(t => {
+                            if (!t.category || t.category.toUpperCase() !== 'GIVING') return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
+                        });
+                        const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                        // Calculate remaining for this month
+                        const remaining = budgeted + pot + netTransactions;
+
+                        // Pot for next month = max(0, remaining) - don't carry negative
+                        pot = Math.max(0, remaining);
+                    }
+                }
+
+                return pot;
+            } catch (error) {
+                console.error('Error calculating Giving pot:', error);
+                return 0;
+            }
+        }
+
+        // Set up editable percentage field for Giving
+        function setupEditableGivingPercentage() {
+            const percentageElement = document.getElementById('giving-percentage');
+            if (!percentageElement) return;
+
+            // Mark as initialized to prevent duplicate listeners
+            if (percentageElement.dataset.initialized) return;
+            percentageElement.dataset.initialized = 'true';
+
+            // Handle focus: select all text for easy editing
+            percentageElement.addEventListener('focus', function() {
+                this.setAttribute('data-original', this.textContent);
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(this);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            });
+
+            // Handle blur: save changes and update calculations
+            percentageElement.addEventListener('blur', async function() {
+                let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
+                let numericValue = parseFloat(value) || 10;
+
+                // Clamp between 0 and 100
+                numericValue = Math.max(0, Math.min(100, numericValue));
+
+                // Update data attribute
+                this.setAttribute('data-value', numericValue.toString());
+
+                // Update display format
+                this.textContent = `${numericValue}%`;
+
+                // Get selected month/year from category page
+                const categoryPage = document.getElementById('categoryDetailPage-giving');
+                let month = new Date().getMonth() + 1;
+                let year = new Date().getFullYear();
+                if (categoryPage) {
+                    const monthSelector = categoryPage.querySelector('.category-month-selector');
+                    const yearSelector = categoryPage.querySelector('.category-year-selector');
+                    if (monthSelector) month = parseInt(monthSelector.getAttribute('data-value')) || month;
+                    if (yearSelector) year = parseInt(yearSelector.getAttribute('data-value')) || year;
+                }
+
+                // Save percentage
+                saveGivingPercentage(month, year, numericValue);
+
+                // Recalculate budgeted based on new percentage
+                const income = await getIncomeForMonth(month, year);
+                const budgeted = (numericValue / 100) * income;
+                const budgetedElement = document.getElementById('giving-budgeted');
+                if (budgetedElement) {
+                    budgetedElement.setAttribute('data-value', budgeted.toString());
+                    budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
+
+                // Recalculate remaining
+                updateFlexibleCategoryRemaining('giving');
+            });
+
+            // Handle Enter key: blur the field to save
+            percentageElement.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+                // Handle Escape key: revert changes
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    const original = this.getAttribute('data-original');
+                    if (original) {
+                        this.textContent = original;
+                    }
+                    this.blur();
+                }
+            });
+        }
+
+        // ========== END GIVING CATEGORY SPECIAL HANDLING ==========
 
         function updateFixedMonthlyCalculations(categorySlug, transactions) {
             // Get selected month/year from category page
@@ -12482,9 +12719,20 @@
                                 // Calculate net transactions (with signs, for remaining)
                                 const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-                                const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
-                                // Use pot from potMap (carries over from previous months)
-                                const rolloverValue = potMap[displayName] || 0;
+                                // Special handling for Giving - use percentage-based budgeting
+                                let budgetedValue;
+                                let rolloverValue;
+                                if (categorySlug === 'giving') {
+                                    // Get percentage and income for this month
+                                    const percentage = loadGivingPercentage(selectedMonth, selectedYear);
+                                    const income = await getIncomeForMonth(selectedMonth, selectedYear);
+                                    budgetedValue = (percentage / 100) * income;
+                                    rolloverValue = await calculateGivingPot(selectedMonth, selectedYear);
+                                } else {
+                                    budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
+                                    // Use pot from potMap (carries over from previous months)
+                                    rolloverValue = potMap[displayName] || 0;
+                                }
                                 // Remaining = Budgeted + Pot + NetTransactions (positive for refunds, negative for expenses)
                                 const remainingValue = budgetedValue + rolloverValue + netTransactions;
 
