@@ -7335,9 +7335,20 @@
         }
 
         async function updateFlexibleCategoryCalculations(categorySlug, transactions) {
-            // Get the selected month
+            // Get the selected month/year
             const month = getSelectedMonth(categorySlug);
             const category = slugToCategory(categorySlug);
+
+            // Parse selected month and year
+            const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
+            let selectedMonth = new Date().getMonth() + 1;
+            let selectedYear = new Date().getFullYear();
+            if (categoryPage) {
+                const monthSelector = categoryPage.querySelector('.category-month-selector');
+                const yearSelector = categoryPage.querySelector('.category-year-selector');
+                if (monthSelector) selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || selectedMonth;
+                if (yearSelector) selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
+            }
 
             // Load budget from server
             if (month && category) {
@@ -7347,6 +7358,14 @@
                     budgetedElement.setAttribute('data-value', budgetData.amount.toString());
                     budgetedElement.textContent = `$${budgetData.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                 }
+            }
+
+            // Calculate pot (rollover from previous months)
+            const pot = await calculateFlexiblePot(categorySlug, category, selectedMonth, selectedYear);
+            const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
+            if (rolloverElement) {
+                rolloverElement.setAttribute('data-value', pot.toString());
+                rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
             // Calculate total spent (absolute value for display)
@@ -7373,6 +7392,94 @@
 
             // Set up editable Budgeted field
             setupEditableBudgeted(categorySlug);
+        }
+
+        // Calculate pot (rollover) for a flexible category by accumulating positive remaining from previous months
+        async function calculateFlexiblePot(categorySlug, category, selectedMonth, selectedYear) {
+            // Fetch all transactions for this category
+            const transactionName = SLUG_TO_TRANSACTION_NAME[categorySlug];
+            if (!transactionName) return 0;
+
+            try {
+                const response = await fetch('/api/transactions');
+                const result = await response.json();
+                if (!response.ok || !result.transactions) return 0;
+
+                // Start from January of the selected year and accumulate through previous month
+                let pot = 0;
+
+                for (let year = 2026; year <= selectedYear; year++) {
+                    const startMonth = 1;
+                    const endMonth = (year === selectedYear) ? selectedMonth - 1 : 12;
+
+                    for (let month = startMonth; month <= endMonth; month++) {
+                        // Get budget for this month
+                        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+                        const budgetData = await loadBudget(category, monthStr);
+                        const budgeted = budgetData.amount || 0;
+
+                        // Get net transactions for this month
+                        const monthTransactions = result.transactions.filter(t => {
+                            if (!t.category || t.category.toUpperCase() !== transactionName) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
+                        });
+                        const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                        // Calculate remaining for this month
+                        const remaining = budgeted + pot + netTransactions;
+
+                        // Pot for next month = max(0, remaining) - don't carry negative
+                        pot = Math.max(0, remaining);
+                    }
+                }
+
+                return pot;
+            } catch (error) {
+                console.error('Error calculating pot:', error);
+                return 0;
+            }
+        }
+
+        // Calculate pot using pre-fetched transactions (more efficient for bulk calculations)
+        async function calculateFlexiblePotWithTransactions(categorySlug, category, selectedMonth, selectedYear, allTransactions) {
+            const transactionName = SLUG_TO_TRANSACTION_NAME[categorySlug];
+            if (!transactionName) return 0;
+
+            try {
+                let pot = 0;
+
+                for (let year = 2026; year <= selectedYear; year++) {
+                    const startMonth = 1;
+                    const endMonth = (year === selectedYear) ? selectedMonth - 1 : 12;
+
+                    for (let month = startMonth; month <= endMonth; month++) {
+                        // Get budget for this month
+                        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+                        const budgetData = await loadBudget(category, monthStr);
+                        const budgeted = budgetData.amount || 0;
+
+                        // Get net transactions for this month from pre-fetched data
+                        const monthTransactions = allTransactions.filter(t => {
+                            if (!t.category || t.category.toUpperCase() !== transactionName) return false;
+                            const txnDate = new Date(t.date);
+                            return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
+                        });
+                        const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                        // Calculate remaining for this month
+                        const remaining = budgeted + pot + netTransactions;
+
+                        // Pot for next month = max(0, remaining) - don't carry negative
+                        pot = Math.max(0, remaining);
+                    }
+                }
+
+                return pot;
+            } catch (error) {
+                console.error('Error calculating pot:', error);
+                return 0;
+            }
         }
 
         function updateFlexibleCategoryRemaining(categorySlug) {
@@ -11941,6 +12048,16 @@
                     budgetMap[name] = budgetResults[index].amount || 0;
                 });
 
+                // Calculate pots (rollover) for all flexible categories in parallel
+                const potPromises = FLEXIBLE_MONTHLY_CATEGORIES.map(cat =>
+                    calculateFlexiblePotWithTransactions(cat.slug, cat.displayName, selectedMonth, selectedYear, result.transactions)
+                );
+                const potResults = await Promise.all(potPromises);
+                const potMap = {};
+                FLEXIBLE_MONTHLY_CATEGORIES.forEach((cat, index) => {
+                    potMap[cat.displayName] = potResults[index];
+                });
+
                 categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
                     const categoryType = SLUG_TO_TYPE[categorySlug];
 
@@ -12099,7 +12216,6 @@
                             } else {
                                 // Flexible-monthly categories: show remaining, budgeted/spent, progress bar
                                 const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-                                const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
                                 if (!budgetedElement) return;
 
                                 // Calculate spent (absolute value for display)
@@ -12108,8 +12224,9 @@
                                 const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                                 const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
-                                const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
-                                // Remaining = Budgeted + Rollover + NetTransactions (positive for refunds, negative for expenses)
+                                // Use pot from potMap (carries over from previous months)
+                                const rolloverValue = potMap[displayName] || 0;
+                                // Remaining = Budgeted + Pot + NetTransactions (positive for refunds, negative for expenses)
                                 const remainingValue = budgetedValue + rolloverValue + netTransactions;
 
                                 if (categoryAmountElement) {
