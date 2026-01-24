@@ -12554,7 +12554,7 @@
                     potMap[cat.displayName] = potResults[index];
                 });
 
-                categories.forEach(([categorySlug, displayName, transactionCategoryName]) => {
+                for (const [categorySlug, displayName, transactionCategoryName] of categories) {
                     const categoryType = SLUG_TO_TYPE[categorySlug];
 
                     // Calculate transactions for this category
@@ -12569,7 +12569,7 @@
 
                     // Update homepage card
                     const homeCards = document.querySelectorAll(`.home-category-item`);
-                    homeCards.forEach(card => {
+                    for (const card of homeCards) {
                         const categoryNameEl = card.querySelector('.category-name');
                         if (categoryNameEl && categoryNameEl.textContent.trim() === actualDisplayName) {
                             const categoryAmountElement = card.querySelector('.category-amount');
@@ -12800,8 +12800,8 @@
                                 }
                             }
                         }
-                    });
-                });
+                    }
+                }
 
                 // Update custom category cards
                 if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
