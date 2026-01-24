@@ -3486,7 +3486,7 @@
 
         <div class="section">
             <div class="section-subtitle">Monthly Bills</div>
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Auto Loan')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="30" onclick="showCategoryDetail('fixed-monthly', 'Auto Loan')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3502,7 +3502,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Rent')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="1" onclick="showCategoryDetail('fixed-monthly', 'Rent')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3518,7 +3518,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Electric')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="8" onclick="showCategoryDetail('fixed-monthly', 'Electric')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3534,7 +3534,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Insurance Auto')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="27" onclick="showCategoryDetail('fixed-monthly', 'Insurance Auto')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3550,7 +3550,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'NW Mutual')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="9" onclick="showCategoryDetail('fixed-monthly', 'NW Mutual')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3566,7 +3566,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Internet')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="25" onclick="showCategoryDetail('fixed-monthly', 'Internet')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3582,7 +3582,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Spotify')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="3" onclick="showCategoryDetail('fixed-monthly', 'Spotify')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3598,7 +3598,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'SP Fitness')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="1" onclick="showCategoryDetail('fixed-monthly', 'SP Fitness')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -3614,7 +3614,7 @@
                 </div>
             </div>
 
-            <div class="home-category-item" onclick="showCategoryDetail('fixed-monthly', 'Alamo Drafthouse')" style="cursor: pointer;">
+            <div class="home-category-item" data-due-day="22" onclick="showCategoryDetail('fixed-monthly', 'Alamo Drafthouse')" style="cursor: pointer;">
                 <div class="bill-card">
                     <div class="category-header">
                         <div class="category-left-group">
@@ -9737,6 +9737,52 @@
                     annualContainer.appendChild(card);
                 }
             });
+
+            // Sort monthly bills by due day after adding custom categories
+            sortMonthlyBillsByDueDay();
+        }
+
+        // Sort all monthly bills (built-in and custom) by due day
+        function sortMonthlyBillsByDueDay() {
+            // Find the Monthly Bills section
+            const sections = document.querySelectorAll('#categoriesPage .section');
+            let monthlySection = null;
+            for (const section of sections) {
+                const subtitle = section.querySelector('.section-subtitle');
+                if (subtitle && subtitle.textContent.trim() === 'Monthly Bills') {
+                    monthlySection = section;
+                    break;
+                }
+            }
+            if (!monthlySection) return;
+
+            // Get all bill cards (both hardcoded and custom)
+            const billCards = Array.from(monthlySection.querySelectorAll('.home-category-item[data-due-day]'));
+
+            // Also get cards from custom-monthly-categories container
+            const customContainer = document.getElementById('custom-monthly-categories');
+            if (customContainer) {
+                const customCards = Array.from(customContainer.querySelectorAll('.home-category-item[data-due-day]'));
+                billCards.push(...customCards);
+            }
+
+            // Sort by due day
+            billCards.sort((a, b) => {
+                const dayA = parseInt(a.getAttribute('data-due-day')) || 31;
+                const dayB = parseInt(b.getAttribute('data-due-day')) || 31;
+                return dayA - dayB;
+            });
+
+            // Remove custom container's cards first (they'll be re-added in sorted order)
+            if (customContainer) {
+                customContainer.innerHTML = '';
+            }
+
+            // Re-append all cards in sorted order (after the section-subtitle)
+            const subtitle = monthlySection.querySelector('.section-subtitle');
+            billCards.forEach(card => {
+                monthlySection.insertBefore(card, customContainer);
+            });
         }
 
         // Create a category card element
@@ -9774,6 +9820,7 @@
             } else if (category.type === 'monthly') {
                 // Monthly bill card - shows budgeted amount, not negative/red
                 const dueText = `Due ${displayMonth}/${category.due_day}`;
+                div.setAttribute('data-due-day', category.due_day);
                 div.innerHTML = `
                     <div class="bill-card">
                         <div class="category-header">
@@ -10043,7 +10090,7 @@
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -10053,6 +10100,13 @@
                     }
                 });
             }
+
+            // Sort Monthly Bills by due day
+            categoryGroups['Monthly Bills'].sort((a, b) => {
+                const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 31;
+                const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 31;
+                return dayA - dayB;
+            });
 
             // Add Unsorted as first option
             const unsortedOption = document.createElement('option');
@@ -11024,7 +11078,7 @@
             // Add custom categories to appropriate groups
             if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
                 customCategories.forEach(category => {
-                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true };
+                    const categoryItem = { name: category.title, emoji: category.emoji, slug: null, isCustom: true, dueDay: category.due_day };
                     if (category.type === 'flexible') {
                         categoryGroups['Flexible Monthly'].push(categoryItem);
                     } else if (category.type === 'monthly') {
@@ -11034,6 +11088,13 @@
                     }
                 });
             }
+
+            // Sort Monthly Bills by due day
+            categoryGroups['Monthly Bills'].sort((a, b) => {
+                const dayA = a.dueDay || (CATEGORY_CONFIG.find(c => c.slug === a.slug)?.dueDay) || 31;
+                const dayB = b.dueDay || (CATEGORY_CONFIG.find(c => c.slug === b.slug)?.dueDay) || 31;
+                return dayA - dayB;
+            });
 
             // Remove any existing dropdown
             const existingDropdown = document.querySelector('.category-dropdown');
