@@ -11690,15 +11690,16 @@
                             billStatus.textContent = 'Paid ✓';
                             billStatus.className = 'bill-status paid';
                         } else {
-                            // Restore original due text
-                            const originalDue = billStatus.getAttribute('data-original-due');
-                            if (originalDue) {
-                                billStatus.textContent = originalDue;
-                            } else if (categoryConfig.dueDay) {
-                                // Fallback for monthly bills
-                                const currentMonth = new Date().getMonth() + 1;
-                                billStatus.textContent = `Due ${currentMonth}/${categoryConfig.dueDay}`;
+                            // Get selected month from dropdowns
+                            const categoriesMonthSelector = document.getElementById('categories-month-selector');
+                            const dashboardMonthSelector = document.getElementById('dashboard-month-selector');
+                            let displayMonth = new Date().getMonth() + 1;
+                            if (categoriesMonthSelector) {
+                                displayMonth = parseInt(categoriesMonthSelector.getAttribute('data-value')) || displayMonth;
+                            } else if (dashboardMonthSelector) {
+                                displayMonth = parseInt(dashboardMonthSelector.getAttribute('data-value')) || displayMonth;
                             }
+                            billStatus.textContent = `Due ${displayMonth}/${categoryConfig.dueDay}`;
                             billStatus.className = 'bill-status due';
                         }
                     }
@@ -12254,8 +12255,7 @@
                                             billStatusElement.textContent = 'Paid ✓';
                                             billStatusElement.className = 'bill-status paid';
                                         } else {
-                                            const currentMonth = new Date().getMonth() + 1;
-                                            billStatusElement.textContent = `Due ${currentMonth}/${category.due_day}`;
+                                            billStatusElement.textContent = `Due ${selectedMonth}/${category.due_day}`;
                                             billStatusElement.className = 'bill-status due';
                                         }
                                     }
