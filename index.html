@@ -7350,9 +7350,10 @@
             }
 
             // Calculate total spent from all transactions for this category
+            // Negative amounts = spending (add to spent), positive amounts = refunds (reduce spent)
             const totalSpent = transactions.reduce((sum, transaction) => {
-                const amount = Math.abs(parseFloat(transaction.amount) || 0);
-                return sum + amount;
+                const amount = parseFloat(transaction.amount) || 0;
+                return sum - amount; // Subtracting negative = adding, subtracting positive = reducing
             }, 0);
 
             // Update spent display
@@ -9919,8 +9920,11 @@
                         });
                     }
 
-                    // Calculate spent
-                    const spent = filtered.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                    // Calculate spent (negative = spending, positive = refunds reduce spent)
+                    const spent = filtered.reduce((sum, t) => {
+                        const amount = parseFloat(t.amount) || 0;
+                        return sum - amount;
+                    }, 0);
 
                     // Load saved budget for this category
                     const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
@@ -11231,8 +11235,11 @@
                            t.category.toUpperCase() === transactionName;
                 });
 
-                // Calculate spent
-                const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                // Calculate spent (negative = spending, positive = refunds)
+                const spent = categoryTransactions.reduce((sum, t) => {
+                    const amount = parseFloat(t.amount) || 0;
+                    return sum - amount;
+                }, 0);
 
                 // Return remaining (can be negative)
                 return budgetAmount - spent;
@@ -12087,9 +12094,16 @@
                                 const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
                                 if (!budgetedElement) return;
 
+                                // For flexible categories, calculate spent properly:
+                                // Negative amounts = spending (add to spent), positive amounts = refunds (reduce spent)
+                                const flexibleSpent = categoryTransactions.reduce((sum, t) => {
+                                    const amount = parseFloat(t.amount) || 0;
+                                    return sum - amount;
+                                }, 0);
+
                                 const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
                                 const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
-                                const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
+                                const remainingValue = (budgetedValue + rolloverValue) - flexibleSpent;
 
                                 if (categoryAmountElement) {
                                     const sign = remainingValue >= 0 ? '' : '-';
@@ -12111,11 +12125,11 @@
 
                                 budgetInfoDiv.innerHTML = `
                                     <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
-                                    <span class="spent-text">SPENT: $${totalSpent.toFixed(2)}</span>
+                                    <span class="spent-text">SPENT: $${flexibleSpent.toFixed(2)}</span>
                                 `;
 
                                 // Update progress bar
-                                const isOverBudget = totalSpent > budgetedValue;
+                                const isOverBudget = flexibleSpent > budgetedValue;
                                 const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                 if (!progressBarContainer && budgetedValue > 0) {
@@ -12134,7 +12148,7 @@
                                     progressBar.style.borderRadius = '1px';
                                     progressBar.style.transition = 'width 0.3s ease';
 
-                                    const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                    const percentage = budgetedValue > 0 ? Math.min((flexibleSpent / budgetedValue) * 100, 100) : 0;
                                     progressBar.style.width = `${percentage}%`;
 
                                     progressContainer.appendChild(progressBar);
@@ -12146,7 +12160,7 @@
                                 } else if (progressBarContainer && budgetedValue > 0) {
                                     const progressBar = progressBarContainer.querySelector('.progress-bar');
                                     if (progressBar) {
-                                        const percentage = Math.min((totalSpent / budgetedValue) * 100, 100);
+                                        const percentage = Math.min((flexibleSpent / budgetedValue) * 100, 100);
                                         progressBar.style.width = `${percentage}%`;
                                         progressBar.style.backgroundColor = progressColor;
                                     }
@@ -12171,7 +12185,12 @@
                         const categoryTransactions = filteredTransactions.filter(t =>
                             t.category && t.category === category.title
                         );
-                        const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                        // For bills, use absolute value; for flexible, account for refunds
+                        const totalSpentAbs = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                        const flexibleSpentCustom = categoryTransactions.reduce((sum, t) => {
+                            const amount = parseFloat(t.amount) || 0;
+                            return sum - amount;
+                        }, 0);
 
                         // Find the card by category name
                         const homeCards = document.querySelectorAll('.home-category-item');
@@ -12186,7 +12205,7 @@
                                     // Get budgeted value from loaded budgets
                                     const budgetedValue = customBudgetMap[category.title] || 0;
                                     const rolloverValue = 0;
-                                    const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
+                                    const remainingValue = (budgetedValue + rolloverValue) - flexibleSpentCustom;
 
                                     if (categoryAmountElement) {
                                         const sign = remainingValue >= 0 ? '' : '-';
@@ -12198,10 +12217,10 @@
                                     const budgetText = card.querySelector('.budget-text');
                                     const spentText = card.querySelector('.spent-text');
                                     if (budgetText) budgetText.textContent = `BUDGETED: $${budgetedValue.toFixed(2)}`;
-                                    if (spentText) spentText.textContent = `SPENT: $${totalSpent.toFixed(2)}`;
+                                    if (spentText) spentText.textContent = `SPENT: $${flexibleSpentCustom.toFixed(2)}`;
 
                                     // Add progress bar if it doesn't exist and budget > 0
-                                    const isOverBudget = totalSpent > budgetedValue;
+                                    const isOverBudget = flexibleSpentCustom > budgetedValue;
                                     const progressColor = isOverBudget ? '#EE3636' : '#D3D3D3';
 
                                     if (!progressBarContainer) {
@@ -12220,7 +12239,7 @@
                                         progressBar.style.borderRadius = '1px';
                                         progressBar.style.transition = 'width 0.3s ease';
 
-                                        const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                        const percentage = budgetedValue > 0 ? Math.min((flexibleSpentCustom / budgetedValue) * 100, 100) : 0;
                                         progressBar.style.width = `${percentage}%`;
 
                                         progressContainer.appendChild(progressBar);
@@ -12232,7 +12251,7 @@
                                     } else {
                                         const progressBar = progressBarContainer.querySelector('.progress-bar');
                                         if (progressBar) {
-                                            const percentage = budgetedValue > 0 ? Math.min((totalSpent / budgetedValue) * 100, 100) : 0;
+                                            const percentage = budgetedValue > 0 ? Math.min((flexibleSpentCustom / budgetedValue) * 100, 100) : 0;
                                             progressBar.style.width = `${percentage}%`;
                                             progressBar.style.backgroundColor = progressColor;
                                         }
@@ -12245,7 +12264,7 @@
 
                                     if (categoryAmountElement) {
                                         // Show total if paid, budgeted if not paid
-                                        const displayAmount = isPaid ? totalSpent : budgetedValue;
+                                        const displayAmount = isPaid ? totalSpentAbs : budgetedValue;
                                         categoryAmountElement.textContent = `$${displayAmount.toFixed(2)}`;
                                         categoryAmountElement.className = 'category-amount'; // No positive/negative styling
                                     }
