@@ -7349,19 +7349,26 @@
                 }
             }
 
-            // Calculate total spent from all transactions for this category
-            // Calculate total spent (absolute value of all transactions)
-            const totalSpent = transactions.reduce((sum, transaction) => {
+            // Calculate total spent (absolute value for display)
+            const totalSpentDisplay = transactions.reduce((sum, transaction) => {
                 return sum + Math.abs(parseFloat(transaction.amount) || 0);
+            }, 0);
+
+            // Calculate net transactions (with signs, for remaining calculation)
+            // Positive amounts (refunds) add to remaining, negative amounts (expenses) subtract
+            const netTransactions = transactions.reduce((sum, transaction) => {
+                return sum + (parseFloat(transaction.amount) || 0);
             }, 0);
 
             // Update spent display
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             if (spentElement) {
-                spentElement.textContent = `$${totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                spentElement.textContent = `$${totalSpentDisplay.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                // Store net transactions for remaining calculation
+                spentElement.setAttribute('data-net', netTransactions);
             }
 
-            // Calculate and update remaining (Budgeted + Rollover - Spent)
+            // Calculate and update remaining (Budgeted + Rollover + NetTransactions)
             updateFlexibleCategoryRemaining(categorySlug);
 
             // Set up editable Budgeted field
@@ -7379,12 +7386,12 @@
                 const budgetedValue = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
                 const rolloverValue = parseFloat(rolloverElement.getAttribute('data-value')) || 0;
 
-                // Parse spent amount (remove - sign and $ symbol)
-                const spentText = spentElement.textContent.replace(/[^\d.]/g, '');
-                const spentValue = parseFloat(spentText) || 0;
+                // Get net transactions (signed sum) - positive = refunds add, negative = expenses subtract
+                const netTransactions = parseFloat(spentElement.getAttribute('data-net')) || 0;
 
-                // Calculate remaining: (Budgeted + Rollover) - Spent
-                const remaining = (budgetedValue + rolloverValue) - spentValue;
+                // Calculate remaining: Budgeted + Rollover + NetTransactions
+                // (NetTransactions is negative for expenses, positive for refunds)
+                const remaining = budgetedValue + rolloverValue + netTransactions;
 
                 // Update display
                 const sign = remaining < 0 ? '-' : '';
@@ -9919,8 +9926,10 @@
                         });
                     }
 
-                    // Calculate spent (absolute value of all transactions)
+                    // Calculate spent (absolute value for display)
                     const spent = filtered.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                    // Calculate net transactions (with signs, for remaining)
+                    const netTransactions = filtered.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                     // Load saved budget for this category
                     const selectedPeriod = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
@@ -9935,13 +9944,15 @@
 
                         if (spentEl) {
                             spentEl.textContent = `$${spent.toFixed(2)}`;
+                            spentEl.setAttribute('data-net', netTransactions);
                         }
                         if (budgetedEl) {
                             budgetedEl.textContent = '$' + savedBudget.toFixed(2);
                             budgetedEl.setAttribute('data-value', savedBudget);
                         }
                         if (remainingEl) {
-                            const remaining = savedBudget - spent;
+                            // Remaining = Budget + NetTransactions (positive for refunds, negative for expenses)
+                            const remaining = savedBudget + netTransactions;
                             remainingEl.textContent = `${remaining < 0 ? '-' : ''}$${Math.abs(remaining).toFixed(2)}`;
                             remainingEl.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
                         }
@@ -10202,9 +10213,11 @@
 
             if (budgetedEl && spentEl && remainingEl) {
                 const budgeted = parseFloat(budgetedEl.getAttribute('data-value')) || 0;
-                const spent = parseFloat(spentEl.textContent.replace(/[^0-9.-]/g, '')) || 0;
+                // Get net transactions (signed sum) for remaining calculation
+                const netTransactions = parseFloat(spentEl.getAttribute('data-net')) || 0;
                 const rollover = rolloverEl ? parseFloat(rolloverEl.getAttribute('data-value')) || 0 : 0;
-                const remaining = (budgeted + rollover) - spent;
+                // Remaining = Budgeted + Rollover + NetTransactions
+                const remaining = budgeted + rollover + netTransactions;
 
                 remainingEl.textContent = `${remaining < 0 ? '-' : ''}$${Math.abs(remaining).toFixed(2)}`;
                 remainingEl.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
@@ -11233,11 +11246,11 @@
                            t.category.toUpperCase() === transactionName;
                 });
 
-                // Calculate spent (absolute value of all transactions)
-                const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                // Calculate net transactions (with signs: positive for refunds, negative for expenses)
+                const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-                // Return remaining (can be negative)
-                return budgetAmount - spent;
+                // Return remaining: Budget + NetTransactions
+                return budgetAmount + netTransactions;
             } catch (error) {
                 console.error('Error calculating category remaining:', error);
                 return 0;
@@ -12089,12 +12102,15 @@
                                 const rolloverElement = document.getElementById(`${categorySlug}-rollover`);
                                 if (!budgetedElement) return;
 
-                                // Calculate spent (absolute value of all transactions)
+                                // Calculate spent (absolute value for display)
                                 const flexibleSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                                // Calculate net transactions (with signs, for remaining)
+                                const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                                 const budgetedValue = budgetMap[displayName] !== undefined ? budgetMap[displayName] : (parseFloat(budgetedElement.getAttribute('data-value')) || 0);
                                 const rolloverValue = rolloverElement ? parseFloat(rolloverElement.getAttribute('data-value')) || 0 : 0;
-                                const remainingValue = (budgetedValue + rolloverValue) - flexibleSpent;
+                                // Remaining = Budgeted + Rollover + NetTransactions (positive for refunds, negative for expenses)
+                                const remainingValue = budgetedValue + rolloverValue + netTransactions;
 
                                 if (categoryAmountElement) {
                                     const sign = remainingValue >= 0 ? '' : '-';
@@ -12179,8 +12195,10 @@
                         const categoryTransactions = filteredTransactions.filter(t =>
                             t.category && t.category === category.title
                         );
-                        // Calculate spent (absolute value of all transactions)
+                        // Calculate spent (absolute value for display)
                         const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                        // Calculate net transactions (with signs, for remaining)
+                        const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                         // Find the card by category name
                         const homeCards = document.querySelectorAll('.home-category-item');
@@ -12195,7 +12213,8 @@
                                     // Get budgeted value from loaded budgets
                                     const budgetedValue = customBudgetMap[category.title] || 0;
                                     const rolloverValue = 0;
-                                    const remainingValue = (budgetedValue + rolloverValue) - totalSpent;
+                                    // Remaining = Budgeted + Rollover + NetTransactions
+                                    const remainingValue = budgetedValue + rolloverValue + netTransactions;
 
                                     if (categoryAmountElement) {
                                         const sign = remainingValue >= 0 ? '' : '-';
