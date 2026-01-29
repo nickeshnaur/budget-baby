@@ -3188,6 +3188,7 @@
         </div>
 
         <div class="transactions-section">
+            <div class="section-subtitle">Sorted</div>
             <div class="assigned">
                 <!-- Assigned transactions will be loaded here dynamically -->
             </div>
@@ -12071,6 +12072,19 @@
             if (dashboard && dashboard.style.display !== 'none') {
                 const monthSelector = document.getElementById('dashboard-month-selector');
                 const yearSelector = document.getElementById('dashboard-year-selector');
+
+                if (monthSelector && yearSelector) {
+                    const selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || currentMonth;
+                    const selectedYear = parseInt(yearSelector.getAttribute('data-value')) || currentYear;
+                    return transactionMonth === selectedMonth && transactionYear === selectedYear;
+                }
+            }
+
+            // Get selected month/year from transactions page dropdowns if on transactions page
+            const transactionsPage = document.getElementById('transactionsPage');
+            if (transactionsPage && transactionsPage.style.display !== 'none') {
+                const monthSelector = document.getElementById('transactions-month-selector');
+                const yearSelector = document.getElementById('transactions-year-selector');
 
                 if (monthSelector && yearSelector) {
                     const selectedMonth = parseInt(monthSelector.getAttribute('data-value')) || currentMonth;
