@@ -163,6 +163,20 @@ async function initializeDatabase() {
       );
     `);
 
+    // Add UNIQUE constraint on title if it doesn't exist
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'custom_categories_title_key'
+        ) THEN
+          -- Remove duplicates first (keep lowest id)
+          DELETE FROM custom_categories a USING custom_categories b
+            WHERE a.id > b.id AND a.title = b.title;
+          ALTER TABLE custom_categories ADD CONSTRAINT custom_categories_title_key UNIQUE (title);
+        END IF;
+      END $$;
+    `);
+
     // Table for storing edits to hardcoded categories
     await pool.query(`
       CREATE TABLE IF NOT EXISTS category_overrides (
@@ -2058,6 +2072,13 @@ function handleCreateCategory(req, res) {
       const result = await pool.query(`
         INSERT INTO custom_categories (type, title, emoji, color, due_day, due_month, annual_cost)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (title) DO UPDATE SET
+          type = EXCLUDED.type,
+          emoji = EXCLUDED.emoji,
+          color = EXCLUDED.color,
+          due_day = EXCLUDED.due_day,
+          due_month = EXCLUDED.due_month,
+          annual_cost = EXCLUDED.annual_cost
         RETURNING *
       `, [type, title, emoji, color, dueDay || null, dueMonth || null, annualCost || null]);
 

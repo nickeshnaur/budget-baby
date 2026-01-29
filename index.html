@@ -10009,7 +10009,13 @@
                 selectedMonth = parseInt(dashboardMonthSelector.getAttribute('data-value')) || selectedMonth;
             }
 
-            // Clear existing
+            // Remove ALL custom category cards (including those moved out of containers by sort functions)
+            const categoriesPage = document.getElementById('categoriesPage');
+            if (categoriesPage) {
+                categoriesPage.querySelectorAll('[data-custom-category]').forEach(el => el.remove());
+            }
+
+            // Clear containers as well
             if (flexibleContainer) flexibleContainer.innerHTML = '';
             if (monthlyContainer) monthlyContainer.innerHTML = '';
             if (annualContainer) annualContainer.innerHTML = '';
@@ -10128,6 +10134,7 @@
         function createCustomCategoryCard(category, selectedMonth) {
             const div = document.createElement('div');
             div.className = 'home-category-item';
+            div.setAttribute('data-custom-category', 'true');
             div.style.cursor = 'pointer';
             div.onclick = () => showCustomCategoryDetail(category);
 
