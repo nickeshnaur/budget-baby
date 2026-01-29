@@ -1118,21 +1118,27 @@ function handleFetchTransactions(req, res) {
                 const rawAmount = parseFloat(txn.amount);
                 const finalAmount = isBofA ? rawAmount : -rawAmount;
 
+                // Preserve manually-changed dates
+                const existing = transactions.get(txn.id);
+                const preservedDate = existing && existing.originalDate ? existing.date : txn.date;
+                const preservedOriginalDate = existing ? existing.originalDate : undefined;
+
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
                   amount: finalAmount,
-                  date: txn.date,
+                  date: preservedDate,
                   status: txn.status,
                   category: existingCategory,
                   createdAt: new Date().toISOString()
                 };
+                if (preservedOriginalDate) transaction.originalDate = preservedOriginalDate;
 
                 transactions.set(txn.id, transaction);
                 allTransactions.push(transaction);
 
-                // Save to PostgreSQL - only insert new, preserve category on existing
+                // Save to PostgreSQL - only insert new, preserve category and date on existing
                 if (pool) {
                   pool.query(
                     `INSERT INTO transactions (id, account_id, description, amount, date, status, category, created_at)
@@ -1141,9 +1147,8 @@ function handleFetchTransactions(req, res) {
                        account_id = $2,
                        description = $3,
                        amount = $4,
-                       date = $5,
                        status = $6`,
-                    [txn.id, acc.id, txn.description, finalAmount, txn.date, txn.status, 'Unsorted', new Date()]
+                    [txn.id, acc.id, txn.description, finalAmount, preservedDate, txn.status, 'Unsorted', new Date()]
                   ).catch(dbError => console.error('Failed to save transaction:', dbError));
                 }
               }
@@ -2474,24 +2479,28 @@ async function syncEnrollment(enrollmentToken) {
                 const isNew = !existingTxnIds.has(txn.id);
                 if (isNew) newCount++;
 
-                const existingCategory = transactions.has(txn.id)
-                  ? transactions.get(txn.id).category
-                  : 'Unsorted';
+                const existing = transactions.get(txn.id);
+                const existingCategory = existing ? existing.category : 'Unsorted';
 
                 // BofA sends correct signs, other banks send positive - negate non-BofA only
                 const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
                 const finalAmount = isBofA ? parseFloat(txn.amount) : -parseFloat(txn.amount);
+
+                // Preserve manually-changed dates
+                const preservedDate = existing && existing.originalDate ? existing.date : txn.date;
+                const preservedOriginalDate = existing ? existing.originalDate : undefined;
 
                 const transaction = {
                   id: txn.id,
                   accountId: acc.id,
                   description: txn.description,
                   amount: finalAmount,
-                  date: txn.date,
+                  date: preservedDate,
                   status: txn.status,
                   category: existingCategory,
                   createdAt: new Date().toISOString()
                 };
+                if (preservedOriginalDate) transaction.originalDate = preservedOriginalDate;
 
                 transactions.set(txn.id, transaction);
 
