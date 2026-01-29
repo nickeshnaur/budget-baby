@@ -5861,6 +5861,32 @@
     <script src="https://cdn.teller.io/connect/connect.js"></script>
 
     <script>
+        // Parse date strings as local midnight (avoids UTC timezone shift)
+        // Handles "YYYY-MM-DD" and "M/D/YY" formats safely
+        function parseLocalDate(dateStr) {
+            if (!dateStr) return new Date(NaN);
+            if (typeof dateStr === 'string') {
+                if (dateStr.includes('-')) {
+                    const [y, m, d] = dateStr.split('-').map(Number);
+                    return new Date(y, m - 1, d);
+                }
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/').map(Number);
+                    const fullYear = parts[2] < 100 ? (parts[2] < 50 ? 2000 + parts[2] : 1900 + parts[2]) : parts[2];
+                    return new Date(fullYear, parts[0] - 1, parts[1]);
+                }
+            }
+            return new Date(dateStr);
+        }
+
+        // Format a Date to "YYYY-MM-DD" using local date components
+        function toLocalISODate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         // =====================================================
         // SINGLE SOURCE OF TRUTH: Category Configuration
         // All category definitions MUST reference this config
@@ -6056,7 +6082,7 @@
 
             // Format the original date (use originalDate if available, otherwise current date)
             const originalDate = transaction.originalDate || transaction.date;
-            const txnDate = new Date(originalDate);
+            const txnDate = parseLocalDate(originalDate);
             const originalDateStr = `${txnDate.getMonth() + 1}/${txnDate.getDate()}/${txnDate.getFullYear()}`;
 
             menu.innerHTML = `
@@ -6214,8 +6240,8 @@
                 z-index: 2000;
             `;
 
-            const currentDate = new Date(transaction.date);
-            const formattedDate = currentDate.toISOString().split('T')[0];
+            const currentDate = parseLocalDate(transaction.date);
+            const formattedDate = toLocalISODate(currentDate);
 
             overlay.innerHTML = `
                 <div style="
@@ -7214,14 +7240,14 @@
                     // Server now returns all transactions including manual ones
                     const allCategoryTransactions = result.transactions.filter(transaction => {
                         if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
-                        const txnDate = new Date(transaction.date);
+                        const txnDate = parseLocalDate(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     });
 
                     // Sort by date (most recent first)
                     allCategoryTransactions.sort((a, b) => {
-                        const dateA = new Date(a.date);
-                        const dateB = new Date(b.date);
+                        const dateA = parseLocalDate(a.date);
+                        const dateB = parseLocalDate(b.date);
                         return dateB - dateA;
                     });
 
@@ -7245,7 +7271,7 @@
                         // For annual bills, also get all transactions for the entire year (for pot calculation)
                         const allYearTransactions = result.transactions.filter(transaction => {
                             if (!transaction.category || transaction.category.toUpperCase() !== transactionName) return false;
-                            const txnDate = new Date(transaction.date);
+                            const txnDate = parseLocalDate(transaction.date);
                             return txnDate.getFullYear() === selectedYear;
                         });
                         updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions, allYearTransactions);
@@ -7318,7 +7344,7 @@
             // Filter income transactions by transaction date
             const filteredIncomeTransactions = incomeTransactions.filter(transaction => {
                 if (!transaction.date) return false;
-                const txnDate = new Date(transaction.date);
+                const txnDate = parseLocalDate(transaction.date);
                 return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
             });
 
@@ -7457,7 +7483,7 @@
                         // Get net transactions for this month
                         const monthTransactions = result.transactions.filter(t => {
                             if (!t.category || t.category.toUpperCase() !== transactionName) return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
                         });
                         const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
@@ -7498,7 +7524,7 @@
                         // Get net transactions for this month from pre-fetched data
                         const monthTransactions = allTransactions.filter(t => {
                             if (!t.category || t.category.toUpperCase() !== transactionName) return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
                         });
                         const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
@@ -7536,7 +7562,7 @@
                         // Get net transactions for this month
                         const monthTransactions = allTransactions.filter(t => {
                             if (t.category !== categoryTitle) return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
                         });
                         const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
@@ -7706,7 +7732,7 @@
                 // Filter for Income category transactions in the specified month/year
                 const incomeTransactions = result.transactions.filter(t => {
                     if (!t.category || t.category.toUpperCase() !== 'INCOME') return false;
-                    const txnDate = new Date(t.date);
+                    const txnDate = parseLocalDate(t.date);
                     return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
                 });
 
@@ -7824,7 +7850,7 @@
                         // Get net transactions for this month
                         const monthTransactions = result.transactions.filter(t => {
                             if (!t.category || t.category.toUpperCase() !== 'GIVING') return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
                         });
                         const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
@@ -8266,7 +8292,7 @@
                     if (yearTransactions && yearTransactions.length > 0) {
                         const monthSpent = yearTransactions
                             .filter(t => {
-                                const txnDate = new Date(t.date);
+                                const txnDate = parseLocalDate(t.date);
                                 return txnDate.getMonth() + 1 === month;
                             })
                             .reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -8545,7 +8571,7 @@
             // Filter by selected date period
             const visibleTransactions = unsortedTransactions.filter(t => {
                 if (!t.date) return false;
-                const date = new Date(t.date);
+                const date = parseLocalDate(t.date);
                 const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
                 return isTransactionInSelectedPeriod(formattedDate);
             }).slice(0, 10);
@@ -8590,7 +8616,7 @@
             // Filter unassigned by selected date period
             const visibleUnassigned = unassignedTransactions.filter(t => {
                 if (!t.date) return false;
-                const date = new Date(t.date);
+                const date = parseLocalDate(t.date);
                 const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
                 return isTransactionInSelectedPeriod(formattedDate);
             });
@@ -8800,7 +8826,7 @@
                     // Helper to check if transaction is in selected period
                     const isInSelectedPeriod = (transaction) => {
                         if (!transaction.date) return false;
-                        const txnDate = new Date(transaction.date);
+                        const txnDate = parseLocalDate(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     };
 
@@ -8860,7 +8886,7 @@
                         // Get year's transactions for pot calculation
                         const yearTransactions = allTransactions.filter(t => {
                             if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getFullYear() === selectedYear;
                         });
 
@@ -8872,7 +8898,7 @@
 
                             const monthSpent = yearTransactions
                                 .filter(t => {
-                                    const txnDate = new Date(t.date);
+                                    const txnDate = parseLocalDate(t.date);
                                     return txnDate.getMonth() + 1 === month;
                                 })
                                 .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
@@ -8934,7 +8960,7 @@
 
             const isInPeriod = (transaction) => {
                 if (!transaction.date) return false;
-                const txnDate = new Date(transaction.date);
+                const txnDate = parseLocalDate(transaction.date);
                 return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
             };
 
@@ -8982,7 +9008,7 @@
 
                 const yearTransactions = allTransactions.filter(t => {
                     if (!t.category || t.category.toUpperCase() !== category.transactionName) return false;
-                    const txnDate = new Date(t.date);
+                    const txnDate = parseLocalDate(t.date);
                     return txnDate.getFullYear() === selectedYear;
                 });
 
@@ -8993,7 +9019,7 @@
 
                     const monthSpent = yearTransactions
                         .filter(t => {
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getMonth() + 1 === m;
                         })
                         .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
@@ -9047,7 +9073,7 @@
                 for (const { month: selectedMonth, year: selectedYear } of months) {
                     const isInPeriod = (transaction) => {
                         if (!transaction.date) return false;
-                        const txnDate = new Date(transaction.date);
+                        const txnDate = parseLocalDate(transaction.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     };
 
@@ -9317,7 +9343,7 @@
             modal.querySelector('.btn-submit').textContent = 'Add';
 
             // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
+            const today = toLocalISODate(new Date());
             document.getElementById('transactionDate').value = today;
 
             // Ensure custom categories are in the dropdown
@@ -10473,7 +10499,7 @@
                     // Filter transactions for this category and month/year
                     const filtered = result.transactions.filter(t => {
                         if (t.category !== currentCustomCategory.title) return false;
-                        const txnDate = new Date(t.date);
+                        const txnDate = parseLocalDate(t.date);
                         return txnDate.getMonth() + 1 === selectedMonth && txnDate.getFullYear() === selectedYear;
                     });
 
@@ -10550,7 +10576,7 @@
                         // Get all transactions for this category for the entire year
                         const yearTransactions = result.transactions.filter(t => {
                             if (t.category !== currentCustomCategory.title) return false;
-                            const txnDate = new Date(t.date);
+                            const txnDate = parseLocalDate(t.date);
                             return txnDate.getFullYear() === selectedYear;
                         });
 
@@ -10561,7 +10587,7 @@
 
                             const monthSpent = yearTransactions
                                 .filter(t => {
-                                    const txnDate = new Date(t.date);
+                                    const txnDate = parseLocalDate(t.date);
                                     return txnDate.getMonth() + 1 === month;
                                 })
                                 .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
@@ -10900,7 +10926,7 @@
 
                     // Insert transaction in date order (most recent first)
                     const existingCards = unassignedSection.querySelectorAll('.transaction-card');
-                    const transactionDate = new Date(transaction.date);
+                    const transactionDate = parseLocalDate(transaction.date);
 
                     let inserted = false;
                     for (let card of existingCards) {
@@ -10947,7 +10973,7 @@
 
         // Function to create manual transaction card with EXACT same structure as existing cards
         function createManualTransactionCard(transaction) {
-            const date = new Date(transaction.date);
+            const date = parseLocalDate(transaction.date);
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).substr(-2)}`;
             const amount = Math.abs(transaction.amount).toFixed(2);
             const isDebit = parseFloat(transaction.amount) < 0;
@@ -11037,7 +11063,7 @@
 
             // Insert in date order (most recent first) in assigned section
             const existingCards = assignedSection.querySelectorAll('.transaction-card');
-            const transactionDate = new Date(transaction.date);
+            const transactionDate = parseLocalDate(transaction.date);
 
             let inserted = false;
             for (let card of existingCards) {
@@ -11170,13 +11196,13 @@
             const selectedYear = parseInt(yearSelector.getAttribute('data-value'));
 
             return transactions.filter(transaction => {
-                const date = new Date(transaction.date);
+                const date = parseLocalDate(transaction.date);
                 return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
             });
         }
 
         function createDashboardTransactionElement(transaction) {
-            const date = new Date(transaction.date);
+            const date = parseLocalDate(transaction.date);
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(2)}`;
             const amount = Math.abs(parseFloat(transaction.amount)).toFixed(2);
             const isDebit = parseFloat(transaction.amount) < 0;
@@ -11270,7 +11296,7 @@
         }
 
         function createTransactionElement(transaction, index) {
-            const date = new Date(transaction.date);
+            const date = parseLocalDate(transaction.date);
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).substr(-2)}`;
             const amount = Math.abs(transaction.amount).toFixed(2);
 
@@ -11844,7 +11870,7 @@
 
                 // Filter transactions for this category and current month
                 const categoryTransactions = result.transactions.filter(t => {
-                    const tDate = new Date(t.date);
+                    const tDate = parseLocalDate(t.date);
                     const tMonth = tDate.getMonth() + 1;
                     const tYear = tDate.getFullYear();
                     return tMonth === selectedMonth &&
@@ -12030,7 +12056,7 @@
                 }
             } else if (dateString.includes('-')) {
                 // Handle YYYY-MM-DD format
-                transactionDate = new Date(dateString);
+                transactionDate = parseLocalDate(dateString);
             }
 
             if (!transactionDate || isNaN(transactionDate.getTime())) {
@@ -12533,7 +12559,7 @@
 
                 // Filter transactions for selected period
                 const filteredTransactions = result.transactions.filter(transaction => {
-                    const transactionDate = new Date(transaction.date);
+                    const transactionDate = parseLocalDate(transaction.date);
                     const transactionMonth = transactionDate.getMonth() + 1;
                     const transactionYear = transactionDate.getFullYear();
                     return transactionMonth === selectedMonth && transactionYear === selectedYear;
@@ -12593,7 +12619,7 @@
                                 // Get all transactions for this category for the selected year
                                 const yearTransactionsForCategory = result.transactions.filter(t => {
                                     if (!t.category || t.category.toUpperCase() !== transactionCategoryName) return false;
-                                    const txnDate = new Date(t.date);
+                                    const txnDate = parseLocalDate(t.date);
                                     return txnDate.getFullYear() === selectedYear;
                                 });
 
@@ -12607,7 +12633,7 @@
                                     // Get transactions for this specific month
                                     const monthSpent = yearTransactionsForCategory
                                         .filter(t => {
-                                            const txnDate = new Date(t.date);
+                                            const txnDate = parseLocalDate(t.date);
                                             return txnDate.getMonth() + 1 === month;
                                         })
                                         .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
@@ -12941,7 +12967,7 @@
                                     // Get all transactions for this category for the entire year
                                     const yearTransactions = result.transactions.filter(t => {
                                         if (!t.category || t.category !== category.title) return false;
-                                        const txnDate = new Date(t.date);
+                                        const txnDate = parseLocalDate(t.date);
                                         return txnDate.getFullYear() === selectedYear;
                                     });
 
@@ -12952,7 +12978,7 @@
 
                                         const monthSpent = yearTransactions
                                             .filter(t => {
-                                                const txnDate = new Date(t.date);
+                                                const txnDate = parseLocalDate(t.date);
                                                 return txnDate.getMonth() + 1 === month;
                                             })
                                             .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
