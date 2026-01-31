@@ -1118,10 +1118,9 @@ function handleFetchTransactions(req, res) {
                 const rawAmount = parseFloat(txn.amount);
                 const finalAmount = isBofA ? rawAmount : -rawAmount;
 
-                // Preserve manually-changed dates
+                // Preserve existing dates — never overwrite dates for existing transactions
                 const existing = transactions.get(txn.id);
-                const preservedDate = existing && existing.originalDate ? existing.date : txn.date;
-                const preservedOriginalDate = existing ? existing.originalDate : undefined;
+                const preservedDate = existing ? existing.date : txn.date;
 
                 const transaction = {
                   id: txn.id,
@@ -1133,7 +1132,7 @@ function handleFetchTransactions(req, res) {
                   category: existingCategory,
                   createdAt: new Date().toISOString()
                 };
-                if (preservedOriginalDate) transaction.originalDate = preservedOriginalDate;
+                if (existing && existing.originalDate) transaction.originalDate = existing.originalDate;
 
                 transactions.set(txn.id, transaction);
                 allTransactions.push(transaction);
@@ -2486,9 +2485,8 @@ async function syncEnrollment(enrollmentToken) {
                 const isBofA = acc.institution?.name?.toLowerCase().includes('bank of america');
                 const finalAmount = isBofA ? parseFloat(txn.amount) : -parseFloat(txn.amount);
 
-                // Preserve manually-changed dates
-                const preservedDate = existing && existing.originalDate ? existing.date : txn.date;
-                const preservedOriginalDate = existing ? existing.originalDate : undefined;
+                // Preserve existing dates — never overwrite dates for existing transactions
+                const preservedDate = existing ? existing.date : txn.date;
 
                 const transaction = {
                   id: txn.id,
@@ -2500,7 +2498,7 @@ async function syncEnrollment(enrollmentToken) {
                   category: existingCategory,
                   createdAt: new Date().toISOString()
                 };
-                if (preservedOriginalDate) transaction.originalDate = preservedOriginalDate;
+                if (existing && existing.originalDate) transaction.originalDate = existing.originalDate;
 
                 transactions.set(txn.id, transaction);
 
