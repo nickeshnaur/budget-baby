@@ -7267,7 +7267,7 @@
                     } else if (categoryType === 'flexible-monthly') {
                         updateFlexibleCategoryCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-monthly') {
-                        updateFixedMonthlyCalculations(categorySlug, allCategoryTransactions);
+                        await updateFixedMonthlyCalculations(categorySlug, allCategoryTransactions);
                     } else if (categoryType === 'fixed-annual') {
                         // For annual bills, also get all transactions for the entire year (for pot calculation)
                         const allYearTransactions = result.transactions.filter(transaction => {
@@ -7275,7 +7275,7 @@
                             const txnDate = parseLocalDate(transaction.date);
                             return txnDate.getFullYear() === selectedYear;
                         });
-                        updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions, allYearTransactions);
+                        await updateFixedAnnualDetailPage(categorySlug, allCategoryTransactions, allYearTransactions);
                     }
                 } else {
                     console.log('No transactions found or error:', result.error);
@@ -7927,6 +7927,10 @@
                     budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 }
 
+                // Save computed budgeted amount to server for cross-device sync
+                const period = `${year}-${String(month).padStart(2, '0')}`;
+                await saveBudget('Giving', period, budgeted);
+
                 // Recalculate remaining
                 updateFlexibleCategoryRemaining('giving');
             });
@@ -7951,7 +7955,7 @@
 
         // ========== END GIVING CATEGORY SPECIAL HANDLING ==========
 
-        function updateFixedMonthlyCalculations(categorySlug, transactions) {
+        async function updateFixedMonthlyCalculations(categorySlug, transactions) {
             // Get selected month/year from category page
             const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
             let selectedMonth = new Date().getMonth() + 1;
@@ -7963,11 +7967,23 @@
                 if (yearSelector) selectedYear = parseInt(yearSelector.getAttribute('data-value')) || selectedYear;
             }
 
-            // Load budgeted amount from localStorage for this month/year
+            // Load budgeted amount - try server first for cross-device sync, fall back to localStorage
             const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
             if (budgetedElement) {
                 const defaultBudget = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
-                const savedBudget = getMonthlyBudgeted(categorySlug, selectedMonth, selectedYear, defaultBudget);
+                const period = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+                const category = slugToCategory(categorySlug);
+                let savedBudget = defaultBudget;
+
+                const budgetData = await loadBudget(category, period);
+                if (budgetData.amount !== null) {
+                    savedBudget = budgetData.amount;
+                    // Cache to localStorage
+                    saveMonthlyBudgeted(categorySlug, selectedMonth, selectedYear, savedBudget);
+                } else {
+                    savedBudget = getMonthlyBudgeted(categorySlug, selectedMonth, selectedYear, defaultBudget);
+                }
+
                 budgetedElement.setAttribute('data-value', savedBudget.toString());
                 budgetedElement.textContent = `$${savedBudget.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
@@ -8026,7 +8042,7 @@
                 });
 
                 // Handle blur: save changes
-                budgetedElement.addEventListener('blur', function() {
+                budgetedElement.addEventListener('blur', async function() {
                     let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
                     const numericValue = parseFloat(value) || 0;
 
@@ -8049,6 +8065,13 @@
 
                     // Save to localStorage with month/year key
                     saveMonthlyBudgeted(categorySlug, month, year, numericValue);
+
+                    // Also save to server for cross-device sync
+                    const period = `${year}-${String(month).padStart(2, '0')}`;
+                    const category = slugToCategory(categorySlug);
+                    if (category) {
+                        await saveBudget(category, period, numericValue);
+                    }
                 });
 
                 // Handle Enter key: blur the field to save
@@ -8221,7 +8244,7 @@
             return rollover;
         }
 
-        function updateFixedAnnualDetailPage(categorySlug, transactions, yearTransactions = []) {
+        async function updateFixedAnnualDetailPage(categorySlug, transactions, yearTransactions = []) {
             // Normalize slug: convert triple dashes to single dashes for element ID lookups
             const elementSlug = categorySlug.replace(/---/g, '-');
 
@@ -8267,19 +8290,30 @@
             // Calculate pot/rollover: sum of budgeted amounts through current month - year's transactions
             const rolloverElement = document.getElementById(`${elementSlug}-rollover`);
             if (rolloverElement) {
-                // Get monthly budgeted value - prefer localStorage, fall back to HTML
+                // Get monthly budgeted value - try server first for cross-device sync, fall back to localStorage, then HTML
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                 const htmlBudgeted = monthlyBudgetedElement ?
                     parseFloat(monthlyBudgetedElement.getAttribute('data-value') || monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
-                // Check if there's a saved value in localStorage for this month
-                const savedBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, null);
-                const currentMonthlyBudgeted = savedBudgeted !== null ? savedBudgeted : htmlBudgeted;
+                let currentMonthlyBudgeted = htmlBudgeted;
+                const period = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+                const budgetCategory = slugToCategory(categorySlug);
+                const budgetData = await loadBudget(budgetCategory, period);
+                if (budgetData.amount !== null) {
+                    currentMonthlyBudgeted = budgetData.amount;
+                    // Cache to localStorage
+                    saveMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, currentMonthlyBudgeted);
+                } else {
+                    const savedBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, null);
+                    if (savedBudgeted !== null) {
+                        currentMonthlyBudgeted = savedBudgeted;
+                    }
+                }
 
-                // Update the display if we have a saved value different from HTML
-                if (monthlyBudgetedElement && savedBudgeted !== null) {
-                    monthlyBudgetedElement.setAttribute('data-value', savedBudgeted.toString());
-                    monthlyBudgetedElement.textContent = `$${savedBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                // Update the display
+                if (monthlyBudgetedElement) {
+                    monthlyBudgetedElement.setAttribute('data-value', currentMonthlyBudgeted.toString());
+                    monthlyBudgetedElement.textContent = `$${currentMonthlyBudgeted.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                 }
 
                 // Calculate pot month by month with reset logic:
@@ -8421,8 +8455,8 @@
                     selection.addRange(range);
                 });
 
-                // Handle blur: save changes to localStorage
-                budgetedElement.addEventListener('blur', function() {
+                // Handle blur: save changes to localStorage and server
+                budgetedElement.addEventListener('blur', async function() {
                     let value = this.textContent.replace(/[^\d.]/g, '');
                     const numericValue = parseFloat(value) || 0;
 
@@ -8445,6 +8479,13 @@
 
                     // Save to localStorage
                     saveMonthlyBudgeted(elementSlug, month, year, numericValue);
+
+                    // Also save to server for cross-device sync
+                    const period = `${year}-${String(month).padStart(2, '0')}`;
+                    const category = slugToCategory(categorySlug);
+                    if (category) {
+                        await saveBudget(category, period, numericValue);
+                    }
                 });
 
                 // Handle Enter key: blur the field to save
