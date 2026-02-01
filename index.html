@@ -8842,13 +8842,17 @@
                     // === CALCULATE TOTAL EXPENSES ===
                     let totalExpenses = 0;
 
+                    // Compute Giving budget as percentage of income (not flat DB amount)
+                    const givingPercentage = loadGivingPercentage(selectedMonth, selectedYear);
+                    const givingBudget = (givingPercentage / 100) * totalIncome;
+
                     // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
                     const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
                     const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
                     const budgetResults = await Promise.all(budgetPromises);
 
                     flexibleMonthlyCategories.forEach((category, index) => {
-                        const budgeted = budgetResults[index].amount || 0;
+                        const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
                         const spent = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t))
                             .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
@@ -8860,7 +8864,8 @@
                     monthlyBillCategories.forEach(category => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                        const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                        const domDefault = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                        const budgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
 
                         const categoryTransactions = allTransactions.filter(t =>
                             t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t)
@@ -8881,7 +8886,7 @@
                     annualBillCategories.forEach(category => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                        const monthlyBudgeted = monthlyBudgetedElement ?
+                        const domDefault = monthlyBudgetedElement ?
                             parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
                         // Get year's transactions for pot calculation
@@ -8894,7 +8899,7 @@
                         // Calculate pot with reset logic
                         let runningPot = 0;
                         for (let month = 1; month <= selectedMonth; month++) {
-                            const monthBudgeted = getMonthlyBudgeted(elementSlug, month, selectedYear, monthlyBudgeted);
+                            const monthBudgeted = getMonthlyBudgeted(elementSlug, month, selectedYear, domDefault);
                             runningPot += monthBudgeted;
 
                             const monthSpent = yearTransactions
@@ -8911,8 +8916,49 @@
                         }
 
                         const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
-                        totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
+                        const currentMonthBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                        totalExpenses += currentMonthBudgeted + extraMonthlyNeeded;
                     });
+
+                    // 4. CUSTOM CATEGORIES
+                    if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                        const activeCustomCategories = customCategories.filter(c => c.type !== 'income' && c.type !== 'ignore');
+                        const customBudgetPromises = activeCustomCategories.map(c => loadBudget(c.title, selectedPeriod));
+                        const customBudgetResults = await Promise.all(customBudgetPromises);
+
+                        activeCustomCategories.forEach((category, index) => {
+                            const budgeted = customBudgetResults[index].amount || 0;
+                            const categoryTransactions = allTransactions.filter(t =>
+                                t.category && t.category === category.title && isInSelectedPeriod(t)
+                            );
+                            const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+                            if (category.type === 'flexible') {
+                                totalExpenses += Math.max(budgeted, spent);
+                            } else if (category.type === 'monthly') {
+                                totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
+                            } else if (category.type === 'annual') {
+                                const yearTransactions = allTransactions.filter(t => {
+                                    if (!t.category || t.category !== category.title) return false;
+                                    const txnDate = parseLocalDate(t.date);
+                                    return txnDate.getFullYear() === selectedYear;
+                                });
+
+                                let runningPot = 0;
+                                for (let month = 1; month <= selectedMonth; month++) {
+                                    runningPot += budgeted;
+                                    const monthSpent = yearTransactions
+                                        .filter(t => parseLocalDate(t.date).getMonth() + 1 === month)
+                                        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                                    runningPot -= monthSpent;
+                                    if (runningPot < 0 && month < selectedMonth) runningPot = 0;
+                                }
+
+                                const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                                totalExpenses += budgeted + extraMonthlyNeeded;
+                            }
+                        });
+                    }
 
                     // Calculate savings = income - expenses
                     const savings = totalIncome - totalExpenses;
@@ -8967,13 +9013,25 @@
 
             let totalExpenses = 0;
 
+            // Compute total income for Giving percentage calculation
+            const totalIncome = allTransactions.reduce((sum, transaction) => {
+                if (transaction.category === 'Income' && isInPeriod(transaction)) {
+                    return sum + Math.abs(parseFloat(transaction.amount) || 0);
+                }
+                return sum;
+            }, 0);
+
+            // Compute Giving budget as percentage of income (not flat DB amount)
+            const givingPercentage = loadGivingPercentage(selectedMonth, selectedYear);
+            const givingBudget = (givingPercentage / 100) * totalIncome;
+
             // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
             const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
             const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
             const budgetResults = await Promise.all(budgetPromises);
 
             flexibleMonthlyCategories.forEach((category, index) => {
-                const budgeted = budgetResults[index].amount || 0;
+                const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
                 const spent = allTransactions
                     .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
                     .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
@@ -8985,7 +9043,8 @@
             monthlyBillCategories.forEach(category => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                const budgeted = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                const domDefault = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                const budgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
 
                 const categoryTransactions = allTransactions.filter(t =>
                     t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t)
@@ -9004,7 +9063,7 @@
             annualBillCategories.forEach(category => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                const monthlyBudgeted = monthlyBudgetedElement ?
+                const domDefault = monthlyBudgetedElement ?
                     parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
 
                 const yearTransactions = allTransactions.filter(t => {
@@ -9015,7 +9074,7 @@
 
                 let runningPot = 0;
                 for (let m = 1; m <= selectedMonth; m++) {
-                    const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, monthlyBudgeted);
+                    const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, domDefault);
                     runningPot += mBudgeted;
 
                     const monthSpent = yearTransactions
@@ -9032,8 +9091,49 @@
                 }
 
                 const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
-                totalExpenses += monthlyBudgeted + extraMonthlyNeeded;
+                const currentMonthBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                totalExpenses += currentMonthBudgeted + extraMonthlyNeeded;
             });
+
+            // 4. CUSTOM CATEGORIES
+            if (typeof customCategories !== 'undefined' && customCategories.length > 0) {
+                const activeCustomCategories = customCategories.filter(c => c.type !== 'income' && c.type !== 'ignore');
+                const customBudgetPromises = activeCustomCategories.map(c => loadBudget(c.title, selectedPeriod));
+                const customBudgetResults = await Promise.all(customBudgetPromises);
+
+                activeCustomCategories.forEach((category, index) => {
+                    const budgeted = customBudgetResults[index].amount || 0;
+                    const categoryTransactions = allTransactions.filter(t =>
+                        t.category && t.category === category.title && isInPeriod(t)
+                    );
+                    const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+                    if (category.type === 'flexible') {
+                        totalExpenses += Math.max(budgeted, spent);
+                    } else if (category.type === 'monthly') {
+                        totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
+                    } else if (category.type === 'annual') {
+                        const yearTransactions = allTransactions.filter(t => {
+                            if (!t.category || t.category !== category.title) return false;
+                            const txnDate = parseLocalDate(t.date);
+                            return txnDate.getFullYear() === selectedYear;
+                        });
+
+                        let runningPot = 0;
+                        for (let m = 1; m <= selectedMonth; m++) {
+                            runningPot += budgeted;
+                            const monthSpent = yearTransactions
+                                .filter(t => parseLocalDate(t.date).getMonth() + 1 === m)
+                                .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            runningPot -= monthSpent;
+                            if (runningPot < 0 && m < selectedMonth) runningPot = 0;
+                        }
+
+                        const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
+                        totalExpenses += budgeted + extraMonthlyNeeded;
+                    }
+                });
+            }
 
             return totalExpenses;
         }
