@@ -7376,7 +7376,7 @@
                     // Update expenses display
                     const expensesElement = document.getElementById('income-expenses');
                     if (expensesElement) {
-                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     }
 
                     // Calculate and update savings (Deposits - Expenses)
@@ -7603,7 +7603,7 @@
 
                 // Update display
                 const sign = remaining < 0 ? '-' : '';
-                remainingElement.textContent = `${sign}$${Math.abs(remaining).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                remainingElement.textContent = `${sign}$${Math.abs(remaining).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
                 // Apply appropriate CSS class
                 remainingElement.className = remaining >= 0 ? 'budget-value positive' : 'budget-value negative';
@@ -8978,7 +8978,7 @@
                     // Update expenses display
                     const expensesElement = document.getElementById('home-overview-expenses');
                     if (expensesElement) {
-                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        expensesElement.textContent = `-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     }
 
                     // Update savings display
@@ -9202,7 +9202,7 @@
                                 </div>
                                 <div class="overview-month-item">
                                     <div class="overview-month-label"><span>💸</span>Expenses</div>
-                                    <div class="overview-month-amount">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                    <div class="overview-month-amount">-$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                                 </div>
                                 <div class="overview-month-item">
                                     <div class="overview-month-label"><span>🏦</span>Savings</div>
@@ -12953,16 +12953,11 @@
                                         progressBar.style.backgroundColor = progressColor;
                                     }
                                 } else if (progressBarContainer && !shouldShowProgress) {
-                                    // For Giving, always show gray progress bar even at 0
-                                    if (categorySlug === 'giving') {
-                                        const progressBar = progressBarContainer.querySelector('.progress-bar');
-                                        if (progressBar) {
-                                            progressBar.style.width = '0%';
-                                            progressBar.style.backgroundColor = '#D3D3D3';
-                                        }
-                                    } else {
-                                        // Remove progress bar if not needed (budget and spent are both 0)
-                                        progressBarContainer.remove();
+                                    // Show gray progress bar at 0% when budget and spent are both 0
+                                    const progressBar = progressBarContainer.querySelector('.progress-bar');
+                                    if (progressBar) {
+                                        progressBar.style.width = '0%';
+                                        progressBar.style.backgroundColor = '#D3D3D3';
                                     }
                                 }
                             }
