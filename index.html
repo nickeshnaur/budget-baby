@@ -7384,10 +7384,10 @@
                     const savingsElement = document.getElementById('income-savings');
                     if (savingsElement) {
                         if (savings >= 0) {
-                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'budget-value positive';
                         } else {
-                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'budget-value negative';
                         }
                     }
@@ -8986,11 +8986,11 @@
                     const overviewGrid = document.querySelector('.overview-grid');
                     if (savingsElement) {
                         if (savings >= 0) {
-                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            savingsElement.textContent = `$${savings.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount positive-savings';
                             if (overviewGrid) overviewGrid.style.backgroundColor = '#F3FCF4';
                         } else {
-                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            savingsElement.textContent = `-$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             savingsElement.className = 'overview-amount negative-savings';
                             if (overviewGrid) overviewGrid.style.backgroundColor = '#FEF5F5';
                         }
@@ -9206,7 +9206,7 @@
                                 </div>
                                 <div class="overview-month-item">
                                     <div class="overview-month-label"><span>🏦</span>Savings</div>
-                                    <div class="overview-month-amount ${savingsClass}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                    <div class="overview-month-amount ${savingsClass}">${savings >= 0 ? '' : '-'}$${Math.abs(savings).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                 </div>
                             </div>
                         </div>
@@ -12912,8 +12912,8 @@
 
                                 // Update progress bar - red only if remaining is negative
                                 const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
-                                // Always show progress bar for all flexible-monthly categories
-                                const shouldShowProgress = true;
+                                // Show progress bar if there's a budget OR if there's spending (always for Giving)
+                                const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0 || categorySlug === 'giving';
 
                                 if (!progressBarContainer && shouldShowProgress) {
                                     // Safety check: remove any existing progress bars to prevent duplicates
