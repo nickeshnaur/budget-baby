@@ -12738,6 +12738,41 @@
                     budgetMap[name] = budgetResults[index].amount || 0;
                 });
 
+                // Load fixed-monthly budgets from server for cross-device sync
+                const fixedMonthlyBudgetPromises = FIXED_MONTHLY_SORTED.map(c => loadBudget(c.displayName, selectedPeriod));
+                const fixedMonthlyBudgetResults = await Promise.all(fixedMonthlyBudgetPromises);
+                const fixedMonthlyBudgetMap = {};
+                FIXED_MONTHLY_SORTED.forEach((cat, index) => {
+                    if (fixedMonthlyBudgetResults[index].amount !== null) {
+                        fixedMonthlyBudgetMap[cat.slug] = fixedMonthlyBudgetResults[index].amount;
+                        saveMonthlyBudgeted(cat.slug, selectedMonth, selectedYear, fixedMonthlyBudgetResults[index].amount);
+                        // Update DOM detail page element so it's in sync
+                        const el = document.getElementById(`${cat.slug}-budgeted`);
+                        if (el) {
+                            el.setAttribute('data-value', fixedMonthlyBudgetResults[index].amount.toString());
+                            el.textContent = `$${fixedMonthlyBudgetResults[index].amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        }
+                    }
+                });
+
+                // Load fixed-annual budgets from server for cross-device sync
+                const fixedAnnualBudgetPromises = FIXED_ANNUAL_CATEGORIES.map(c => loadBudget(c.displayName, selectedPeriod));
+                const fixedAnnualBudgetResults = await Promise.all(fixedAnnualBudgetPromises);
+                const fixedAnnualBudgetMap = {};
+                FIXED_ANNUAL_CATEGORIES.forEach((cat, index) => {
+                    const elSlug = cat.slug.replace(/---/g, '-');
+                    if (fixedAnnualBudgetResults[index].amount !== null) {
+                        fixedAnnualBudgetMap[elSlug] = fixedAnnualBudgetResults[index].amount;
+                        saveMonthlyBudgeted(elSlug, selectedMonth, selectedYear, fixedAnnualBudgetResults[index].amount);
+                        // Update DOM detail page element so it's in sync
+                        const el = document.getElementById(`${elSlug}-budgeted`);
+                        if (el) {
+                            el.setAttribute('data-value', fixedAnnualBudgetResults[index].amount.toString());
+                            el.textContent = `$${fixedAnnualBudgetResults[index].amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        }
+                    }
+                });
+
                 // Calculate pots (rollover) for all flexible categories in parallel
                 const potPromises = FLEXIBLE_MONTHLY_CATEGORIES.map(cat =>
                     calculateFlexiblePotWithTransactions(cat.slug, cat.displayName, selectedMonth, selectedYear, result.transactions)
@@ -12775,10 +12810,16 @@
                                 // Normalize slug: convert triple dashes to single dashes for element ID lookups
                                 const elementSlug = categorySlug.replace(/---/g, '-');
 
-                                // Get monthly budgeted value from detail page
-                                const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
-                                const monthlyBudgeted = monthlyBudgetedElement ?
-                                    parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                                // Get monthly budgeted value - prefer server, then localStorage, then DOM
+                                let monthlyBudgeted;
+                                if (fixedAnnualBudgetMap[elementSlug] !== undefined) {
+                                    monthlyBudgeted = fixedAnnualBudgetMap[elementSlug];
+                                } else {
+                                    const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
+                                    const domDefault = monthlyBudgetedElement ?
+                                        parseFloat(monthlyBudgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
+                                    monthlyBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                                }
 
                                 // Get all transactions for this category for the selected year
                                 const yearTransactionsForCategory = result.transactions.filter(t => {
@@ -12855,10 +12896,16 @@
                             }
                             // Handle fixed-monthly categories differently
                             else if (categoryType === 'fixed-monthly') {
-                                // Get budgeted value and due date from category detail page
-                                const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                                // Get budgeted value - prefer server, then localStorage, then DOM
                                 const dueDateElement = document.getElementById(`${categorySlug}-due-date`);
-                                const budgetedValue = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value')) || 0 : 0;
+                                let budgetedValue;
+                                if (fixedMonthlyBudgetMap[categorySlug] !== undefined) {
+                                    budgetedValue = fixedMonthlyBudgetMap[categorySlug];
+                                } else {
+                                    const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
+                                    const domDefault = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value')) || 0 : 0;
+                                    budgetedValue = getMonthlyBudgeted(categorySlug, selectedMonth, selectedYear, domDefault);
+                                }
                                 const dueDate = dueDateElement ? dueDateElement.textContent.trim() : '';
 
                                 // Remove progress bar if exists
