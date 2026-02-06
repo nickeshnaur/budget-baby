@@ -12019,6 +12019,11 @@
                 const slug = DISPLAY_TO_SLUG[category];
                 const transactionName = slug ? SLUG_TO_TRANSACTION_NAME[slug] : category.toUpperCase();
 
+                // Calculate pot (carryover from previous months)
+                const pot = slug
+                    ? await calculateFlexiblePotWithTransactions(slug, category, selectedMonth, selectedYear, result.transactions)
+                    : 0;
+
                 // Filter transactions for this category and current month
                 const categoryTransactions = result.transactions.filter(t => {
                     const tDate = parseLocalDate(t.date);
@@ -12033,8 +12038,8 @@
                 // Calculate net transactions (with signs: positive for refunds, negative for expenses)
                 const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-                // Return remaining: Budget + NetTransactions
-                return budgetAmount + netTransactions;
+                // Return remaining: Budget + Pot + NetTransactions
+                return budgetAmount + pot + netTransactions;
             } catch (error) {
                 console.error('Error calculating category remaining:', error);
                 return 0;
