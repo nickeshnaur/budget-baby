@@ -13267,9 +13267,9 @@
                     });
                 }
 
-                // Update ignore count
+                // Update ignore count (filtered by selected month)
                 const ignoreTransactions = result.transactions.filter(t =>
-                    t.category && t.category === 'Ignore'
+                    t.category && t.category === 'Ignore' && isInSelectedPeriod(t)
                 );
                 const ignoreCountElement = document.getElementById('ignore-count');
                 if (ignoreCountElement) {
