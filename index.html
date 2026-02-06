@@ -8889,7 +8889,7 @@
                     const givingBudget = (givingPercentage / 100) * totalIncome;
 
                     // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
-                    const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+                    const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly' && !deletedCategories.includes(c.slug));
                     const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
                     const budgetResults = await Promise.all(budgetPromises);
 
@@ -8902,7 +8902,7 @@
                     });
 
                     // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid
-                    const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
+                    const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly' && !deletedCategories.includes(c.slug));
                     monthlyBillCategories.forEach(category => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
@@ -8924,7 +8924,7 @@
                     });
 
                     // 3. ANNUAL BILLS (fixed-annual): monthly budgeted + extra monthly needed
-                    const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
+                    const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual' && !deletedCategories.includes(c.slug));
                     annualBillCategories.forEach(category => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
@@ -9068,7 +9068,7 @@
             const givingBudget = (givingPercentage / 100) * totalIncome;
 
             // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
-            const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly');
+            const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly' && !deletedCategories.includes(c.slug));
             const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
             const budgetResults = await Promise.all(budgetPromises);
 
@@ -9081,7 +9081,7 @@
             });
 
             // 2. MONTHLY BILLS: budgeted if pending, total if paid
-            const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly');
+            const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly' && !deletedCategories.includes(c.slug));
             monthlyBillCategories.forEach(category => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
@@ -9101,7 +9101,7 @@
             });
 
             // 3. ANNUAL BILLS: monthly budgeted + extra monthly needed
-            const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual');
+            const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual' && !deletedCategories.includes(c.slug));
             annualBillCategories.forEach(category => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
@@ -12374,21 +12374,21 @@
 
         // Update fixed monthly categories using centralized config
         function updateFixedMonthlyCategoryData(transactions) {
-            CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly').forEach(category => {
+            CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly' && !deletedCategories.includes(c.slug)).forEach(category => {
                 updateCategoryCalculations(category.slug, category.transactionName, transactions);
             });
         }
 
         // Update fixed annual categories using centralized config
         function updateFixedAnnualCategoryData(transactions) {
-            CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual').forEach(category => {
+            CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual' && !deletedCategories.includes(c.slug)).forEach(category => {
                 updateFixedAnnualCalculations(category.slug, category.transactionName, transactions);
             });
         }
 
         // Update all flexible monthly categories using centralized config
         function updateFlexibleMonthlyCategoryData(transactions) {
-            FLEXIBLE_MONTHLY_CATEGORIES.forEach(category => {
+            FLEXIBLE_MONTHLY_CATEGORIES.filter(c => !deletedCategories.includes(c.slug)).forEach(category => {
                 updateFlexibleCalculations(category.slug, category.transactionName, transactions);
             });
         }
