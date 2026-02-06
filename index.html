@@ -8888,17 +8888,28 @@
                     const givingPercentage = loadGivingPercentage(selectedMonth, selectedYear);
                     const givingBudget = (givingPercentage / 100) * totalIncome;
 
-                    // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
+                    // 1. FLEXIBLE MONTHLY: budget if under, actual spent if over (considering pot)
                     const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly' && !deletedCategories.includes(c.slug));
                     const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
                     const budgetResults = await Promise.all(budgetPromises);
 
+                    // Calculate pots for all flexible categories
+                    const potPromises = flexibleMonthlyCategories.map(c =>
+                        c.slug === 'giving'
+                            ? calculateGivingPot(selectedMonth, selectedYear)
+                            : calculateFlexiblePotWithTransactions(c.slug, c.displayName, selectedMonth, selectedYear, allTransactions)
+                    );
+                    const potResults = await Promise.all(potPromises);
+
                     flexibleMonthlyCategories.forEach((category, index) => {
                         const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
-                        const spent = allTransactions
+                        const pot = potResults[index] || 0;
+                        const netTransactions = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t))
-                            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                        totalExpenses += Math.max(budgeted, spent);
+                            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                        const remaining = budgeted + pot + netTransactions;
+                        // If remaining >= 0: use budget. If overspent (remaining < 0): use actual spent
+                        totalExpenses += remaining >= 0 ? budgeted : Math.abs(netTransactions);
                     });
 
                     // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid
@@ -8968,15 +8979,26 @@
                         const customBudgetPromises = activeCustomCategories.map(c => loadBudget(c.title, selectedPeriod));
                         const customBudgetResults = await Promise.all(customBudgetPromises);
 
+                        // Calculate pots for flexible custom categories
+                        const customPotPromises = activeCustomCategories.map(c =>
+                            c.type === 'flexible'
+                                ? calculateCustomFlexiblePot(c.title, selectedMonth, selectedYear, allTransactions)
+                                : Promise.resolve(0)
+                        );
+                        const customPotResults = await Promise.all(customPotPromises);
+
                         activeCustomCategories.forEach((category, index) => {
                             const budgeted = customBudgetResults[index].amount || 0;
+                            const pot = customPotResults[index] || 0;
                             const categoryTransactions = allTransactions.filter(t =>
                                 t.category && t.category === category.title && isInSelectedPeriod(t)
                             );
-                            const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                            const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                            const spent = Math.abs(netTransactions);
 
                             if (category.type === 'flexible') {
-                                totalExpenses += Math.max(budgeted, spent);
+                                const remaining = budgeted + pot + netTransactions;
+                                totalExpenses += remaining >= 0 ? budgeted : spent;
                             } else if (category.type === 'monthly') {
                                 totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
                             } else if (category.type === 'annual') {
@@ -9067,17 +9089,28 @@
             const givingPercentage = loadGivingPercentage(selectedMonth, selectedYear);
             const givingBudget = (givingPercentage / 100) * totalIncome;
 
-            // 1. FLEXIBLE MONTHLY: max(budgeted, spent)
+            // 1. FLEXIBLE MONTHLY: budget if under, actual spent if over (considering pot)
             const flexibleMonthlyCategories = CATEGORY_CONFIG.filter(c => c.type === 'flexible-monthly' && !deletedCategories.includes(c.slug));
             const budgetPromises = flexibleMonthlyCategories.map(c => loadBudget(c.displayName, selectedPeriod));
             const budgetResults = await Promise.all(budgetPromises);
 
+            // Calculate pots for all flexible categories
+            const potPromises = flexibleMonthlyCategories.map(c =>
+                c.slug === 'giving'
+                    ? calculateGivingPot(selectedMonth, selectedYear)
+                    : calculateFlexiblePotWithTransactions(c.slug, c.displayName, selectedMonth, selectedYear, allTransactions)
+            );
+            const potResults = await Promise.all(potPromises);
+
             flexibleMonthlyCategories.forEach((category, index) => {
                 const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
-                const spent = allTransactions
+                const pot = potResults[index] || 0;
+                const netTransactions = allTransactions
                     .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
-                    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                totalExpenses += Math.max(budgeted, spent);
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const remaining = budgeted + pot + netTransactions;
+                // If remaining >= 0: use budget. If overspent (remaining < 0): use actual spent
+                totalExpenses += remaining >= 0 ? budgeted : Math.abs(netTransactions);
             });
 
             // 2. MONTHLY BILLS: budgeted if pending, total if paid
@@ -9143,15 +9176,26 @@
                 const customBudgetPromises = activeCustomCategories.map(c => loadBudget(c.title, selectedPeriod));
                 const customBudgetResults = await Promise.all(customBudgetPromises);
 
+                // Calculate pots for flexible custom categories
+                const customPotPromises = activeCustomCategories.map(c =>
+                    c.type === 'flexible'
+                        ? calculateCustomFlexiblePot(c.title, selectedMonth, selectedYear, allTransactions)
+                        : Promise.resolve(0)
+                );
+                const customPotResults = await Promise.all(customPotPromises);
+
                 activeCustomCategories.forEach((category, index) => {
                     const budgeted = customBudgetResults[index].amount || 0;
+                    const pot = customPotResults[index] || 0;
                     const categoryTransactions = allTransactions.filter(t =>
                         t.category && t.category === category.title && isInPeriod(t)
                     );
-                    const spent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+                    const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                    const spent = Math.abs(netTransactions);
 
                     if (category.type === 'flexible') {
-                        totalExpenses += Math.max(budgeted, spent);
+                        const remaining = budgeted + pot + netTransactions;
+                        totalExpenses += remaining >= 0 ? budgeted : spent;
                     } else if (category.type === 'monthly') {
                         totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
                     } else if (category.type === 'annual') {
