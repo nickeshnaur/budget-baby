@@ -13047,6 +13047,11 @@
                                     <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
                                     <span class="spent-text">SPENT: $${flexibleSpent.toFixed(2)}</span>
                                 `;
+                                if (categorySlug === 'gifts' || categorySlug === 'treats' || categorySlug === 'home') {
+                                    console.log(`[TRACE] ${categorySlug}: flexibleSpent=${flexibleSpent.toFixed(2)}, .spent-text now="${card.querySelector('.spent-text')?.textContent}"`);
+                                    setTimeout(() => console.log(`[TRACE-1s] ${categorySlug}: .spent-text after 1s="${card.querySelector('.spent-text')?.textContent}"`), 1000);
+                                    setTimeout(() => console.log(`[TRACE-3s] ${categorySlug}: .spent-text after 3s="${card.querySelector('.spent-text')?.textContent}"`), 3000);
+                                }
 
                                 // Update progress bar - red only if remaining is negative
                                 const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
