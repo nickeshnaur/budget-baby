@@ -7431,8 +7431,9 @@
                 rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Calculate total spent (|net|: absolute value of signed sum, so refunds reduce displayed spent)
-            const totalSpentDisplay = Math.abs(transactions.reduce((sum, transaction) => {
+            // Calculate total spent: negate signed sum (expenses are negative, so -net = positive spent;
+            // if more refunds than expenses, -net is negative = shown as -$X to indicate net earning)
+            const totalSpentDisplay = -(transactions.reduce((sum, transaction) => {
                 return sum + (parseFloat(transaction.amount) || 0);
             }, 0));
 
@@ -7445,7 +7446,8 @@
             // Update spent display
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             if (spentElement) {
-                spentElement.textContent = `$${totalSpentDisplay.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                const spentSign = totalSpentDisplay < 0 ? '-' : '';
+                spentElement.textContent = `${spentSign}$${Math.abs(totalSpentDisplay).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                 // Store net transactions for remaining calculation
                 spentElement.setAttribute('data-net', netTransactions);
             }
@@ -7805,8 +7807,9 @@
                 rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Calculate total spent (|net|: absolute value of signed sum, so refunds reduce displayed spent)
-            const totalSpentDisplay = Math.abs(transactions.reduce((sum, transaction) => {
+            // Calculate total spent: negate signed sum (expenses are negative, so -net = positive spent;
+            // if more refunds than expenses, -net is negative = shown as -$X to indicate net earning)
+            const totalSpentDisplay = -(transactions.reduce((sum, transaction) => {
                 return sum + (parseFloat(transaction.amount) || 0);
             }, 0));
 
@@ -7818,7 +7821,8 @@
             // Update spent display
             const spentElement = document.getElementById('giving-spent');
             if (spentElement) {
-                spentElement.textContent = `$${totalSpentDisplay.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                const spentSign = totalSpentDisplay < 0 ? '-' : '';
+                spentElement.textContent = `${spentSign}$${Math.abs(totalSpentDisplay).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                 spentElement.setAttribute('data-net', netTransactions);
             }
 
@@ -12447,7 +12451,7 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
+            const totalSpent = -(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update actual payment on category detail page
             // Try the standard pattern first, then try the -cost pattern for annual categories
@@ -12576,7 +12580,7 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
+            const totalSpent = -(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update Total - show -- if no transactions, otherwise sum of transactions for that month
             const actualElement = document.getElementById(`${elementSlug}-total`);
@@ -12660,12 +12664,13 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
+            const totalSpent = -(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update spent amount
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             if (spentElement) {
-                spentElement.textContent = `$${totalSpent.toFixed(2)}`;
+                const spentSign = totalSpent < 0 ? '-' : '';
+                spentElement.textContent = `${spentSign}$${Math.abs(totalSpent).toFixed(2)}`;
             }
 
             // Update remaining amount
