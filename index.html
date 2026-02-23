@@ -8905,12 +8905,15 @@
                     flexibleMonthlyCategories.forEach((category, index) => {
                         const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
                         const pot = potResults[index] || 0;
-                        const netTransactions = allTransactions
-                            .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t))
-                            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                        const categoryTxns = allTransactions
+                            .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
+                        const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
                         const remaining = budgeted + pot + netTransactions;
                         const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
                         console.log(`[flex] ${category.displayName}: budgeted=${budgeted.toFixed(2)}, pot=${pot.toFixed(2)}, net=${netTransactions.toFixed(2)}, remaining=${remaining.toFixed(2)}, adds=${contribution.toFixed(2)}`);
+                        if (['GIFTS', 'TREATS'].includes(category.transactionName)) {
+                            categoryTxns.forEach(t => console.log(`  -> txn: ${t.date} amount=${t.amount} desc="${t.description}"`));
+                        }
                         // If remaining >= 0: use budget. If overspent (remaining < 0): use actual spent
                         totalExpenses += contribution;
                     });
