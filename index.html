@@ -8911,8 +8911,11 @@
                         const remaining = budgeted + pot + netTransactions;
                         const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
                         totalExpenses += contribution;
-                        if (remaining < 0) {
-                            console.log(`[OVER-BUDGET] ${category.displayName}: budgeted=${budgeted.toFixed(2)}, pot=${pot.toFixed(2)}, net=${netTransactions.toFixed(2)}, |net|=${Math.abs(netTransactions).toFixed(2)}, grossSpent=${grossSpent.toFixed(2)}, diff=${(grossSpent - Math.abs(netTransactions)).toFixed(2)}, contribution=${contribution.toFixed(2)}`);
+                        if (remaining < 0 && grossSpent !== Math.abs(netTransactions)) {
+                            console.log(`[POSITIVE-TXNS] ${category.displayName}: |net|=${Math.abs(netTransactions).toFixed(2)}, grossSpent=${grossSpent.toFixed(2)}, diff=${(grossSpent - Math.abs(netTransactions)).toFixed(2)}`);
+                            categoryTxns.filter(t => parseFloat(t.amount) > 0).forEach(t => {
+                                console.log(`  [+] ${t.date} | ${t.description || t.name || 'no desc'} | $${parseFloat(t.amount).toFixed(2)}`);
+                            });
                         }
                     });
 
