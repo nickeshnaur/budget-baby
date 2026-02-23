@@ -8907,9 +8907,13 @@
                         const categoryTxns = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
                         const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                        const grossSpent = categoryTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                         const remaining = budgeted + pot + netTransactions;
                         const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
                         totalExpenses += contribution;
+                        if (remaining < 0) {
+                            console.log(`[OVER-BUDGET] ${category.displayName}: budgeted=${budgeted.toFixed(2)}, pot=${pot.toFixed(2)}, net=${netTransactions.toFixed(2)}, |net|=${Math.abs(netTransactions).toFixed(2)}, grossSpent=${grossSpent.toFixed(2)}, diff=${(grossSpent - Math.abs(netTransactions)).toFixed(2)}, contribution=${contribution.toFixed(2)}`);
+                        }
                     });
 
                     // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid
