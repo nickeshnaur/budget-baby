@@ -8875,7 +8875,7 @@
 
                     // Calculate total income (Income category filtered by date)
                     const totalIncome = allTransactions.reduce((sum, transaction) => {
-                        if (transaction.category === 'Income' && isInSelectedPeriod(transaction)) {
+                        if (transaction.category && transaction.category.toUpperCase() === 'INCOME' && isInSelectedPeriod(transaction)) {
                             return sum + Math.abs(parseFloat(transaction.amount) || 0);
                         }
                         return sum;
@@ -9079,7 +9079,7 @@
 
             // Compute total income for Giving percentage calculation
             const totalIncome = allTransactions.reduce((sum, transaction) => {
-                if (transaction.category === 'Income' && isInPeriod(transaction)) {
+                if (transaction.category && transaction.category.toUpperCase() === 'INCOME' && isInPeriod(transaction)) {
                     return sum + Math.abs(parseFloat(transaction.amount) || 0);
                 }
                 return sum;
