@@ -8901,20 +8901,16 @@
                     );
                     const potResults = await Promise.all(potPromises);
 
-                    console.log('=== EXPENSES BREAKDOWN ===');
                     flexibleMonthlyCategories.forEach((category, index) => {
                         const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
                         const pot = potResults[index] || 0;
                         const categoryTxns = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
                         const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                        const grossSpent = categoryTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                         const remaining = budgeted + pot + netTransactions;
-                        const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
-                        console.log(`[flex] ${category.displayName}: budgeted=${budgeted.toFixed(2)}, pot=${pot.toFixed(2)}, net=${netTransactions.toFixed(2)}, remaining=${remaining.toFixed(2)}, adds=${contribution.toFixed(2)}`);
-                        if (['GIFTS', 'TREATS'].includes(category.transactionName)) {
-                            categoryTxns.forEach(t => console.log(`  -> txn: ${t.date} amount=${t.amount} desc="${t.description}"`));
-                        }
-                        // If remaining >= 0: use budget. If overspent (remaining < 0): use actual spent
+                        // If remaining >= 0: use budget. If overspent: use gross spent (sum of abs amounts, matching card SPENT display)
+                        const contribution = remaining >= 0 ? budgeted : grossSpent;
                         totalExpenses += contribution;
                     });
 
@@ -8930,18 +8926,14 @@
                             t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t)
                         );
 
-                        let contribution;
                         if (categoryTransactions.length > 0) {
                             // Has transactions: use actual total
                             const total = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
-                            contribution = total;
                             totalExpenses += total;
                         } else {
                             // No transactions: use budgeted
-                            contribution = budgeted;
                             totalExpenses += budgeted;
                         }
-                        console.log(`[fixed-monthly] ${category.displayName}: budgeted=${budgeted.toFixed(2)}, txns=${categoryTransactions.length}, adds=${contribution.toFixed(2)}`);
                     });
 
                     // 3. ANNUAL BILLS (fixed-annual): monthly budgeted + extra monthly needed
@@ -8980,7 +8972,6 @@
 
                         const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
                         const currentMonthBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
-                        console.log(`[annual] ${category.displayName}: monthlyBudgeted=${currentMonthBudgeted.toFixed(2)}, extra=${extraMonthlyNeeded.toFixed(2)}, adds=${(currentMonthBudgeted + extraMonthlyNeeded).toFixed(2)}`);
                         totalExpenses += currentMonthBudgeted + extraMonthlyNeeded;
                     });
 
@@ -9009,13 +9000,9 @@
 
                             if (category.type === 'flexible') {
                                 const remaining = budgeted + pot + netTransactions;
-                                const contribution = remaining >= 0 ? budgeted : spent;
-                                console.log(`[custom-flex] ${category.title}: budgeted=${budgeted.toFixed(2)}, pot=${pot.toFixed(2)}, net=${netTransactions.toFixed(2)}, adds=${contribution.toFixed(2)}`);
-                                totalExpenses += contribution;
+                                totalExpenses += remaining >= 0 ? budgeted : spent;
                             } else if (category.type === 'monthly') {
-                                const contribution = (categoryTransactions.length > 0) ? spent : budgeted;
-                                console.log(`[custom-monthly] ${category.title}: budgeted=${budgeted.toFixed(2)}, spent=${spent.toFixed(2)}, adds=${contribution.toFixed(2)}`);
-                                totalExpenses += contribution;
+                                totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
                             } else if (category.type === 'annual') {
                                 const yearTransactions = allTransactions.filter(t => {
                                     if (!t.category || t.category !== category.title) return false;
@@ -9039,7 +9026,6 @@
                         });
                     }
 
-                    console.log(`=== TOTAL EXPENSES: ${totalExpenses.toFixed(2)} ===`);
                     // Calculate savings = income - expenses
                     const savings = totalIncome - totalExpenses;
 
@@ -9121,12 +9107,13 @@
             flexibleMonthlyCategories.forEach((category, index) => {
                 const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
                 const pot = potResults[index] || 0;
-                const netTransactions = allTransactions
-                    .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t))
-                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const categoryTxns = allTransactions
+                    .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t));
+                const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const grossSpent = categoryTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                 const remaining = budgeted + pot + netTransactions;
-                // If remaining >= 0: use budget. If overspent (remaining < 0): use actual spent
-                totalExpenses += remaining >= 0 ? budgeted : Math.abs(netTransactions);
+                // If remaining >= 0: use budget. If overspent: use gross spent (matching card SPENT display)
+                totalExpenses += remaining >= 0 ? budgeted : grossSpent;
             });
 
             // 2. MONTHLY BILLS: budgeted if pending, total if paid
