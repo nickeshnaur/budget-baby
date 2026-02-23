@@ -7431,10 +7431,10 @@
                 rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Calculate total spent (absolute value for display)
-            const totalSpentDisplay = transactions.reduce((sum, transaction) => {
-                return sum + Math.abs(parseFloat(transaction.amount) || 0);
-            }, 0);
+            // Calculate total spent (|net|: absolute value of signed sum, so refunds reduce displayed spent)
+            const totalSpentDisplay = Math.abs(transactions.reduce((sum, transaction) => {
+                return sum + (parseFloat(transaction.amount) || 0);
+            }, 0));
 
             // Calculate net transactions (with signs, for remaining calculation)
             // Positive amounts (refunds) add to remaining, negative amounts (expenses) subtract
@@ -7805,10 +7805,10 @@
                 rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
             }
 
-            // Calculate total spent (absolute value for display)
-            const totalSpentDisplay = transactions.reduce((sum, transaction) => {
-                return sum + Math.abs(parseFloat(transaction.amount) || 0);
-            }, 0);
+            // Calculate total spent (|net|: absolute value of signed sum, so refunds reduce displayed spent)
+            const totalSpentDisplay = Math.abs(transactions.reduce((sum, transaction) => {
+                return sum + (parseFloat(transaction.amount) || 0);
+            }, 0));
 
             // Calculate net transactions (with signs, for remaining calculation)
             const netTransactions = transactions.reduce((sum, transaction) => {
@@ -12447,7 +12447,7 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update actual payment on category detail page
             // Try the standard pattern first, then try the -cost pattern for annual categories
@@ -12576,7 +12576,7 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update Total - show -- if no transactions, otherwise sum of transactions for that month
             const actualElement = document.getElementById(`${elementSlug}-total`);
@@ -12660,7 +12660,7 @@
                 t.category.toUpperCase() === categoryName
             );
 
-            const totalSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const totalSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
             // Update spent amount
             const spentElement = document.getElementById(`${categorySlug}-spent`);
@@ -13047,13 +13047,7 @@
                                     <span class="budget-text">BUDGETED: $${budgetedValue.toFixed(2)}</span>
                                     <span class="spent-text">SPENT: $${flexibleSpent.toFixed(2)}</span>
                                 `;
-                                if (categorySlug === 'gifts' || categorySlug === 'treats' || categorySlug === 'home') {
-                                    console.log(`[TRACE] ${categorySlug}: flexibleSpent=${flexibleSpent.toFixed(2)}, .spent-text now="${card.querySelector('.spent-text')?.textContent}"`);
-                                    setTimeout(() => console.log(`[TRACE-1s] ${categorySlug}: .spent-text after 1s="${card.querySelector('.spent-text')?.textContent}"`), 1000);
-                                    setTimeout(() => console.log(`[TRACE-3s] ${categorySlug}: .spent-text after 3s="${card.querySelector('.spent-text')?.textContent}"`), 3000);
-                                }
-
-                                // Update progress bar - red only if remaining is negative
+// Update progress bar - red only if remaining is negative
                                 const progressColor = remainingValue < 0 ? '#EE3636' : '#D3D3D3';
                                 // Show progress bar if there's a budget OR if there's spending (always for Giving and School)
                                 const shouldShowProgress = budgetedValue > 0 || flexibleSpent > 0 || categorySlug === 'giving' || categorySlug === 'school';
