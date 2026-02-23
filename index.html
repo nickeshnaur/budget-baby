@@ -8907,10 +8907,8 @@
                         const categoryTxns = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
                         const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-                        const grossSpent = categoryTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                         const remaining = budgeted + pot + netTransactions;
-                        // If remaining >= 0: use budget. If overspent: use gross spent (sum of abs amounts, matching card SPENT display)
-                        const contribution = remaining >= 0 ? budgeted : grossSpent;
+                        const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
                         totalExpenses += contribution;
                     });
 
@@ -9110,10 +9108,8 @@
                 const categoryTxns = allTransactions
                     .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t));
                 const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-                const grossSpent = categoryTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
                 const remaining = budgeted + pot + netTransactions;
-                // If remaining >= 0: use budget. If overspent: use gross spent (matching card SPENT display)
-                totalExpenses += remaining >= 0 ? budgeted : grossSpent;
+                totalExpenses += remaining >= 0 ? budgeted : Math.abs(netTransactions);
             });
 
             // 2. MONTHLY BILLS: budgeted if pending, total if paid
@@ -13008,7 +13004,7 @@
                                 if (!budgetedElement) return;
 
                                 // Calculate spent (absolute value for display)
-                                const flexibleSpent = categoryTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+                                const flexibleSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
                                 // Calculate net transactions (with signs, for remaining)
                                 const netTransactions = categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
