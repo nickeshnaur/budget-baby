@@ -8649,6 +8649,13 @@
                                         if (onclick && onclick.includes(`'${catConfig.displayName}'`)) {
                                             if (parsedDay) card.setAttribute('data-due-day', parsedDay);
                                             if (parsedMonth) card.setAttribute('data-due-month', parsedMonth);
+                                            // Update bill-status text on the home card
+                                            const billStatus = card.querySelector('.bill-status');
+                                            if (billStatus && !billStatus.classList.contains('paid')) {
+                                                const m = parsedMonth || card.getAttribute('data-due-month');
+                                                const d = parsedDay || card.getAttribute('data-due-day');
+                                                if (m && d) billStatus.textContent = `Due ${m}/${d}`;
+                                            }
                                         }
                                     });
                                 } catch (error) {
@@ -13071,12 +13078,11 @@
                                         budgetInfoDiv.innerHTML = `<span class="budget-text">DUE: ${dueDate}</span>`;
                                     }
                                     if (billStatusElement) {
-                                        // Store original due text on first run
-                                        if (!billStatusElement.hasAttribute('data-original-due')) {
-                                            billStatusElement.setAttribute('data-original-due', billStatusElement.textContent);
-                                        }
-                                        const originalDue = billStatusElement.getAttribute('data-original-due');
-                                        billStatusElement.textContent = originalDue || (dueDate ? `Due ${dueDate}` : 'Due');
+                                        // Compute due text from current data attributes
+                                        const cardDueMonth = card.getAttribute('data-due-month');
+                                        const cardDueDay = card.getAttribute('data-due-day');
+                                        const dueText = (cardDueMonth && cardDueDay) ? `Due ${cardDueMonth}/${cardDueDay}` : (dueDate ? `Due ${dueDate}` : 'Due');
+                                        billStatusElement.textContent = dueText;
                                         billStatusElement.className = 'bill-status due';
                                     }
                                 }
