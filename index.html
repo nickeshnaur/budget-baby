@@ -8113,13 +8113,50 @@
                 });
 
                 // Handle blur: save changes
-                dueDateElement.addEventListener('blur', function() {
+                dueDateElement.addEventListener('blur', async function() {
                     let value = this.textContent.trim();
 
                     // Accept any non-empty value (e.g., "1st", "22nd", "15", etc.)
                     if (value.length > 0) {
-                        this.setAttribute('data-value', value);
-                        this.textContent = value;
+                        const dayNum = parseInt(value.replace(/\D/g, '')) || 1;
+                        const suffix = getDaySuffix(dayNum);
+                        this.textContent = `${dayNum}${suffix}`;
+                        this.setAttribute('data-value', `${dayNum}${suffix}`);
+
+                        // Persist to database via category overrides
+                        const catConfig = CATEGORY_CONFIG.find(c => c.slug === categorySlug);
+                        if (catConfig) {
+                            const override = categoryOverrides[categorySlug] || {};
+                            try {
+                                await fetch('/api/categories/update', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({
+                                        slug: categorySlug,
+                                        isCustom: false,
+                                        title: override.title || catConfig.displayName,
+                                        emoji: override.emoji || '',
+                                        color: override.color || '',
+                                        type: override.type || catConfig.type,
+                                        dueDay: dayNum
+                                    })
+                                });
+                                // Update local overrides
+                                if (!categoryOverrides[categorySlug]) categoryOverrides[categorySlug] = {};
+                                categoryOverrides[categorySlug].due_day = dayNum;
+                                // Update home page card data attribute
+                                const homeCards = document.querySelectorAll('.home-category-item');
+                                homeCards.forEach(card => {
+                                    const onclick = card.getAttribute('onclick');
+                                    if (onclick && onclick.includes(`'${catConfig.displayName}'`)) {
+                                        card.setAttribute('data-due-day', dayNum);
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('Error saving due date:', error);
+                            }
+                        }
                     } else {
                         // Revert to original if empty
                         const original = this.getAttribute('data-original');
@@ -8524,7 +8561,7 @@
                 });
 
                 // Handle blur: save changes
-                dueDateElement.addEventListener('blur', function() {
+                dueDateElement.addEventListener('blur', async function() {
                     let value = this.textContent.trim();
 
                     // Enhanced validation for multiple date formats
@@ -8550,6 +8587,74 @@
                         if (rolloverElement && annualCost > 0) {
                             const rollover = calculateRollover(categorySlug, annualCost);
                             rolloverElement.textContent = `$${rollover.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        }
+
+                        // Parse month and day from the value to persist
+                        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const monthNamesFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                        let parsedMonth = null;
+                        let parsedDay = null;
+
+                        if (value.match(/^\d{1,2}\/\d{1,2}$/)) {
+                            const parts = value.split('/');
+                            parsedMonth = parseInt(parts[0]);
+                            parsedDay = parseInt(parts[1]);
+                        } else {
+                            // Extract month from name
+                            const lowerVal = value.toLowerCase();
+                            for (let i = 0; i < monthNamesFull.length; i++) {
+                                if (lowerVal.includes(monthNamesFull[i].toLowerCase()) || lowerVal.includes(monthNames[i].toLowerCase())) {
+                                    parsedMonth = i + 1;
+                                    break;
+                                }
+                            }
+                            // Extract day number
+                            const dayMatch = value.match(/(\d+)/);
+                            if (dayMatch) parsedDay = parseInt(dayMatch[1]);
+                            // If only a month number was given
+                            if (!parsedMonth && value.match(/^\d{1,2}$/)) {
+                                parsedMonth = parseInt(value);
+                            }
+                        }
+
+                        // Persist to database via category overrides
+                        if (parsedMonth || parsedDay) {
+                            const catConfig = CATEGORY_CONFIG.find(c => c.slug === categorySlug);
+                            if (catConfig) {
+                                const override = categoryOverrides[categorySlug] || {};
+                                try {
+                                    await fetch('/api/categories/update', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        credentials: 'include',
+                                        body: JSON.stringify({
+                                            slug: categorySlug,
+                                            isCustom: false,
+                                            title: override.title || catConfig.displayName,
+                                            emoji: override.emoji || '',
+                                            color: override.color || '',
+                                            type: override.type || catConfig.type,
+                                            dueDay: parsedDay || catConfig.dueDay,
+                                            dueMonth: parsedMonth || catConfig.dueMonth
+                                        })
+                                    });
+                                    // Update local overrides
+                                    if (!categoryOverrides[categorySlug]) categoryOverrides[categorySlug] = {};
+                                    if (parsedDay) categoryOverrides[categorySlug].due_day = parsedDay;
+                                    if (parsedMonth) categoryOverrides[categorySlug].due_month = parsedMonth;
+                                    // Update home page card data attributes
+                                    const homeCards = document.querySelectorAll('.home-category-item');
+                                    homeCards.forEach(card => {
+                                        const onclick = card.getAttribute('onclick');
+                                        if (onclick && onclick.includes(`'${catConfig.displayName}'`)) {
+                                            if (parsedDay) card.setAttribute('data-due-day', parsedDay);
+                                            if (parsedMonth) card.setAttribute('data-due-month', parsedMonth);
+                                        }
+                                    });
+                                } catch (error) {
+                                    console.error('Error saving due date:', error);
+                                }
+                            }
                         }
                     } else {
                         // Revert to original if empty
@@ -10155,6 +10260,35 @@
                     if (override.color && accentEl) {
                         accentEl.style.background = override.color;
                     }
+                }
+
+                // Update due date in detail page and home card
+                const catConfig = CATEGORY_CONFIG.find(c => c.slug === slug);
+                if (catConfig) {
+                    const dueDateEl = document.getElementById(`${slug}-due-date`);
+                    if (catConfig.type === 'fixed-monthly' && override.due_day && dueDateEl) {
+                        dueDateEl.textContent = `${override.due_day}${getDaySuffix(override.due_day)}`;
+                    } else if (catConfig.type === 'fixed-annual' && dueDateEl) {
+                        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const dueMonth = override.due_month || catConfig.dueMonth;
+                        const dueDay = override.due_day || catConfig.dueDay;
+                        if (dueMonth && dueDay) {
+                            const formatted = `${monthNames[dueMonth - 1]} ${dueDay}`;
+                            dueDateEl.textContent = formatted;
+                            dueDateEl.setAttribute('data-value', formatted);
+                        }
+                    }
+
+                    // Update home page card data attributes
+                    const displayName = override.title || catConfig.displayName;
+                    const homeCards = document.querySelectorAll('.home-category-item');
+                    homeCards.forEach(card => {
+                        const onclick = card.getAttribute('onclick');
+                        if (onclick && (onclick.includes(`'${catConfig.displayName}'`) || onclick.includes(`'${displayName}'`))) {
+                            if (override.due_day) card.setAttribute('data-due-day', override.due_day);
+                            if (override.due_month) card.setAttribute('data-due-month', override.due_month);
+                        }
+                    });
                 }
             });
         }
