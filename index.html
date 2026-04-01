@@ -9024,7 +9024,7 @@
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
                         const netTransactions = categoryTxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
                         const remaining = budgeted + pot + netTransactions;
-                        const contribution = remaining >= 0 ? budgeted : Math.abs(netTransactions);
+                        const contribution = remaining >= 0 ? budgeted : (Math.abs(netTransactions) - pot);
                         totalExpenses += contribution;
                     });
 
@@ -9114,7 +9114,7 @@
 
                             if (category.type === 'flexible') {
                                 const remaining = budgeted + pot + netTransactions;
-                                totalExpenses += remaining >= 0 ? budgeted : spent;
+                                totalExpenses += remaining >= 0 ? budgeted : (spent - pot);
                             } else if (category.type === 'monthly') {
                                 totalExpenses += (categoryTransactions.length > 0) ? spent : budgeted;
                             } else if (category.type === 'annual') {
