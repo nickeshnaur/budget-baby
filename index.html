@@ -9018,7 +9018,7 @@
                     const potResults = await Promise.all(potPromises);
 
                     flexibleMonthlyCategories.forEach((category, index) => {
-                        const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
+                        const budgeted = budgetResults[index].amount || 0;
                         const pot = potResults[index] || 0;
                         const categoryTxns = allTransactions
                             .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t));
@@ -9219,7 +9219,7 @@
             const potResults = await Promise.all(potPromises);
 
             flexibleMonthlyCategories.forEach((category, index) => {
-                const budgeted = category.slug === 'giving' ? givingBudget : (budgetResults[index].amount || 0);
+                const budgeted = budgetResults[index].amount || 0;
                 const pot = potResults[index] || 0;
                 const categoryTxns = allTransactions
                     .filter(t => t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t));
