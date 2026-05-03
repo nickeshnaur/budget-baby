@@ -7596,10 +7596,11 @@
             const spentElement = document.getElementById(`${categorySlug}-spent`);
             const remainingElement = document.getElementById(`${categorySlug}-remaining`);
 
-            if (budgetedElement && rolloverElement && spentElement && remainingElement) {
+            if (budgetedElement && spentElement && remainingElement) {
                 // Get values from data attributes and text content
                 const budgetedValue = parseFloat(budgetedElement.getAttribute('data-value')) || 0;
-                const rolloverValue = parseFloat(rolloverElement.getAttribute('data-value')) || 0;
+                // Categories without a pot (e.g. Giving) won't have a rollover element — treat as 0.
+                const rolloverValue = rolloverElement ? (parseFloat(rolloverElement.getAttribute('data-value')) || 0) : 0;
 
                 // Get net transactions (signed sum) - positive = refunds add, negative = expenses subtract
                 const netTransactions = parseFloat(spentElement.getAttribute('data-net')) || 0;
