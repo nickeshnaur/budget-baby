@@ -5801,10 +5801,6 @@
                 <div class="budget-value editable" contenteditable="true" id="giving-percentage" data-value="10">10%</div>
             </div>
             <div class="budget-item">
-                <div class="budget-label"><span>🏦</span>Pot</div>
-                <div class="budget-value" id="giving-rollover" data-value="0">$0.00</div>
-            </div>
-            <div class="budget-item">
                 <div class="budget-label"><span>💸</span>Spent</div>
                 <div class="budget-value" id="giving-spent">$0.00</div>
             </div>
@@ -7808,13 +7804,7 @@
                 budgetedElement.textContent = `$${budgeted.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             }
 
-            // Calculate pot (rollover from previous months)
-            const pot = await calculateGivingPot(selectedMonth, selectedYear);
-            const rolloverElement = document.getElementById('giving-rollover');
-            if (rolloverElement) {
-                rolloverElement.setAttribute('data-value', pot.toString());
-                rolloverElement.textContent = `$${pot.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            }
+            // Giving has no pot — unspent budget does not roll over to future months.
 
             // Calculate total spent: negate signed sum (expenses are negative, so -net = positive spent;
             // if more refunds than expenses, -net is negative = shown as -$X to indicate net earning)
@@ -7842,46 +7832,10 @@
             setupEditableGivingPercentage();
         }
 
-        // Calculate pot for Giving by accumulating positive remaining from previous months
-        async function calculateGivingPot(selectedMonth, selectedYear) {
-            try {
-                const response = await fetch('/api/transactions');
-                const result = await response.json();
-                if (!response.ok || !result.transactions) return 0;
-
-                let pot = 0;
-
-                for (let year = 2026; year <= selectedYear; year++) {
-                    const startMonth = 1;
-                    const endMonth = (year === selectedYear) ? selectedMonth - 1 : 12;
-
-                    for (let month = startMonth; month <= endMonth; month++) {
-                        // Get percentage and income for this month
-                        const percentage = loadGivingPercentage(month, year);
-                        const income = await getIncomeForMonth(month, year);
-                        const budgeted = (percentage / 100) * income;
-
-                        // Get net transactions for this month
-                        const monthTransactions = result.transactions.filter(t => {
-                            if (!t.category || t.category.toUpperCase() !== 'GIVING') return false;
-                            const txnDate = parseLocalDate(t.date);
-                            return txnDate.getMonth() + 1 === month && txnDate.getFullYear() === year;
-                        });
-                        const netTransactions = monthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-
-                        // Calculate remaining for this month
-                        const remaining = budgeted + pot + netTransactions;
-
-                        // Pot for next month = max(0, remaining) - don't carry negative
-                        pot = Math.max(0, remaining);
-                    }
-                }
-
-                return pot;
-            } catch (error) {
-                console.error('Error calculating Giving pot:', error);
-                return 0;
-            }
+        // Giving doesn't have a pot — unspent monthly budget does not roll over.
+        // Returns 0 unconditionally so any remaining call sites stay valid.
+        async function calculateGivingPot() {
+            return 0;
         }
 
         // Set up editable percentage field for Giving
