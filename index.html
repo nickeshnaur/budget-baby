@@ -9021,13 +9021,20 @@
                         totalExpenses += contribution;
                     });
 
-                    // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid
+                    // 2. MONTHLY BILLS (fixed-monthly): budgeted if pending, total if paid.
+                    // Source of truth is the server (with inheritance from prior months) — not
+                    // localStorage, which can hold a stale value the user can't easily clear.
                     const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly' && !deletedCategories.includes(c.slug));
-                    monthlyBillCategories.forEach(category => {
+                    const monthlyBillBudgetResults = await Promise.all(
+                        monthlyBillCategories.map(c => loadBudget(c.displayName, selectedPeriod))
+                    );
+                    monthlyBillCategories.forEach((category, index) => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                         const domDefault = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
-                        const budgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                        const budgeted = monthlyBillBudgetResults[index].amount !== null
+                            ? monthlyBillBudgetResults[index].amount
+                            : domDefault;
 
                         const categoryTransactions = allTransactions.filter(t =>
                             t.category && t.category.toUpperCase() === category.transactionName && isInSelectedPeriod(t)
@@ -9043,9 +9050,23 @@
                         }
                     });
 
-                    // 3. ANNUAL BILLS (fixed-annual): monthly budgeted + extra monthly needed
+                    // 3. ANNUAL BILLS (fixed-annual): monthly budgeted + extra monthly needed.
+                    // Same: read budget per month from the server, not from localStorage.
                     const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual' && !deletedCategories.includes(c.slug));
+                    const annualBillCurrentBudgets = await Promise.all(
+                        annualBillCategories.map(c => loadBudget(c.displayName, selectedPeriod))
+                    );
+                    // Pre-fetch every month-of-year budget needed for pot computation, in parallel.
+                    const annualMonthBudgetPromises = [];
                     annualBillCategories.forEach(category => {
+                        for (let month = 1; month <= selectedMonth; month++) {
+                            const monthStr = `${selectedYear}-${String(month).padStart(2, '0')}`;
+                            annualMonthBudgetPromises.push(loadBudget(category.displayName, monthStr));
+                        }
+                    });
+                    const annualMonthBudgets = await Promise.all(annualMonthBudgetPromises);
+
+                    annualBillCategories.forEach((category, idx) => {
                         const elementSlug = category.slug.replace(/---/g, '-');
                         const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                         const domDefault = monthlyBudgetedElement ?
@@ -9058,10 +9079,12 @@
                             return txnDate.getFullYear() === selectedYear;
                         });
 
-                        // Calculate pot with reset logic
+                        // Calculate pot with reset logic — using server-inherited budgets.
                         let runningPot = 0;
                         for (let month = 1; month <= selectedMonth; month++) {
-                            const monthBudgeted = getMonthlyBudgeted(elementSlug, month, selectedYear, domDefault);
+                            const slotIndex = idx * selectedMonth + (month - 1);
+                            const slotResult = annualMonthBudgets[slotIndex];
+                            const monthBudgeted = (slotResult && slotResult.amount !== null) ? slotResult.amount : domDefault;
                             runningPot += monthBudgeted;
 
                             const monthSpent = yearTransactions
@@ -9078,7 +9101,9 @@
                         }
 
                         const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
-                        const currentMonthBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                        const currentMonthBudgeted = annualBillCurrentBudgets[idx].amount !== null
+                            ? annualBillCurrentBudgets[idx].amount
+                            : domDefault;
                         totalExpenses += currentMonthBudgeted + extraMonthlyNeeded;
                     });
 
@@ -9224,13 +9249,18 @@
                 totalExpenses += remaining >= 0 ? budgeted : (Math.abs(netTransactions) - pot);
             });
 
-            // 2. MONTHLY BILLS: budgeted if pending, total if paid
+            // 2. MONTHLY BILLS: server is source of truth (with inheritance), not localStorage.
             const monthlyBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-monthly' && !deletedCategories.includes(c.slug));
-            monthlyBillCategories.forEach(category => {
+            const monthlyBillBudgetResults = await Promise.all(
+                monthlyBillCategories.map(c => loadBudget(c.displayName, selectedPeriod))
+            );
+            monthlyBillCategories.forEach((category, index) => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const budgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                 const domDefault = budgetedElement ? parseFloat(budgetedElement.getAttribute('data-value') || budgetedElement.textContent.replace(/[^0-9.-]/g, '')) || 0 : 0;
-                const budgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                const budgeted = monthlyBillBudgetResults[index].amount !== null
+                    ? monthlyBillBudgetResults[index].amount
+                    : domDefault;
 
                 const categoryTransactions = allTransactions.filter(t =>
                     t.category && t.category.toUpperCase() === category.transactionName && isInPeriod(t)
@@ -9244,9 +9274,21 @@
                 }
             });
 
-            // 3. ANNUAL BILLS: monthly budgeted + extra monthly needed
+            // 3. ANNUAL BILLS: server is source of truth.
             const annualBillCategories = CATEGORY_CONFIG.filter(c => c.type === 'fixed-annual' && !deletedCategories.includes(c.slug));
+            const annualBillCurrentBudgets = await Promise.all(
+                annualBillCategories.map(c => loadBudget(c.displayName, selectedPeriod))
+            );
+            const annualMonthBudgetPromises = [];
             annualBillCategories.forEach(category => {
+                for (let m = 1; m <= selectedMonth; m++) {
+                    const monthStr = `${selectedYear}-${String(m).padStart(2, '0')}`;
+                    annualMonthBudgetPromises.push(loadBudget(category.displayName, monthStr));
+                }
+            });
+            const annualMonthBudgets = await Promise.all(annualMonthBudgetPromises);
+
+            annualBillCategories.forEach((category, idx) => {
                 const elementSlug = category.slug.replace(/---/g, '-');
                 const monthlyBudgetedElement = document.getElementById(`${elementSlug}-budgeted`);
                 const domDefault = monthlyBudgetedElement ?
@@ -9260,7 +9302,9 @@
 
                 let runningPot = 0;
                 for (let m = 1; m <= selectedMonth; m++) {
-                    const mBudgeted = getMonthlyBudgeted(elementSlug, m, selectedYear, domDefault);
+                    const slotIndex = idx * selectedMonth + (m - 1);
+                    const slotResult = annualMonthBudgets[slotIndex];
+                    const mBudgeted = (slotResult && slotResult.amount !== null) ? slotResult.amount : domDefault;
                     runningPot += mBudgeted;
 
                     const monthSpent = yearTransactions
@@ -9277,7 +9321,9 @@
                 }
 
                 const extraMonthlyNeeded = runningPot < 0 ? Math.abs(runningPot) : 0;
-                const currentMonthBudgeted = getMonthlyBudgeted(elementSlug, selectedMonth, selectedYear, domDefault);
+                const currentMonthBudgeted = annualBillCurrentBudgets[idx].amount !== null
+                    ? annualBillCurrentBudgets[idx].amount
+                    : domDefault;
                 totalExpenses += currentMonthBudgeted + extraMonthlyNeeded;
             });
 
