@@ -177,6 +177,12 @@ async function initializeDatabase() {
       END $$;
     `);
 
+    // Add deleted_at column to custom_categories for soft-delete
+    await pool.query(`
+      ALTER TABLE custom_categories
+      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+    `);
+
     // Table for storing edits to hardcoded categories
     await pool.query(`
       CREATE TABLE IF NOT EXISTS category_overrides (
@@ -601,6 +607,10 @@ function handleApiRequest(req, res, pathname) {
     handleUpdateCategory(req, res);
   } else if (pathname === '/api/categories/delete' && req.method === 'POST') {
     handleDeleteCategory(req, res);
+  } else if (pathname === '/api/categories/restore' && req.method === 'POST') {
+    handleRestoreCategory(req, res);
+  } else if (pathname === '/api/categories/deleted' && req.method === 'GET') {
+    handleListDeletedCategories(req, res);
   } else if (pathname === '/api/categories/overrides' && req.method === 'GET') {
     handleGetCategoryOverrides(req, res);
   } else if (pathname === '/api/upload' && req.method === 'POST') {
@@ -2116,7 +2126,7 @@ function handleGetCategories(req, res) {
         return;
       }
 
-      const result = await pool.query('SELECT * FROM custom_categories ORDER BY created_at DESC');
+      const result = await pool.query('SELECT * FROM custom_categories WHERE deleted_at IS NULL ORDER BY created_at DESC');
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
@@ -2212,30 +2222,10 @@ function handleDeleteCategory(req, res) {
       }
 
       if (isCustom && id) {
-        // Get the category title first so we can reassign transactions
-        const categoryResult = await pool.query('SELECT title FROM custom_categories WHERE id = $1', [id]);
-        const categoryTitle = categoryResult.rows[0]?.title;
-
-        if (categoryTitle) {
-          // Reassign all transactions with this category to 'Unsorted'
-          const updateResult = await pool.query(
-            'UPDATE transactions SET category = $1 WHERE category = $2',
-            ['Unsorted', categoryTitle]
-          );
-          console.log(`📝 Reassigned ${updateResult.rowCount} transactions from "${categoryTitle}" to "Unsorted"`);
-
-          // Also update in-memory transactions
-          transactions.forEach((transaction, id) => {
-            if (transaction.category === categoryTitle) {
-              transaction.category = 'Unsorted';
-              transactions.set(id, transaction);
-            }
-          });
-        }
-
-        // Delete custom category from custom_categories table
-        await pool.query('DELETE FROM custom_categories WHERE id = $1', [id]);
-        console.log(`🗑️ Deleted custom category ID: ${id}`);
+        // Soft-delete: mark deleted_at instead of removing the row.
+        // Transactions keep their category tag so restoring is lossless.
+        await pool.query('UPDATE custom_categories SET deleted_at = NOW() WHERE id = $1', [id]);
+        console.log(`🗑️ Soft-deleted custom category ID: ${id}`);
       } else if (slug) {
         // For hardcoded categories, get the display name from SLUG_TO_DISPLAY mapping
         const slugToDisplay = {
@@ -2257,31 +2247,13 @@ function handleDeleteCategory(req, res) {
           'income': 'Income', 'ignore': 'Ignore'
         };
 
-        const categoryName = slugToDisplay[slug];
-        if (categoryName) {
-          // Reassign all transactions with this category to 'Unsorted'
-          const updateResult = await pool.query(
-            'UPDATE transactions SET category = $1 WHERE category = $2',
-            ['Unsorted', categoryName]
-          );
-          console.log(`📝 Reassigned ${updateResult.rowCount} transactions from "${categoryName}" to "Unsorted"`);
-
-          // Also update in-memory transactions
-          transactions.forEach((transaction, id) => {
-            if (transaction.category === categoryName) {
-              transaction.category = 'Unsorted';
-              transactions.set(id, transaction);
-            }
-          });
-        }
-
-        // Mark hardcoded category as deleted
+        // Soft-delete hardcoded category — keep transactions tagged so restore is lossless.
         await pool.query(`
           INSERT INTO deleted_categories (slug, deleted_at)
           VALUES ($1, NOW())
           ON CONFLICT DO NOTHING
         `, [slug]);
-        console.log(`🗑️ Marked category as deleted: ${slug}`);
+        console.log(`🗑️ Marked hardcoded category as deleted: ${slug}`);
       } else {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Category ID or slug required' }));
@@ -2298,6 +2270,87 @@ function handleDeleteCategory(req, res) {
       res.end(JSON.stringify({ error: 'Failed to delete category' }));
     }
   });
+}
+
+// Restore a soft-deleted category (custom by id, hardcoded by slug)
+function handleRestoreCategory(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  let body = '';
+  req.on('data', chunk => { body += chunk.toString(); });
+  req.on('end', async () => {
+    try {
+      const { id, slug, isCustom } = JSON.parse(body);
+
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      if (isCustom && id) {
+        await pool.query('UPDATE custom_categories SET deleted_at = NULL WHERE id = $1', [id]);
+        console.log(`♻️ Restored custom category ID: ${id}`);
+      } else if (slug) {
+        await pool.query('DELETE FROM deleted_categories WHERE slug = $1', [slug]);
+        console.log(`♻️ Restored hardcoded category: ${slug}`);
+      } else {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Category ID or slug required' }));
+        return;
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true }));
+    } catch (error) {
+      console.error('Restore category error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to restore category' }));
+    }
+  });
+}
+
+// List all soft-deleted categories (custom + hardcoded) for the restore UI
+function handleListDeletedCategories(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  (async () => {
+    try {
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      const customRes = await pool.query(
+        'SELECT id, type, title, emoji, color, due_day, due_month, annual_cost, deleted_at FROM custom_categories WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC'
+      );
+      const hardcodedRes = await pool.query(
+        'SELECT slug, deleted_at FROM deleted_categories ORDER BY deleted_at DESC'
+      );
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        custom: customRes.rows,
+        hardcoded: hardcodedRes.rows
+      }));
+    } catch (error) {
+      console.error('List deleted categories error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to list deleted categories' }));
+    }
+  })();
 }
 
 // Get category overrides and deletions

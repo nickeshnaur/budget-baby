@@ -3153,6 +3153,15 @@
                         <button type="submit" class="btn-submit">Add</button>
                     </div>
                 </form>
+                <div style="margin-top:18px;border-top:1px solid #eee;padding-top:14px;">
+                    <button type="button" onclick="toggleDeletedCategoriesPanel()"
+                        style="background:none;border:none;color:#4DABF7;font-size:13px;cursor:pointer;padding:0;">
+                        Restore deleted categories
+                    </button>
+                    <div id="deletedCategoriesPanel" style="display:none;margin-top:10px;">
+                        <div id="deletedCategoriesList" style="max-height:240px;overflow-y:auto;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -9849,13 +9858,17 @@
         function handleDeleteCategory() {
             if (!editingCategory) return;
 
+            // Defensive: confirm shows the exact title bound to this delete so a stale
+            // editingCategory binding can't silently delete the wrong row.
             const categoryName = editingCategory.title;
-            if (confirm(`Are you sure you want to delete "${categoryName}"? This action cannot be undone.`)) {
+            const kind = editingCategory.isCustom ? 'custom' : 'built-in';
+            const msg = `Delete the ${kind} category "${categoryName}"?\n\nIt will be hidden from the home page. Transactions stay tagged with this category, and you can restore it from the "Restore deleted categories" button at the bottom of the Add Category screen.`;
+            if (confirm(msg)) {
                 deleteCategory(editingCategory);
             }
         }
 
-        // Delete category
+        // Delete category (soft-delete on the server)
         async function deleteCategory(categoryInfo) {
             try {
                 const response = await fetch('/api/categories/delete', {
@@ -9873,8 +9886,12 @@
 
                 if (result.success) {
                     closeAddCategoryModal();
-                    alert('Category deleted successfully!');
-                    location.reload();
+                    // Refresh state in place — no full reload, which used to hide errors
+                    // and made the UI feel like it had nuked everything.
+                    if (typeof loadCustomCategories === 'function') {
+                        try { await loadCustomCategories(); } catch (e) { console.error(e); }
+                    }
+                    await fetchCategoryOverrides();
                 } else {
                     alert('Failed to delete category: ' + (result.error || 'Unknown error'));
                 }
@@ -9882,6 +9899,96 @@
                 console.error('Error deleting category:', error);
                 alert('Failed to delete category. Please try again.');
             }
+        }
+
+        // Restore a soft-deleted category (custom by id, hardcoded by slug)
+        async function restoreCategory({ id, slug, isCustom }) {
+            try {
+                const response = await fetch('/api/categories/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id, slug, isCustom })
+                });
+                const result = await response.json();
+                if (!result.success) {
+                    alert('Failed to restore category: ' + (result.error || 'Unknown error'));
+                    return;
+                }
+                if (typeof loadCustomCategories === 'function') {
+                    try { await loadCustomCategories(); } catch (e) { console.error(e); }
+                }
+                await fetchCategoryOverrides();
+                await renderDeletedCategoriesList();
+            } catch (error) {
+                console.error('Error restoring category:', error);
+                alert('Failed to restore category.');
+            }
+        }
+
+        // Fetch and render the list of soft-deleted categories inside the modal
+        async function renderDeletedCategoriesList() {
+            const container = document.getElementById('deletedCategoriesList');
+            if (!container) return;
+            container.innerHTML = '<div style="color:#888;font-size:13px;">Loading…</div>';
+            try {
+                const res = await fetch('/api/categories/deleted', { credentials: 'include' });
+                const data = await res.json();
+                const customRows = (data && data.custom) || [];
+                const hardcodedRows = (data && data.hardcoded) || [];
+
+                if (customRows.length === 0 && hardcodedRows.length === 0) {
+                    container.innerHTML = '<div style="color:#888;font-size:13px;">No deleted categories.</div>';
+                    return;
+                }
+
+                const rowHtml = (label, sub, payloadJson) => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+                        <div style="min-width:0;">
+                            <div style="font-size:14px;color:#222;">${label}</div>
+                            <div style="font-size:11px;color:#888;">${sub}</div>
+                        </div>
+                        <button type="button" class="btn-restore-category" data-payload='${payloadJson.replace(/'/g, "&apos;")}'
+                            style="background:#4DABF7;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
+                            Restore
+                        </button>
+                    </div>`;
+
+                let html = '';
+                customRows.forEach(c => {
+                    html += rowHtml(
+                        `${c.emoji || ''} ${c.title}`,
+                        `Custom · ${c.type} · deleted ${c.deleted_at ? new Date(c.deleted_at).toLocaleString() : ''}`,
+                        JSON.stringify({ id: c.id, isCustom: true })
+                    );
+                });
+                hardcodedRows.forEach(h => {
+                    html += rowHtml(
+                        SLUG_TO_DISPLAY[h.slug] || h.slug,
+                        `Built-in · deleted ${h.deleted_at ? new Date(h.deleted_at).toLocaleString() : ''}`,
+                        JSON.stringify({ slug: h.slug, isCustom: false })
+                    );
+                });
+
+                container.innerHTML = html;
+                container.querySelectorAll('.btn-restore-category').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const payload = JSON.parse(btn.dataset.payload.replace(/&apos;/g, "'"));
+                        restoreCategory(payload);
+                    });
+                });
+            } catch (e) {
+                console.error('Error loading deleted categories:', e);
+                container.innerHTML = '<div style="color:#c00;font-size:13px;">Failed to load deleted categories.</div>';
+            }
+        }
+
+        function toggleDeletedCategoriesPanel() {
+            const panel = document.getElementById('deletedCategoriesPanel');
+            if (!panel) return;
+            const visible = panel.style.display !== 'none';
+            panel.style.display = visible ? 'none' : 'block';
+            if (!visible) renderDeletedCategoriesList();
         }
 
         // Close add category modal
@@ -10210,23 +10317,42 @@
             }
         }
 
+        // Stamp every home-category-item with data-slug derived from its onclick handler.
+        // This is idempotent and makes hide/show robust to renames or onclick-string changes.
+        function tagHomeCardsWithSlugs() {
+            const items = document.querySelectorAll('.home-category-item');
+            items.forEach(item => {
+                if (item.dataset.slug) return;
+                const onclick = item.getAttribute('onclick') || '';
+                // Extract the second arg of showCategoryDetail('type', 'Display Name')
+                const match = onclick.match(/showCategoryDetail\(['"][^'"]+['"]\s*,\s*['"]([^'"]+)['"]\)/);
+                if (match && DISPLAY_TO_SLUG[match[1]]) {
+                    item.dataset.slug = DISPLAY_TO_SLUG[match[1]];
+                }
+            });
+        }
+
         // Apply category overrides to the UI
         function applyCategoryOverrides() {
-            // Hide deleted categories
-            deletedCategories.forEach(slug => {
-                // Get the display name for this slug to match onclick
-                const displayName = SLUG_TO_DISPLAY[slug];
+            // Make sure every home card has a data-slug before we filter by it.
+            tagHomeCardsWithSlugs();
 
-                // Hide from category home page - match by display name in onclick
-                if (displayName) {
-                    const homeItems = document.querySelectorAll('.home-category-item');
-                    homeItems.forEach(item => {
-                        const onclick = item.getAttribute('onclick');
-                        if (onclick && onclick.includes(`'${displayName}'`)) {
-                            item.style.display = 'none';
-                        }
-                    });
+            // First: un-hide everything that's no longer in the deleted list,
+            // so restoring a category brings it back without a page reload.
+            document.querySelectorAll('.home-category-item[data-slug]').forEach(item => {
+                if (!deletedCategories.includes(item.dataset.slug)) {
+                    item.style.display = '';
                 }
+            });
+            document.querySelectorAll('[id^="categoryDetailPage-"]').forEach(page => {
+                page.removeAttribute('data-deleted');
+            });
+
+            // Hide deleted categories by slug — no string matching against onclick.
+            deletedCategories.forEach(slug => {
+                document.querySelectorAll(`.home-category-item[data-slug="${slug}"]`).forEach(item => {
+                    item.style.display = 'none';
+                });
 
                 // Hide category detail page
                 const detailPage = document.getElementById(`categoryDetailPage-${slug}`);
@@ -12978,6 +13104,7 @@
                 });
 
                 for (const [categorySlug, displayName, transactionCategoryName] of categories) {
+                    try {
                     const categoryType = SLUG_TO_TYPE[categorySlug];
 
                     // Calculate transactions for this category
@@ -13146,7 +13273,12 @@
                             } else {
                                 // Flexible-monthly categories: show remaining, budgeted/spent, progress bar
                                 const budgetedElement = document.getElementById(`${categorySlug}-budgeted`);
-                                if (!budgetedElement) return;
+                                if (!budgetedElement) {
+                                    // Don't `return` — that aborts the entire render and blanks every
+                                    // remaining card. Just skip this one.
+                                    console.warn(`Missing budgeted element for category: ${categorySlug}`);
+                                    break;
+                                }
 
                                 // Calculate spent (absolute value for display)
                                 const flexibleSpent = Math.abs(categoryTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
@@ -13245,6 +13377,9 @@
                             }
                         }
                     }
+                    } catch (cardErr) {
+                        console.error(`Error rendering card for ${categorySlug}:`, cardErr);
+                    }
                 }
 
                 // Update custom category cards
@@ -13258,6 +13393,7 @@
                     });
 
                     customCategories.forEach(category => {
+                        try {
                         // Filter transactions for this custom category
                         const categoryTransactions = filteredTransactions.filter(t =>
                             t.category && t.category === category.title
@@ -13407,6 +13543,9 @@
                                 }
                             }
                         });
+                        } catch (customErr) {
+                            console.error(`Error rendering custom category card "${category && category.title}":`, customErr);
+                        }
                     });
                 }
 
