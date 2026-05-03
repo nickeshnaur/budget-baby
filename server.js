@@ -183,6 +183,21 @@ async function initializeDatabase() {
       ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
     `);
 
+    // Audit log for every budget write — diagnoses any future drift.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS budget_audit (
+        id SERIAL PRIMARY KEY,
+        category TEXT NOT NULL,
+        month TEXT NOT NULL,
+        old_amount DECIMAL,
+        new_amount DECIMAL,
+        source TEXT,
+        client_ip TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS budget_audit_cat_month_idx ON budget_audit (category, month, created_at DESC);`);
+
     // Table for storing edits to hardcoded categories
     await pool.query(`
       CREATE TABLE IF NOT EXISTS category_overrides (
@@ -599,6 +614,8 @@ function handleApiRequest(req, res, pathname) {
     handleGetBudget(req, res);
   } else if (pathname === '/api/budgets/save' && req.method === 'POST') {
     handleSaveBudget(req, res);
+  } else if (pathname === '/api/budgets/audit' && req.method === 'GET') {
+    handleGetBudgetAudit(req, res);
   } else if (pathname === '/api/categories' && req.method === 'POST') {
     handleCreateCategory(req, res);
   } else if (pathname === '/api/categories' && req.method === 'GET') {
@@ -2019,7 +2036,7 @@ function handleSaveBudget(req, res) {
   });
   req.on('end', async () => {
     try {
-      const { category, month, amount } = JSON.parse(body);
+      const { category, month, amount, source } = JSON.parse(body);
 
       if (!category || !month || amount === undefined) {
         res.writeHead(400);
@@ -2033,15 +2050,47 @@ function handleSaveBudget(req, res) {
         return;
       }
 
+      // Read the existing value first. We use this to:
+      //   1) Reject no-op writes — defense in depth against spurious blur saves
+      //      that already passed the client-side guard.
+      //   2) Record old → new in the audit log for traceability.
+      const existing = await pool.query(
+        'SELECT amount FROM budgets WHERE category = $1 AND month = $2',
+        [category, month]
+      );
+      const oldAmount = existing.rows.length > 0 ? parseFloat(existing.rows[0].amount) : null;
+      const newAmount = parseFloat(amount);
+
+      if (oldAmount !== null && Math.abs(oldAmount - newAmount) < 1e-9) {
+        // Identical to what's already stored — log and skip the write entirely.
+        console.log(`🟡 Skipped no-op budget save: ${category} (${month}) = $${newAmount} (source=${source || 'unspecified'})`);
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, skipped: 'no-op' }));
+        return;
+      }
+
       // Upsert the budget
       await pool.query(`
         INSERT INTO budgets (category, month, amount, updated_at)
         VALUES ($1, $2, $3, NOW())
         ON CONFLICT (category, month)
         DO UPDATE SET amount = $3, updated_at = NOW()
-      `, [category, month, amount]);
+      `, [category, month, newAmount]);
 
-      console.log(`💰 Saved budget for ${category} (${month}): $${amount}`);
+      // Append to audit log so we can always answer "what changed this and when?"
+      const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim();
+      try {
+        await pool.query(
+          `INSERT INTO budget_audit (category, month, old_amount, new_amount, source, client_ip)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [category, month, oldAmount, newAmount, source || 'unspecified', clientIp]
+        );
+      } catch (auditErr) {
+        console.error('Budget audit write failed (non-fatal):', auditErr.message);
+      }
+
+      console.log(`💰 Saved budget for ${category} (${month}): $${oldAmount} → $${newAmount} (source=${source || 'unspecified'})`);
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
@@ -2053,6 +2102,53 @@ function handleSaveBudget(req, res) {
       res.end(JSON.stringify({ error: 'Failed to save budget' }));
     }
   });
+}
+
+// Read budget_audit log. Optional query params: category, month, limit (default 100, max 500).
+function handleGetBudgetAudit(req, res) {
+  if (!isAuthenticated(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return;
+  }
+
+  (async () => {
+    try {
+      if (!pool) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Database not available' }));
+        return;
+      }
+
+      const url = new URL(req.url, 'http://localhost');
+      const category = url.searchParams.get('category');
+      const month = url.searchParams.get('month');
+      const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 500);
+
+      const conds = [];
+      const params = [];
+      if (category) { params.push(category); conds.push(`category = $${params.length}`); }
+      if (month) { params.push(month); conds.push(`month = $${params.length}`); }
+      const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+      params.push(limit);
+
+      const result = await pool.query(
+        `SELECT id, category, month, old_amount, new_amount, source, client_ip, created_at
+         FROM budget_audit ${where}
+         ORDER BY created_at DESC
+         LIMIT $${params.length}`,
+        params
+      );
+
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, rows: result.rows }));
+    } catch (error) {
+      console.error('Get budget audit error:', error);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to get budget audit' }));
+    }
+  })();
 }
 
 // Create a new category

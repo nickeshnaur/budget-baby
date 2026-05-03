@@ -7636,14 +7636,15 @@
             return { amount: null, inherited: false };
         }
 
-        // Save budget to server
-        async function saveBudget(category, month, amount) {
+        // Save budget to server. The optional `source` string is recorded in the
+        // server's budget_audit table so future spurious writes are traceable.
+        async function saveBudget(category, month, amount, source) {
             try {
                 const response = await fetch('/api/budgets/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ category, month, amount })
+                    body: JSON.stringify({ category, month, amount, source: source || 'unspecified' })
                 });
                 if (!response.ok) {
                     console.error('Failed to save budget');
@@ -7693,6 +7694,14 @@
                     let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
                     const numericValue = parseFloat(value) || 0;
 
+                    // Skip the save if the value didn't actually change. Without this guard,
+                    // any focus→blur cycle (tab through, accidental click) overwrites the DB
+                    // budget for this month with whatever the field was already showing —
+                    // which can clobber inheritance from a prior month.
+                    const originalText = this.getAttribute('data-original') || '';
+                    const originalNumeric = parseFloat(originalText.replace(/[^\d.]/g, '')) || 0;
+                    const changed = Math.abs(numericValue - originalNumeric) > 1e-9;
+
                     // Update data attribute
                     this.setAttribute('data-value', numericValue.toString());
 
@@ -7702,11 +7711,13 @@
                     // Recalculate remaining
                     updateFlexibleCategoryRemaining(categorySlug);
 
+                    if (!changed) return;
+
                     // Save to server
                     const month = getSelectedMonth(categorySlug);
                     const category = slugToCategory(categorySlug);
                     if (month && category) {
-                        await saveBudget(category, month, numericValue);
+                        await saveBudget(category, month, numericValue, 'flexible-blur');
                     }
                 });
 
@@ -7897,7 +7908,7 @@
 
                 // Save computed budgeted amount to server for cross-device sync
                 const period = `${year}-${String(month).padStart(2, '0')}`;
-                await saveBudget('Giving', period, budgeted);
+                await saveBudget('Giving', period, budgeted, 'giving-percentage-edit');
 
                 // Recalculate remaining
                 updateFlexibleCategoryRemaining('giving');
@@ -8014,11 +8025,19 @@
                     let value = this.textContent.replace(/[^\d.]/g, ''); // Remove non-numeric characters
                     const numericValue = parseFloat(value) || 0;
 
+                    // Skip the save if the value didn't actually change — see the flexible
+                    // handler above for the rationale.
+                    const originalText = this.getAttribute('data-original') || '';
+                    const originalNumeric = parseFloat(originalText.replace(/[^\d.]/g, '')) || 0;
+                    const changed = Math.abs(numericValue - originalNumeric) > 1e-9;
+
                     // Update data attribute
                     this.setAttribute('data-value', numericValue.toString());
 
                     // Update display format
                     this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+                    if (!changed) return;
 
                     // Get selected month/year from category page
                     const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
@@ -8038,7 +8057,7 @@
                     const period = `${year}-${String(month).padStart(2, '0')}`;
                     const category = slugToCategory(categorySlug);
                     if (category) {
-                        await saveBudget(category, period, numericValue);
+                        await saveBudget(category, period, numericValue, 'fixed-monthly-blur');
                     }
                 });
 
@@ -8465,11 +8484,17 @@
                     let value = this.textContent.replace(/[^\d.]/g, '');
                     const numericValue = parseFloat(value) || 0;
 
+                    const originalText = this.getAttribute('data-original') || '';
+                    const originalNumeric = parseFloat(originalText.replace(/[^\d.]/g, '')) || 0;
+                    const changed = Math.abs(numericValue - originalNumeric) > 1e-9;
+
                     // Update data attribute
                     this.setAttribute('data-value', numericValue.toString());
 
                     // Update display format
                     this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+                    if (!changed) return;
 
                     // Get current month/year from the page selector
                     const categoryPage = document.getElementById('categoryDetailPage-' + categorySlug);
@@ -8489,7 +8514,7 @@
                     const period = `${year}-${String(month).padStart(2, '0')}`;
                     const category = slugToCategory(categorySlug);
                     if (category) {
-                        await saveBudget(category, period, numericValue);
+                        await saveBudget(category, period, numericValue, 'fixed-annual-blur');
                     }
                 });
 
@@ -11149,9 +11174,15 @@
                     const text = this.textContent.replace(/[^0-9.-]/g, '');
                     const numericValue = parseFloat(text) || 0;
 
+                    const originalText = this.dataset.original || '';
+                    const originalNumeric = parseFloat(originalText.replace(/[^0-9.-]/g, '')) || 0;
+                    const changed = Math.abs(numericValue - originalNumeric) > 1e-9;
+
                     // Update display format
                     this.textContent = `$${numericValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                     this.setAttribute('data-value', numericValue);
+
+                    if (!changed) return;
 
                     // Get selected month
                     const monthSelector = document.getElementById('custom-category-month-selector');
@@ -11161,7 +11192,7 @@
                     const month = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
                     // Save budget using category title
-                    await saveBudget(currentCustomCategory.title, month, numericValue);
+                    await saveBudget(currentCustomCategory.title, month, numericValue, 'custom-blur');
 
                     // Recalculate remaining for flexible categories
                     if (currentCustomCategory.type === 'flexible') {
