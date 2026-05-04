@@ -780,6 +780,14 @@ async function handleTellerAccount(req, res) {
 
             const savedAccounts = [];
             for (const acc of accounts) {
+              // Skip accounts the user has explicitly deleted — Teller still
+              // returns them under the enrollment, but we don't want to revive them.
+              const existing = connectedAccounts.get(acc.id);
+              if (existing && existing.status === 'deleted') {
+                console.log(`⏭️  Skipping deleted account: ${acc.institution?.name} - ${acc.name}`);
+                continue;
+              }
+
               const accountData = {
                 id: acc.id,
                 enrollmentToken: enrollmentToken,
@@ -1023,8 +1031,17 @@ function handleFetchTransactions(req, res) {
             }
 
             // Store each account from Teller (mark as connected since API call succeeded)
+            const accountsToFetch = [];
             for (const acc of accounts) {
               console.log(`📋 Account: ${acc.institution?.name} - ${acc.name} (****${acc.last_four})`);
+
+              // Skip user-deleted accounts so Teller can't revive them.
+              const existingForSkip = connectedAccounts.get(acc.id);
+              if (existingForSkip && existingForSkip.status === 'deleted') {
+                console.log(`⏭️  Skipping deleted account: ${acc.institution?.name} - ${acc.name}`);
+                continue;
+              }
+              accountsToFetch.push(acc);
 
               // Use Teller account ID as the key for each sub-account
               const subAccountId = acc.id;
@@ -1109,8 +1126,8 @@ function handleFetchTransactions(req, res) {
               });
             };
 
-            // Fetch from all accounts in parallel
-            const results = await Promise.all(accounts.map(fetchTransactionsForAccount));
+            // Fetch from all accounts in parallel (skipping user-deleted ones)
+            const results = await Promise.all(accountsToFetch.map(fetchTransactionsForAccount));
 
             // Get existing transaction IDs and categories from DATABASE (not memory)
             let existingTxnData = new Map(); // id -> category
@@ -1272,7 +1289,8 @@ async function handleClearTransactions(req, res) {
 
 function handleGetAccounts(req, res) {
   try {
-    const accounts = Array.from(connectedAccounts.values());
+    const accounts = Array.from(connectedAccounts.values())
+      .filter(a => a.status !== 'deleted');
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);
     res.end(JSON.stringify({ accounts }));
@@ -1298,18 +1316,24 @@ async function handleDeleteAccount(req, res) {
         return;
       }
 
-      // Remove from memory
-      connectedAccounts.delete(accountId);
+      // Soft-delete: hard DELETE caused the account to come back on the next
+      // Teller sync because Teller still returns it under the same enrollment
+      // and the upsert re-inserted it. Mark as 'deleted' so the sync loops
+      // (and the GET /api/accounts response) skip it.
+      const account = connectedAccounts.get(accountId);
+      if (account) {
+        account.status = 'deleted';
+        connectedAccounts.set(accountId, account);
+      }
 
-      // Remove from database
       if (pool) {
-        await pool.query('DELETE FROM accounts WHERE id = $1', [accountId]);
+        await pool.query("UPDATE accounts SET status = 'deleted' WHERE id = $1", [accountId]);
       }
 
       // Save to file backup
       saveAccounts(connectedAccounts);
 
-      console.log(`🗑️ Deleted account: ${accountId}`);
+      console.log(`🗑️ Soft-deleted account: ${accountId}`);
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
@@ -2506,9 +2530,9 @@ async function autoSyncTransactions() {
   console.log(`\n🔄 AUTO-SYNC STARTED at ${new Date().toISOString()}`);
 
   try {
-    // Get all connected accounts (not disconnected, not placeholders)
+    // Get all connected accounts (not disconnected, not deleted, not placeholders)
     const accountsToSync = Array.from(connectedAccounts.values())
-      .filter(acc => acc.status !== 'disconnected')
+      .filter(acc => acc.status !== 'disconnected' && acc.status !== 'deleted')
       .filter(acc => acc.lastFour && acc.lastFour !== '****' && acc.lastFour !== '');
 
     if (accountsToSync.length === 0) {
