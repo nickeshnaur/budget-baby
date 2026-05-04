@@ -1439,36 +1439,32 @@ function handleFileUpload(req, res) {
         return;
       }
 
-      // Generate unique filename
       const ext = path.extname(filename).toLowerCase();
-      const allowedExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
-      if (!allowedExts.includes(ext)) {
+      const mimeByExt = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      const mime = mimeByExt[ext];
+      if (!mime) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid file type. Allowed: PNG, JPG, GIF, WEBP' }));
         return;
       }
 
-      const timestamp = Date.now();
-      const safeName = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const newFilename = `${timestamp}-${safeName}`;
-      const filePath = path.join(__dirname, '_Assets', newFilename);
-
-      // Ensure _Assets directory exists
-      const assetsDir = path.join(__dirname, '_Assets');
-      if (!fs.existsSync(assetsDir)) {
-        fs.mkdirSync(assetsDir, { recursive: true });
-      }
-
-      // Save file
-      fs.writeFileSync(filePath, fileData);
-      console.log(`📁 Uploaded file: ${newFilename}`);
+      // Encode as data URI so the image persists in Postgres instead of on
+      // Railway's ephemeral filesystem (uploaded files vanish on every redeploy).
+      const dataUri = `data:${mime};base64,${fileData.toString('base64')}`;
+      console.log(`📁 Uploaded file inline (${fileData.length} bytes, ${mime})`);
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
       res.end(JSON.stringify({
         success: true,
-        path: `_Assets/${newFilename}`,
-        filename: newFilename
+        path: dataUri,
+        filename,
       }));
     } catch (error) {
       console.error('File upload error:', error);
