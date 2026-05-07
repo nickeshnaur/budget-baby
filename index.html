@@ -136,7 +136,7 @@
         }
 
         .app-header.demo-mode {
-            background: #2E7D4F;
+            background: #0ECB27;
         }
 
         .app-header.demo-mode .app-logo {
@@ -147,17 +147,29 @@
             color: white;
         }
 
-        .app-header.demo-mode::before {
-            content: 'DEMO';
+        .demo-pill {
+            display: none;
             font-family: 'Roboto', sans-serif;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 1.5px;
+            text-indent: 1.5px;
             color: white;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.22);
+            padding: 7px 14px;
             border-radius: 999px;
-            pointer-events: none;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .demo-pill:hover {
+            background: rgba(255, 255, 255, 0.32);
+        }
+
+        .app-header.demo-mode .demo-pill {
+            display: inline-block;
         }
 
         /* Demo Mode Toggle (Profile page) */
@@ -223,7 +235,7 @@
         }
 
         .demo-toggle.on {
-            background: #2E7D4F;
+            background: #0ECB27;
         }
 
         .demo-toggle.on::after {
@@ -2995,6 +3007,7 @@
     <!-- App Header -->
     <div class="app-header">
         <img src="_Assets/BudgetBaby-Logo.jpg" alt="Budget Baby" class="app-logo" onclick="showDashboard()">
+        <span class="demo-pill" onclick="showDashboard()">DEMO</span>
         <div class="header-actions">
             <!-- Refresh/Sync Icon -->
             <i class="fa-solid fa-arrows-rotate header-icon" onclick="syncTransactionsFromHeader()"></i>
