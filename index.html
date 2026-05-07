@@ -132,6 +132,98 @@
             align-items: center;
             justify-content: space-between;
             z-index: 1000;
+            transition: background 0.2s ease;
+        }
+
+        .app-header.demo-mode {
+            background: #FFD166;
+        }
+
+        .app-header.demo-mode::after {
+            content: 'DEMO';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Roboto', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #7A4A00;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 4px 10px;
+            border-radius: 999px;
+            pointer-events: none;
+        }
+
+        /* Demo Mode Toggle (Profile page) */
+        .demo-mode-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #E6E6E6;
+            background: white;
+        }
+
+        .demo-mode-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .demo-mode-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .demo-mode-title {
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .demo-mode-desc {
+            font-family: 'Roboto', sans-serif;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .demo-toggle {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+            background: #E6E6E6;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .demo-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .demo-toggle.on {
+            background: #FFD166;
+        }
+
+        .demo-toggle.on::after {
+            transform: translateX(20px);
         }
 
         .app-logo {
@@ -5854,6 +5946,16 @@
             <h2 class="page-title">Profile</h2>
         </div>
 
+        <div class="demo-mode-section">
+            <div class="demo-mode-row">
+                <div class="demo-mode-text">
+                    <span class="demo-mode-title">Demo Mode</span>
+                    <span class="demo-mode-desc">Hide your real data and show sample transactions instead. The header turns yellow when this is on.</span>
+                </div>
+                <button id="demoModeToggle" class="demo-toggle" onclick="toggleDemoMode()" aria-label="Toggle demo mode"></button>
+            </div>
+        </div>
+
         <div id="connected-accounts">
             <div class="section-subtitle">No accounts connected</div>
         </div>
@@ -5867,6 +5969,227 @@
     <script src="https://cdn.teller.io/connect/connect.js"></script>
 
     <script>
+        // ===================== DEMO MODE =====================
+        // Toggleable in Profile screen. Hides real data behind canned dummy data
+        // by intercepting fetch() for /api endpoints. Persisted to localStorage.
+        const DEMO_MODE_KEY = 'demo-mode-enabled';
+
+        function isDemoMode() {
+            return localStorage.getItem(DEMO_MODE_KEY) === 'true';
+        }
+
+        function applyDemoModeHeader() {
+            const header = document.querySelector('.app-header');
+            if (!header) return;
+            header.classList.toggle('demo-mode', isDemoMode());
+        }
+
+        function syncDemoToggleUI() {
+            const toggle = document.getElementById('demoModeToggle');
+            if (toggle) toggle.classList.toggle('on', isDemoMode());
+        }
+
+        function toggleDemoMode() {
+            const next = !isDemoMode();
+            localStorage.setItem(DEMO_MODE_KEY, next ? 'true' : 'false');
+            // Reload so all derived state (dashboards, category totals, pots, etc.)
+            // rebuilds from the new data source cleanly.
+            location.reload();
+        }
+
+        // ----- Dummy data -----
+        // Build dates relative to "now" so the demo always looks current.
+        function _demoDateStr(daysAgo) {
+            const d = new Date();
+            d.setDate(d.getDate() - daysAgo);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function _demoMonthDateStr(monthsAgo, day) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - monthsAgo);
+            d.setDate(day);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function getDemoAccounts() {
+            return [
+                { id: 'demo_acct_1', status: 'connected', institutionName: 'Chase', accountName: 'Sapphire Preferred', subtype: 'credit_card', lastFour: '0241', owner: 'Alex' },
+                { id: 'demo_acct_2', status: 'connected', institutionName: 'Capital One', accountName: 'Venture X', subtype: 'credit_card', lastFour: '5022', owner: 'Alex' },
+                { id: 'demo_acct_3', status: 'connected', institutionName: 'Bank of America', accountName: 'Checking', subtype: 'checking', lastFour: '1885', owner: 'Alex' },
+                { id: 'demo_acct_4', status: 'connected', institutionName: 'Chase', accountName: 'Southwest', subtype: 'credit_card', lastFour: '3859', owner: 'Jordan' }
+            ];
+        }
+
+        function getDemoTransactions() {
+            const A = { four: '0241', name: 'Sapphire Preferred', bank: 'Chase' };
+            const B = { four: '5022', name: 'Venture X', bank: 'Capital One' };
+            const C = { four: '1885', name: 'Checking', bank: 'Bank of America' };
+            const D = { four: '3859', name: 'Southwest', bank: 'Chase' };
+            const t = (id, daysAgo, amt, desc, cat, acct) => ({
+                id: 'demo_' + id,
+                date: _demoDateStr(daysAgo),
+                amount: amt,
+                description: desc,
+                category: cat,
+                accountLastFour: acct.four,
+                accountName: acct.name,
+                bank: acct.bank
+            });
+            const tm = (id, monthsAgo, day, amt, desc, cat, acct) => ({
+                id: 'demo_' + id,
+                date: _demoMonthDateStr(monthsAgo, day),
+                amount: amt,
+                description: desc,
+                category: cat,
+                accountLastFour: acct.four,
+                accountName: acct.name,
+                bank: acct.bank
+            });
+
+            return [
+                // ----- Income (current + prior 2 months) -----
+                t('inc1', 2, 4200.00, 'Acme Corp Payroll', 'INCOME', C),
+                tm('inc2', 1, 1, 4200.00, 'Acme Corp Payroll', 'INCOME', C),
+                tm('inc3', 1, 15, 4200.00, 'Acme Corp Payroll', 'INCOME', C),
+                tm('inc4', 2, 1, 4200.00, 'Acme Corp Payroll', 'INCOME', C),
+                tm('inc5', 2, 15, 4200.00, 'Acme Corp Payroll', 'INCOME', C),
+
+                // ----- Current month flexible spending -----
+                t('g1', 1, -82.34, 'Whole Foods', 'GROCERY', A),
+                t('g2', 3, -54.20, 'Trader Joe\'s', 'GROCERY', A),
+                t('g3', 5, -127.88, 'Costco', 'GROCERY', B),
+                t('o1', 0, -18.45, 'Starbucks', 'OUT & ABOUT', A),
+                t('o2', 2, -64.10, 'Pizzeria Bianco', 'OUT & ABOUT', A),
+                t('o3', 4, -32.00, 'Local Brewery', 'OUT & ABOUT', A),
+                t('gas1', 1, -48.75, 'Shell', 'GAS', A),
+                t('gas2', 6, -52.10, 'Chevron', 'GAS', A),
+                t('cl1', 2, -89.99, 'Uniqlo', 'CLOTHING', B),
+                t('h1', 3, -45.67, 'Target', 'HOME', A),
+                t('h2', 5, -129.00, 'IKEA', 'HOME', B),
+                t('hc1', 4, -22.50, 'CVS Pharmacy', 'HEALTH & CARE', A),
+                t('tr1', 1, -12.99, 'Coffee Shop', 'TREATS', A),
+                t('tr2', 3, -8.50, 'Ice Cream', 'TREATS', A),
+                t('pn1', 2, -14.99, 'Spotify Family', 'PERSONAL NICK', A),
+                t('pn2', 4, -32.00, 'Bookstore', 'PERSONAL NICK', A),
+                t('pc1', 3, -45.00, 'Yoga Studio', 'PERSONAL CHELSEA', B),
+
+                // ----- Current month fixed bills -----
+                t('rent1', 5, -1850.00, 'Rent Payment', 'RENT', C),
+                t('elec1', 3, -94.20, 'Electric Co', 'ELECTRIC', C),
+                t('int1', 4, -69.99, 'Internet ISP', 'INTERNET', C),
+                t('spot1', 2, -16.99, 'Spotify', 'SPOTIFY', A),
+                t('spfit', 5, -29.99, 'SP Fitness', 'SP FITNESS', A),
+                t('autol', 5, -385.00, 'Auto Loan Pmt', 'AUTO LOAN', C),
+                t('insa', 4, -142.50, 'Auto Insurance', 'INSURANCE AUTO', C),
+                t('alamo', 5, -19.99, 'Alamo Drafthouse', 'ALAMO DRAFTHOUSE', A),
+
+                // ----- Prior month spending -----
+                tm('pg1', 1, 5, -76.45, 'Whole Foods', 'GROCERY', A),
+                tm('pg2', 1, 12, -89.30, 'Sprouts', 'GROCERY', A),
+                tm('pg3', 1, 22, -148.20, 'Costco', 'GROCERY', B),
+                tm('po1', 1, 8, -42.00, 'Sushi Bar', 'OUT & ABOUT', A),
+                tm('po2', 1, 18, -78.50, 'Steakhouse', 'OUT & ABOUT', A),
+                tm('pgas1', 1, 10, -49.20, 'Shell', 'GAS', A),
+                tm('pgas2', 1, 24, -51.80, 'Costco Gas', 'GAS', B),
+                tm('pgift', 1, 14, -75.00, 'Birthday Gift', 'GIFTS', A),
+                tm('ptrv', 1, 20, -312.00, 'Airbnb', 'TRAVEL', B),
+                tm('prent', 1, 1, -1850.00, 'Rent Payment', 'RENT', C),
+                tm('pelec', 1, 8, -86.40, 'Electric Co', 'ELECTRIC', C),
+                tm('pint', 1, 25, -69.99, 'Internet ISP', 'INTERNET', C),
+                tm('pspot', 1, 3, -16.99, 'Spotify', 'SPOTIFY', A),
+
+                // ----- Unsorted (so the home page has stuff to sort) -----
+                t('u1', 0, -23.45, 'AMZN MKTP US*X1Y2Z', '', A),
+                t('u2', 1, -7.89, 'SQ *DOWNTOWN CAFE', '', A),
+                t('u3', 2, -41.20, 'PAYPAL *MERCHANT', '', B)
+            ];
+        }
+
+        function _demoBudget(category) {
+            const map = {
+                'Out & About': 400,
+                'Grocery': 600,
+                'Gas': 200,
+                'Auto': 100,
+                'Clothing': 150,
+                'Gifts': 100,
+                'Health & Care': 100,
+                'Home': 200,
+                'Travel': 300,
+                'Treats': 80,
+                'Personal Nick': 150,
+                'Personal Chelsea': 150,
+                'School': 0,
+                'Giving': 420,
+                'Auto Loan': 385,
+                'Rent': 1850,
+                'Electric': 100,
+                'Insurance Auto': 142.50,
+                'NW Mutual': 250,
+                'Internet': 70,
+                'Spotify': 17,
+                'SP Fitness': 30,
+                'Alamo Drafthouse': 20
+            };
+            return map[category] !== undefined ? map[category] : null;
+        }
+
+        function _demoJsonResponse(body) {
+            return Promise.resolve(new Response(JSON.stringify(body), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        }
+
+        // Install fetch interceptor immediately so it's active before any
+        // existing code calls fetch() during page init.
+        (function installDemoFetch() {
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = function(input, init) {
+                if (!isDemoMode()) return originalFetch(input, init);
+
+                const url = typeof input === 'string' ? input : (input && input.url) || '';
+
+                // Only intercept our own /api/* endpoints. Let everything else (CDNs, Teller, etc.) pass through.
+                if (!url.startsWith('/api/')) return originalFetch(input, init);
+
+                // ----- Reads -----
+                if (url === '/api/transactions' || url.startsWith('/api/transactions?')) {
+                    return _demoJsonResponse({ transactions: getDemoTransactions() });
+                }
+                if (url === '/api/accounts' || url.startsWith('/api/accounts?')) {
+                    return _demoJsonResponse({ accounts: getDemoAccounts() });
+                }
+                if (url === '/api/categories' || url.startsWith('/api/categories?')) {
+                    return _demoJsonResponse({ success: true, categories: [] });
+                }
+                if (url === '/api/categories/overrides') {
+                    return _demoJsonResponse({ success: true, overrides: [], deleted: [] });
+                }
+                if (url === '/api/categories/deleted') {
+                    return _demoJsonResponse({ success: true, deleted: [] });
+                }
+                if (url === '/api/budgets/get') {
+                    let body = {};
+                    try { body = init && init.body ? JSON.parse(init.body) : {}; } catch (e) {}
+                    const amt = _demoBudget(body.category);
+                    return _demoJsonResponse({ amount: amt, inherited: false });
+                }
+
+                // ----- Writes / mutations: no-op success so the UI doesn't error,
+                // but real data is never touched. -----
+                return _demoJsonResponse({ success: true, demo: true });
+            };
+        })();
+        // =================== END DEMO MODE ===================
+
         // Parse date strings as local midnight (avoids UTC timezone shift)
         // Handles "YYYY-MM-DD" and "M/D/YY" formats safely
         function parseLocalDate(dateStr) {
@@ -7085,6 +7408,10 @@
 
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Apply demo mode visuals as early as possible
+            applyDemoModeHeader();
+            syncDemoToggleUI();
+
             // Initial route handling on page load
             router.handleRoute();
 
