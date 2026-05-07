@@ -136,22 +136,26 @@
         }
 
         .app-header.demo-mode {
-            background: #FFD166;
+            background: #2E7D4F;
         }
 
-        .app-header.demo-mode::after {
+        .app-header.demo-mode .app-logo {
+            display: none;
+        }
+
+        .app-header.demo-mode .header-icon {
+            color: white;
+        }
+
+        .app-header.demo-mode::before {
             content: 'DEMO';
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
             font-family: 'Roboto', sans-serif;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 1.5px;
-            color: #7A4A00;
-            background: rgba(255, 255, 255, 0.6);
-            padding: 4px 10px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
             border-radius: 999px;
             pointer-events: none;
         }
@@ -219,7 +223,7 @@
         }
 
         .demo-toggle.on {
-            background: #FFD166;
+            background: #2E7D4F;
         }
 
         .demo-toggle.on::after {
@@ -5946,16 +5950,6 @@
             <h2 class="page-title">Profile</h2>
         </div>
 
-        <div class="demo-mode-section">
-            <div class="demo-mode-row">
-                <div class="demo-mode-text">
-                    <span class="demo-mode-title">Demo Mode</span>
-                    <span class="demo-mode-desc">Hide your real data and show sample transactions instead. The header turns yellow when this is on.</span>
-                </div>
-                <button id="demoModeToggle" class="demo-toggle" onclick="toggleDemoMode()" aria-label="Toggle demo mode"></button>
-            </div>
-        </div>
-
         <div id="connected-accounts">
             <div class="section-subtitle">No accounts connected</div>
         </div>
@@ -5963,6 +5957,16 @@
         <button class="add-transaction-btn" onclick="connectBankAccount()">
             + Connect Bank Account
         </button>
+
+        <div class="demo-mode-section">
+            <div class="demo-mode-row">
+                <div class="demo-mode-text">
+                    <span class="demo-mode-title">Demo Mode</span>
+                    <span class="demo-mode-desc">Hide your real data and show sample transactions instead. The header turns green when this is on.</span>
+                </div>
+                <button id="demoModeToggle" class="demo-toggle" onclick="toggleDemoMode()" aria-label="Toggle demo mode"></button>
+            </div>
+        </div>
     </div>
 
     <!-- Teller Connect Script -->
