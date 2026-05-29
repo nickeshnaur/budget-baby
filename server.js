@@ -91,6 +91,27 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS custom_card_image TEXT;`).catch(() => {});
     await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS owner TEXT DEFAULT 'Chelsea';`).catch(() => {});
 
+    // One-shot cleanup: pre-2026-05-04 uploads were saved as files under _Assets/
+    // on Railway's ephemeral disk and wiped on every redeploy, but the DB still
+    // pointed at those dead paths. Null them out so the UI cleanly falls back
+    // to the default logo / placeholder until the user re-uploads. Data-URI
+    // uploads (post-fix) start with "data:" and are left alone.
+    try {
+      const cleanup = await pool.query(`
+        UPDATE accounts
+        SET custom_logo       = CASE WHEN starts_with(custom_logo, '_Assets/')       THEN NULL ELSE custom_logo END,
+            custom_card_image = CASE WHEN starts_with(custom_card_image, '_Assets/') THEN NULL ELSE custom_card_image END
+        WHERE starts_with(custom_logo, '_Assets/')
+           OR starts_with(custom_card_image, '_Assets/')
+        RETURNING id;
+      `);
+      if (cleanup.rowCount > 0) {
+        console.log(`🧹 Cleared ${cleanup.rowCount} dead _Assets/ image path(s) from accounts; re-upload to restore.`);
+      }
+    } catch (cleanupErr) {
+      console.error('Custom-image cleanup failed (non-fatal):', cleanupErr.message);
+    }
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY,
