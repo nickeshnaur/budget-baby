@@ -1045,6 +1045,9 @@ function handleFetchTransactions(req, res) {
 
               // Use Teller account ID as the key for each sub-account
               const subAccountId = acc.id;
+              // Preserve custom display settings across resyncs — replacing the
+              // in-memory account with a Teller-only object wiped customCardImage/
+              // customLogo/customName (card showed gray until the next DB reload).
               const accountData = {
                 id: subAccountId,
                 enrollmentToken: enrollmentToken, // Use the ACTUAL enrollment token, not accountId!
@@ -1054,7 +1057,12 @@ function handleFetchTransactions(req, res) {
                 subtype: acc.subtype || 'unknown',
                 lastFour: acc.last_four || '',
                 status: 'connected',
-                connectedAt: new Date().toISOString()
+                connectedAt: existingForSkip?.connectedAt || new Date().toISOString(),
+                customLogo: existingForSkip?.customLogo,
+                customLogoHeight: existingForSkip?.customLogoHeight,
+                customName: existingForSkip?.customName,
+                customCardImage: existingForSkip?.customCardImage,
+                owner: existingForSkip?.owner
               };
 
               connectedAccounts.set(subAccountId, accountData);
