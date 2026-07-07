@@ -13,6 +13,8 @@ try {
 
 const PORT = process.env.PORT || 3000;
 const PASSWORD = '1614babywolfdog';
+// Sessions created before this moment are force-invalidated (forces a one-time re-login on deploy).
+const SESSIONS_VALID_AFTER = new Date('2026-07-07T00:00:00Z');
 
 // Force HTTPS redirect in production
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
@@ -489,6 +491,14 @@ function isAuthenticated(req) {
   }
 
   const session = sessions.get(sessionId);
+
+  // Force-invalidate sessions created before the cutoff (one-time re-login)
+  if (session.createdAt && new Date(session.createdAt) < SESSIONS_VALID_AFTER) {
+    sessions.delete(sessionId);
+    saveSessions(sessions);
+    deleteSessionFromDB(sessionId); // Fire and forget
+    return false;
+  }
 
   // Check if session has expired
   if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
