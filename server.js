@@ -14,7 +14,7 @@ try {
 const PORT = process.env.PORT || 3000;
 const PASSWORD = '1614babywolfdog';
 // Sessions created before this moment are force-invalidated (forces a one-time re-login on deploy).
-const SESSIONS_VALID_AFTER = new Date('2026-07-07T00:00:00Z');
+const SESSIONS_VALID_AFTER = new Date('2026-07-07T16:53:00Z');
 
 // Force HTTPS redirect in production
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
