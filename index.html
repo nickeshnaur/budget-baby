@@ -7424,10 +7424,26 @@
         }
 
         // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Apply demo mode visuals as early as possible
             applyDemoModeHeader();
             syncDemoToggleUI();
+
+            // Validate the session with the server before rendering.
+            // If the server rejects it (password change, session cutoff, expiry),
+            // clear the local flag so the login screen shows automatically on load.
+            if (isAuthenticated) {
+                try {
+                    const authResp = await fetch('/api/auth/me', { credentials: 'include' });
+                    if (authResp.status === 401) {
+                        isAuthenticated = false;
+                        localStorage.removeItem('authenticated');
+                    }
+                } catch (e) {
+                    // Network error: keep existing state so the app still works offline
+                    console.warn('Session validation skipped:', e);
+                }
+            }
 
             // Initial route handling on page load
             router.handleRoute();
