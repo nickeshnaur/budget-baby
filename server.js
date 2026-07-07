@@ -12,7 +12,7 @@ try {
 }
 
 const PORT = process.env.PORT || 3000;
-const PASSWORD = 'babywolfdog';
+const PASSWORD = '1614babywolfdog';
 
 // Force HTTPS redirect in production
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
